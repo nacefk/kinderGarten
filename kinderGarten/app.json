@@ -27,6 +27,21 @@
       "bundler": "metro"
     },
     "plugins": [
+         [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow the app to access your photos.",
+          "videosPermission": "Allow the app to access your videos.",
+          "audioPermission": "Allow the app to access your audio files."
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -39,7 +54,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+
     ],
     "experiments": {
       "typedRoutes": true,
