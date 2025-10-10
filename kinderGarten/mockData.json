@@ -1,0 +1,158 @@
+{
+  "screens": {
+    "home": {
+      "apiCalls": [
+        {
+          "endpoint": "/api/profile",
+          "storeKey": "profile",
+          "data": {
+            "id": "child_001",
+            "name": "Joud",
+            "avatar": "https://i.pravatar.cc/100?img=46",
+            "status": "checked_in",
+            "present": true,
+            "checkedAt": "2025-10-09T08:45:00Z"
+          }
+        },
+        {
+          "endpoint": "/api/daily-summary",
+          "storeKey": "dailySummary",
+          "data": {
+            "date": "2025-10-09",
+            "lunch": "Pasta",
+            "napDuration": "1h 20min",
+            "activityMood": "Happy & active"
+          }
+        },
+        {
+          "endpoint": "/api/timeline",
+          "storeKey": "timeline",
+          "data": [
+            {
+              "time": "10:15 AM",
+              "title": "Snack time",
+              "description": "Daisy had a great morning!",
+              "image": "https://i.pravatar.cc/100?img=30"
+            }
+          ]
+        },
+        {
+          "endpoint": "/api/upcoming",
+          "storeKey": "upcomingEvents",
+          "data": [
+            {
+              "id": "event_001",
+              "title": "Parent Meeting",
+              "datetime": "2025-10-09T17:00:00Z",
+              "image": "https://i.pravatar.cc/100?img=12"
+            }
+          ]
+        },
+        {
+          "endpoint": "/api/extra-hours",
+          "storeKey": "extraHours",
+          "data": {
+            "baseEndTime": "17:00",
+            "requestedExtension": null,
+            "status": "none"
+          }
+        }
+      ]
+    },
+
+    "activity": {
+      "apiCalls": [
+        {
+          "endpoint": "/api/activities/today",
+          "storeKey": "todayTimeline",
+          "data": [
+            { "time": "8:45 AM", "icon": "✅", "title": "Checked in", "detail": "Arrived at daycare." },
+            { "time": "9:30 AM", "icon": "🧩", "title": "Playtime", "detail": "Building with blocks." },
+            { "time": "10:15 AM", "icon": "🍎", "title": "Snack", "detail": "Apple slices and milk." },
+            { "time": "12:00 PM", "icon": "🍝", "title": "Lunch", "detail": "Pasta with veggies." },
+            { "time": "1:10 PM", "icon": "😴", "title": "Nap", "detail": "Slept for 1h 20min." },
+            { "time": "3:00 PM", "icon": "🎨", "title": "Drawing", "detail": "Painting session with colors." }
+          ]
+        },
+        {
+          "endpoint": "/api/activities/week",
+          "storeKey": "timelineByDay",
+          "data": {
+            "Monday": [
+              { "time": "8:40 AM", "icon": "✅", "title": "Checked in", "detail": "Arrived with a smile." },
+              { "time": "9:15 AM", "icon": "🎵", "title": "Music time", "detail": "Sang songs with friends." },
+              { "time": "10:30 AM", "icon": "🍎", "title": "Snack", "detail": "Apples and milk." }
+            ],
+            "Tuesday": [
+              { "time": "8:45 AM", "icon": "✅", "title": "Checked in", "detail": "Arrived at daycare." },
+              { "time": "9:30 AM", "icon": "🎨", "title": "Art Class", "detail": "Painting session." },
+              { "time": "12:00 PM", "icon": "🍝", "title": "Lunch", "detail": "Pasta with veggies." }
+            ],
+            "Wednesday": [
+              { "time": "9:00 AM", "icon": "📚", "title": "Storytime", "detail": "Read 'The Very Hungry Caterpillar'." },
+              { "time": "10:15 AM", "icon": "🍎", "title": "Snack", "detail": "Apple slices and juice." },
+              { "time": "1:00 PM", "icon": "😴", "title": "Nap", "detail": "1h 10min rest." }
+            ]
+          }
+        },
+        {
+          "endpoint": "/api/gallery/today",
+          "storeKey": "galleryItems",
+          "data": [
+            { "id": "1", "type": "image", "uri": "https://i.pravatar.cc/400?img=20" },
+            { "id": "2", "type": "video", "uri": "https://www.w3schools.com/html/mov_bbb.mp4" },
+            { "id": "3", "type": "image", "uri": "https://i.pravatar.cc/400?img=25" }
+          ]
+        },
+        {
+          "endpoint": "/api/activities/upcoming",
+          "storeKey": "upcomingActivities",
+          "data": [
+            { "date": "Tomorrow", "icon": "🎂", "title": "Birthday Party", "detail": "Celebrating Adam’s birthday." },
+            { "date": "Friday", "icon": "👩‍🏫", "title": "Parent Meeting", "detail": "5:00 PM – Meet the educator." }
+          ]
+        }
+      ]
+    },
+
+    "profile": {
+      "apiCalls": [
+        {
+          "endpoint": "/api/profile",
+          "storeKey": "profile",
+          "data": {
+            "id": "child_001",
+            "name": "Emma Johnson",
+            "group": "Butterflies",
+            "birthdate": "2022-05-14",
+            "weight": "14.2 kg",
+            "height": "94 cm",
+            "gender": "Female",
+            "allergies": "Peanuts",
+            "conditions": "Asthma",
+            "medication": "Ventolin (as needed)",
+            "doctor": "Dr. Williams — (555) 678-9012",
+            "emergencyContact": {
+              "name": "Robert Green",
+              "relation": "Grandfather",
+              "phone": "(555) 222-3344"
+            },
+            "authorizedPickups": [
+              { "name": "Sarah Johnson", "phone": "(555) 111-2233" },
+              { "name": "Robert Green", "phone": "(555) 222-3344" },
+              { "name": "Emily Davis", "phone": "(555) 333-4455" }
+            ],
+            "classInfo": {
+              "teacherName": "Mrs. Emily Brown",
+              "teacherPhone": "(555) 987-1122",
+              "classroomName": "Room 3 – Butterflies",
+              "responsibleName": "Mr. James Miller",
+              "responsiblePhone": "(555) 444-8899"
+            },
+            "avatar": "https://i.pravatar.cc/150?img=5"
+          }
+        }
+      ]
+    }
+  }
+}
