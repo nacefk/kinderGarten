@@ -27,7 +27,7 @@
       "bundler": "metro"
     },
     "plugins": [
-         [
+      [
         "expo-media-library",
         {
           "photosPermission": "Allow the app to access your photos.",
@@ -55,7 +55,7 @@
           }
         }
       ],
-
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
