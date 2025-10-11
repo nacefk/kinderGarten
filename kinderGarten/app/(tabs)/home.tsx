@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StatusBar, Text, TouchableOpacity, View, Image } from "react-native";
-import { Bell } from "lucide-react-native";
+import { Bell, LogOut } from "lucide-react-native";
 import { useAppStore } from "../../store/useAppStore";
 import colors from "../../config/colors";
 import Card from "../../components/Card";
+import { router } from "expo-router";
 
 export default function Home({ childId = "child_014" }) {
   const { childrenList, dailyReports, weeklyPlans, calendarEvents } = useAppStore();
@@ -19,7 +20,7 @@ export default function Home({ childId = "child_014" }) {
   });
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
 
-  /** 📦 Build child-specific data */
+  /** 📦 Construction des données spécifiques à l’enfant */
   useEffect(() => {
     if (!childrenList || !dailyReports || !weeklyPlans) return;
 
@@ -43,7 +44,7 @@ export default function Home({ childId = "child_014" }) {
       });
     }
 
-    // 🕒 Build timeline & upcoming from weekly plan
+    // 🕒 Construire la timeline et les prochaines activités à partir du planning hebdomadaire
     const today = new Date().toLocaleDateString("fr-FR", { weekday: "long" });
     const capitalizedDay = today.charAt(0).toUpperCase() + today.slice(1);
     const classPlan = weeklyPlans?.[child.className]?.[capitalizedDay] || [];
@@ -69,7 +70,7 @@ export default function Home({ childId = "child_014" }) {
       setTimeline([
         {
           title: lastActivity.title,
-          description: `${child.className} — current activity`,
+          description: `${child.className} — activité en cours`,
           image: "https://i.pravatar.cc/100?img=30",
         },
       ]);
@@ -85,7 +86,7 @@ export default function Home({ childId = "child_014" }) {
         },
       ]);
     else if (calendarEvents?.length) {
-      // fallback: next class-related calendar event
+      // fallback: prochain événement du calendrier
       const nextEvent = calendarEvents
         .filter(
           (e: any) =>
@@ -105,7 +106,7 @@ export default function Home({ childId = "child_014" }) {
     }
   }, [childId, childrenList, dailyReports, weeklyPlans, calendarEvents]);
 
-  /** ⏰ Extra Hours Logic */
+  /** ⏰ Gestion des heures supplémentaires */
   const handleRequestExtraHours = () => {
     if (!selectedOption) return;
     setExtraHours((prev) => ({ ...prev, status: "pending", requestedMinutes: selectedOption }));
@@ -123,12 +124,12 @@ export default function Home({ childId = "child_014" }) {
     return `${newHour}:${newMinute}`;
   };
 
-  /** 🧭 UI Rendering */
+  /** 🧭 Rendu de l’interface utilisateur */
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
-      {/* 🧭 Header */}
+      {/* 🧭 En-tête */}
       <View
         className="flex-row items-center justify-between px-7 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
@@ -140,52 +141,63 @@ export default function Home({ childId = "child_014" }) {
           />
           <View>
             <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
-              {profile?.name ?? "Loading..."}
+              {profile?.name ?? "Chargement..."}
             </Text>
             <Text
               className="font-semibold text-base"
               style={{ color: profile?.present ? colors.success : colors.error }}
             >
-              ● {profile?.present ? "Checked in" : "Checked out"}
+              ● {profile?.present ? "Présent" : "Absent"}
             </Text>
           </View>
         </View>
-        <TouchableOpacity>
-          <Bell color={colors.textDark} size={32} />
-        </TouchableOpacity>
+       {/* 🔔 Notifications + 🔓 Déconnexion */}
+        <View className="flex-row items-center">
+          <TouchableOpacity className="mr-4">
+            <Bell color={colors.textDark} size={28} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.replace("/login")} // 👈 Navigate to login
+            className="p-1"
+          >
+            <LogOut color={colors.textDark} size={28} />
+          </TouchableOpacity>
+
+      </View>
       </View>
 
-      {/* 📜 Scroll content */}
+      {/* 📜 Contenu défilant */}
       <ScrollView
         className="flex-1 px-5"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* 📅 Today at a Glance */}
-        <Card title="Today at a Glance">
+        {/* 📅 Résumé du jour */}
+        <Card title="Résumé du jour">
           {dailySummary ? (
             <>
               <View className="flex-row justify-between mb-2">
-                <Text style={{ color: colors.text }}>🍽 Lunch</Text>
+                <Text style={{ color: colors.text }}>🍽 Déjeuner</Text>
                 <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                   {dailySummary.lunch}
                 </Text>
               </View>
               <View className="flex-row justify-between mb-2">
-                <Text style={{ color: colors.text }}>😴 Nap</Text>
+                <Text style={{ color: colors.text }}>😴 Sieste</Text>
                 <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                   {dailySummary.napDuration}
                 </Text>
               </View>
               <View className="flex-row justify-between">
-                <Text style={{ color: colors.text }}>🎨 Activity</Text>
+                <Text style={{ color: colors.text }}>🎨 Activité</Text>
                 <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                   {dailySummary.activityMood}
                 </Text>
               </View>
             </>
           ) : (
-            <Text style={{ color: colors.textLight }}>Loading summary...</Text>
+            <Text style={{ color: colors.textLight }}>Chargement du résumé...</Text>
           )}
 
           <TouchableOpacity
@@ -193,13 +205,13 @@ export default function Home({ childId = "child_014" }) {
             style={{ backgroundColor: colors.accent }}
           >
             <Text className="text-center text-white font-semibold">
-              View full report
+              Voir le rapport complet
             </Text>
           </TouchableOpacity>
         </Card>
 
-        {/* 🕒 Timeline */}
-        <Card title="Timeline">
+        {/* 🕒 Chronologie */}
+        <Card title="Chronologie">
           {timeline?.length > 0 ? (
             timeline.map((item, index) => (
               <View key={index} className="flex-row items-center mb-3">
@@ -216,12 +228,12 @@ export default function Home({ childId = "child_014" }) {
               </View>
             ))
           ) : (
-            <Text style={{ color: colors.textLight }}>No timeline yet.</Text>
+            <Text style={{ color: colors.textLight }}>Aucune activité pour le moment.</Text>
           )}
         </Card>
 
-        {/* 📆 Upcoming */}
-        <Card title="Upcoming">
+        {/* 📆 À venir */}
+        <Card title="À venir">
           {upcoming?.length > 0 ? (
             upcoming.map((event, index) => (
               <View key={index} className="flex-row items-center mb-3">
@@ -240,16 +252,16 @@ export default function Home({ childId = "child_014" }) {
               </View>
             ))
           ) : (
-            <Text style={{ color: colors.textLight }}>No upcoming events.</Text>
+            <Text style={{ color: colors.textLight }}>Aucun événement à venir.</Text>
           )}
         </Card>
 
-        {/* ⏰ Extra Hours */}
-        <Card title="Extra Hours">
+        {/* ⏰ Heures supplémentaires */}
+        <Card title="Heures supplémentaires">
           {extraHours.status === "none" && (
             <>
               <Text style={{ color: colors.text, marginBottom: 12 }}>
-                Request additional care time
+                Demander du temps de garde supplémentaire
               </Text>
               <View className="flex-row justify-between mb-4">
                 {[15, 30, 60].map((option) => (
@@ -277,14 +289,14 @@ export default function Home({ childId = "child_014" }) {
               </View>
 
               <View className="flex-row justify-between mb-2">
-                <Text style={{ color: colors.text }}>🕕 Original End:</Text>
+                <Text style={{ color: colors.text }}>🕕 Fin initiale :</Text>
                 <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                   {extraHours.baseEndTime || "17:00"}
                 </Text>
               </View>
 
               <View className="flex-row justify-between mb-4">
-                <Text style={{ color: colors.text }}>🕒 New End:</Text>
+                <Text style={{ color: colors.text }}>🕒 Nouvelle fin :</Text>
                 <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                   {calculateNewEndTime()}
                 </Text>
@@ -299,7 +311,7 @@ export default function Home({ childId = "child_014" }) {
                 }}
               >
                 <Text className="text-center text-white font-semibold">
-                  Request Extra Hours
+                  Demander des heures supplémentaires
                 </Text>
               </TouchableOpacity>
             </>
@@ -308,18 +320,21 @@ export default function Home({ childId = "child_014" }) {
           {extraHours.status === "pending" && (
             <View className="items-center">
               <Text className="text-center font-medium mb-3" style={{ color: colors.warning }}>
-                Pending approval ⏳
+                En attente d’approbation ⏳
               </Text>
               <Text style={{ color: colors.text }}>
-                You requested an additional{" "}
-                <Text style={{ fontWeight: "600" }}>{selectedOption ?? extraHours.requestedMinutes} minutes</Text> of care time.
+                Vous avez demandé{" "}
+                <Text style={{ fontWeight: "600" }}>
+                  {selectedOption ?? extraHours.requestedMinutes} minutes
+                </Text>{" "}
+                supplémentaires de garde.
               </Text>
               <Text style={{ color: colors.text, marginTop: 4 }}>
-                New end time:{" "}
+                Nouvelle heure de fin :{" "}
                 <Text style={{ fontWeight: "600" }}>{calculateNewEndTime()}</Text>
               </Text>
               <Text style={{ color: colors.textLight, marginTop: 6, textAlign: "center" }}>
-                The staff has been notified and will approve shortly.
+                Le personnel a été notifié et approuvera sous peu.
               </Text>
             </View>
           )}
@@ -327,18 +342,21 @@ export default function Home({ childId = "child_014" }) {
           {extraHours.status === "approved" && (
             <View className="items-center">
               <Text className="text-center font-medium mb-3" style={{ color: colors.success }}>
-                Approved ✅
+                Approuvé ✅
               </Text>
               <Text style={{ color: colors.text }}>
-                Your extra time request of{" "}
-                <Text style={{ fontWeight: "600" }}>{selectedOption ?? extraHours.requestedMinutes} minutes</Text> has been approved.
+                Votre demande de{" "}
+                <Text style={{ fontWeight: "600" }}>
+                  {selectedOption ?? extraHours.requestedMinutes} minutes
+                </Text>{" "}
+                supplémentaires a été approuvée.
               </Text>
               <Text style={{ color: colors.text, marginTop: 4 }}>
-                New end time:{" "}
+                Nouvelle heure de fin :{" "}
                 <Text style={{ fontWeight: "600" }}>{calculateNewEndTime()}</Text>
               </Text>
               <Text style={{ color: colors.textLight, marginTop: 6, textAlign: "center" }}>
-                Thank you! The schedule has been updated accordingly.
+                Merci ! Le planning a été mis à jour en conséquence.
               </Text>
             </View>
           )}

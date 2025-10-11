@@ -26,7 +26,7 @@ export default function Profile({ childId = "child_014" }) {
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [localProfile, setLocalProfile] = useState<any>(null);
 
-  /** 🧮 Helper to calculate age */
+  /** 🧮 Calcul de l’âge */
   const getAge = (birthdate?: string) => {
     if (!birthdate) return "";
     const parsed = new Date(birthdate);
@@ -38,51 +38,50 @@ export default function Profile({ childId = "child_014" }) {
       years--;
       months += 12;
     }
-    if (years < 1) return `${months} month${months > 1 ? "s" : ""}`;
-    return `${years} year${years > 1 ? "s" : ""}${months > 0 ? ` ${months} mo` : ""}`;
+    if (years < 1) return `${months} mois`;
+    return `${years} an${years > 1 ? "s" : ""}${months > 0 ? ` ${months} mois` : ""}`;
   };
 
-  /** 📦 Build child data dynamically */
+  /** 📦 Construction du profil enfant */
   useEffect(() => {
     if (!childrenList || !classes) return;
 
     const child = childrenList.find((c: any) => c.id === childId);
     if (!child) return;
 
-    // find the class for this child
     const classInfo = classes.find((cl: any) => cl.name === child.className);
 
     const fullProfile = {
       id: child.id,
       name: child.name,
       avatar: child.avatar,
-      group: child.className || "Unknown Class",
+      group: child.className || "Classe inconnue",
       birthdate: child.birthdate || "2020-01-01",
       age: child.age || getAge(child.birthdate || "2020-01-01"),
-      weight: child.weight || "N/A",
-      height: child.height || "N/A",
-      gender: child.gender || "Female",
-      allergies: child.allergies || "None",
-      conditions: child.medicalNote || "None",
-      medication: "N/A",
-      doctor: classInfo ? `${classInfo.teacher} — ${classInfo.room}` : "N/A",
+      weight: child.weight || "N/D",
+      height: child.height || "N/D",
+      gender: child.gender || "Fille",
+      allergies: child.allergies || "Aucune",
+      conditions: child.medicalNote || "Aucune",
+      medication: "N/D",
+      doctor: classInfo ? `${classInfo.teacher} — ${classInfo.room}` : "N/D",
       emergencyContact: child.emergencyContact || {
-        name: "N/A",
-        relation: "N/A",
-        phone: "N/A",
+        name: "N/D",
+        relation: "N/D",
+        phone: "N/D",
       },
       authorizedPickups: child.authorizedPickups || [],
       classInfo: {
-        teacherName: classInfo?.teacher || "Unknown",
+        teacherName: classInfo?.teacher || "Inconnu",
         teacherPhone: "",
-        classroomName: classInfo?.room || "N/A",
-        responsibleName: classInfo?.assistant || "N/A",
+        classroomName: classInfo?.room || "N/D",
+        responsibleName: classInfo?.assistant || "N/D",
         responsiblePhone: "",
       },
     };
 
     setLocalProfile(fullProfile);
-    setData("profile", fullProfile); // sync with store
+    setData("profile", fullProfile);
   }, [childId, childrenList, classes]);
 
   const updateField = (key: string, value: any) => {
@@ -95,21 +94,21 @@ export default function Profile({ childId = "child_014" }) {
   };
 
   const handlePhoneCall = (phone: string) => {
-    if (!phone || phone === "N/A") return;
+    if (!phone || phone === "N/D") return;
     const sanitized = phone.replace(/[^+\d]/g, "");
     const url = `tel:${sanitized}`;
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) Linking.openURL(url);
-        else Alert.alert("Error", "Unable to open the dialer.");
+        else Alert.alert("Erreur", "Impossible d’ouvrir le composeur téléphonique.");
       })
-      .catch(() => Alert.alert("Error", "Something went wrong while making the call."));
+      .catch(() => Alert.alert("Erreur", "Une erreur est survenue lors de l’appel."));
   };
 
   if (!localProfile) {
     return (
       <View className="flex-1 items-center justify-center" style={{ backgroundColor: colors.background }}>
-        <Text style={{ color: colors.textLight }}>Loading profile...</Text>
+        <Text style={{ color: colors.textLight }}>Chargement du profil...</Text>
       </View>
     );
   }
@@ -118,7 +117,7 @@ export default function Profile({ childId = "child_014" }) {
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
-      {/* Header */}
+      {/* En-tête */}
       <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
@@ -127,9 +126,7 @@ export default function Profile({ childId = "child_014" }) {
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
             <ChevronLeft color={colors.textDark} size={28} />
           </TouchableOpacity>
-          <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
-            Profile
-          </Text>
+
         </View>
 
         <TouchableOpacity
@@ -151,8 +148,8 @@ export default function Profile({ childId = "child_014" }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 80 }}
       >
-        {/* 👶 Child Info */}
-        <Card title="Child Info">
+        {/* 👶 Informations sur l’enfant */}
+        <Card title="Informations de l’enfant">
           <View className="items-center">
             <Image
               source={{ uri: localProfile?.avatar }}
@@ -175,10 +172,7 @@ export default function Profile({ childId = "child_014" }) {
               </>
             ) : (
               <>
-                <Text
-                  className="text-xl font-semibold"
-                  style={{ color: colors.textDark }}
-                >
+                <Text className="text-xl font-semibold" style={{ color: colors.textDark }}>
                   {localProfile?.name}
                 </Text>
                 <Text style={{ color: colors.text, marginTop: 4 }}>
@@ -189,21 +183,18 @@ export default function Profile({ childId = "child_014" }) {
           </View>
         </Card>
 
-        {/* 📏 Physical Info */}
-        <Card title="Physical Info">
-          {/* 🎂 Birthdate */}
-          <Row label="🎂 Birthdate">
+        {/* 📏 Informations physiques */}
+        <Card title="Informations physiques">
+          {/* 🎂 Date de naissance */}
+          <Row label="🎂 Date de naissance">
             {isEditing ? (
               <>
                 <TouchableOpacity
                   onPress={() => setShowDatePicker(true)}
                   className="border-b border-gray-300 w-40"
                 >
-                  <Text
-                    className="text-right font-medium py-1"
-                    style={{ color: colors.textDark }}
-                  >
-                    {localProfile?.birthdate || "Select Date"}
+                  <Text className="text-right font-medium py-1" style={{ color: colors.textDark }}>
+                    {localProfile?.birthdate || "Sélectionner une date"}
                   </Text>
                 </TouchableOpacity>
 
@@ -225,45 +216,32 @@ export default function Profile({ childId = "child_014" }) {
                 )}
               </>
             ) : (
-              <Text
-                className="font-medium text-right"
-                style={{ color: colors.textDark }}
-              >
+              <Text className="font-medium text-right" style={{ color: colors.textDark }}>
                 {localProfile?.birthdate}
               </Text>
             )}
           </Row>
 
-          {/* ⚖️ Weight */}
-          {renderRow("⚖️ Weight", "weight", localProfile?.weight, isEditing, (v) =>
-            updateField("weight", v)
-          )}
+          {/* ⚖️ Poids */}
+          {renderRow("⚖️ Poids", "weight", localProfile?.weight, isEditing, (v) => updateField("weight", v))}
 
-          {/* 📏 Height */}
-          {renderRow("📏 Height", "height", localProfile?.height, isEditing, (v) =>
-            updateField("height", v)
-          )}
+          {/* 📏 Taille */}
+          {renderRow("📏 Taille", "height", localProfile?.height, isEditing, (v) => updateField("height", v))}
 
-          {/* 👧 Gender */}
-          <Row label="👧 Gender">
+          {/* 👧 Sexe */}
+          <Row label="👧 Sexe">
             {isEditing ? (
               <TouchableOpacity
                 onPress={() => setShowGenderDropdown(!showGenderDropdown)}
                 className="flex-row justify-between items-center border-b border-gray-300 w-40"
               >
-                <Text
-                  className="text-right font-medium py-1"
-                  style={{ color: colors.textDark }}
-                >
-                  {localProfile?.gender || "Select Gender"}
+                <Text className="text-right font-medium py-1" style={{ color: colors.textDark }}>
+                  {localProfile?.gender || "Sélectionner le sexe"}
                 </Text>
                 <ChevronDown color={colors.textDark} size={18} />
               </TouchableOpacity>
             ) : (
-              <Text
-                className="font-medium text-right"
-                style={{ color: colors.textDark }}
-              >
+              <Text className="font-medium text-right" style={{ color: colors.textDark }}>
                 {localProfile?.gender}
               </Text>
             )}
@@ -274,7 +252,7 @@ export default function Profile({ childId = "child_014" }) {
               className="rounded-xl shadow-sm p-3 mt-1"
               style={{ backgroundColor: colors.cardBackground }}
             >
-              {["Female", "Male"].map((option) => (
+              {["Fille", "Garçon"].map((option) => (
                 <TouchableOpacity
                   key={option}
                   onPress={() => {
@@ -288,10 +266,7 @@ export default function Profile({ childId = "child_014" }) {
                   <Text
                     className="text-right"
                     style={{
-                      color:
-                        localProfile?.gender === option
-                          ? colors.accent
-                          : colors.textDark,
+                      color: localProfile?.gender === option ? colors.accent : colors.textDark,
                       fontWeight: localProfile?.gender === option ? "600" : "400",
                     }}
                   >
@@ -303,47 +278,39 @@ export default function Profile({ childId = "child_014" }) {
           )}
         </Card>
 
-        {/* 🚑 Health Info */}
-        <Card title="Health & Allergies">
-          {renderRow("Allergies", "allergies", localProfile?.allergies, isEditing, (v) =>
-            updateField("allergies", v)
-          )}
-          {renderRow("Conditions", "conditions", localProfile?.conditions, isEditing, (v) =>
-            updateField("conditions", v)
-          )}
-          {renderRow("Medication", "medication", localProfile?.medication, isEditing, (v) =>
-            updateField("medication", v)
-          )}
-          {renderRow("Doctor", "doctor", localProfile?.doctor, isEditing, (v) =>
-            updateField("doctor", v)
-          )}
+        {/* 🚑 Santé & Allergies */}
+        <Card title="Santé & allergies">
+          {renderRow("Allergies", "allergies", localProfile?.allergies, isEditing, (v) => updateField("allergies", v))}
+          {renderRow("Conditions", "conditions", localProfile?.conditions, isEditing, (v) => updateField("conditions", v))}
+          {renderRow("Médication", "medication", localProfile?.medication, isEditing, (v) => updateField("medication", v))}
+          {renderRow("Médecin", "doctor", localProfile?.doctor, isEditing, (v) => updateField("doctor", v))}
         </Card>
 
-        {/* 🚨 Emergency Contact */}
-        <Card title="Emergency Contact">
-          {renderRow("Name", "emergencyContact.name", localProfile?.emergencyContact?.name, isEditing, (v) =>
+        {/* 🚨 Contact d’urgence */}
+        <Card title="Contact d’urgence">
+          {renderRow("Nom", "emergencyContact.name", localProfile?.emergencyContact?.name, isEditing, (v) =>
             updateField("emergencyContact", { ...localProfile?.emergencyContact, name: v })
           )}
           {renderRow("Relation", "emergencyContact.relation", localProfile?.emergencyContact?.relation, isEditing, (v) =>
             updateField("emergencyContact", { ...localProfile?.emergencyContact, relation: v })
           )}
-          {renderRow("Phone", "emergencyContact.phone", localProfile?.emergencyContact?.phone, isEditing, (v) =>
+          {renderRow("Téléphone", "emergencyContact.phone", localProfile?.emergencyContact?.phone, isEditing, (v) =>
             updateField("emergencyContact", { ...localProfile?.emergencyContact, phone: v })
           )}
         </Card>
 
-        {/* 🎓 Class Info */}
-        <Card title="Class Information">
-          {renderRow("👩‍🏫 Teacher", "classInfo.teacherName", localProfile?.classInfo?.teacherName, isEditing, (v) =>
+        {/* 🎓 Informations sur la classe */}
+        <Card title="Informations sur la classe">
+          {renderRow("👩‍🏫 Enseignant(e)", "classInfo.teacherName", localProfile?.classInfo?.teacherName, isEditing, (v) =>
             updateField("classInfo", { ...localProfile?.classInfo, teacherName: v })
           )}
-          {renderRow("🚪 Classroom", "classInfo.classroomName", localProfile?.classInfo?.classroomName, isEditing, (v) =>
+          {renderRow("🚪 Salle", "classInfo.classroomName", localProfile?.classInfo?.classroomName, isEditing, (v) =>
             updateField("classInfo", { ...localProfile?.classInfo, classroomName: v })
           )}
-          {renderRow("🧑 Responsible", "classInfo.responsibleName", localProfile?.classInfo?.responsibleName, isEditing, (v) =>
+          {renderRow("🧑 Responsable", "classInfo.responsibleName", localProfile?.classInfo?.responsibleName, isEditing, (v) =>
             updateField("classInfo", { ...localProfile?.classInfo, responsibleName: v })
           )}
-          {renderRow("📞 Responsible Phone", "classInfo.responsiblePhone", localProfile?.classInfo?.responsiblePhone, isEditing, (v) =>
+          {renderRow("📞 Téléphone du responsable", "classInfo.responsiblePhone", localProfile?.classInfo?.responsiblePhone, isEditing, (v) =>
             updateField("classInfo", { ...localProfile?.classInfo, responsiblePhone: v })
           )}
         </Card>
@@ -352,7 +319,7 @@ export default function Profile({ childId = "child_014" }) {
   );
 }
 
-/* 🧱 Reusable row helper */
+/* 🧱 Fonction de ligne réutilisable */
 function renderRow(
   label: string,
   key: string,
@@ -371,10 +338,7 @@ function renderRow(
           style={{ color: colors.textDark }}
         />
       ) : (
-        <Text
-          className="font-medium text-right"
-          style={{ color: colors.textDark }}
-        >
+        <Text className="font-medium text-right" style={{ color: colors.textDark }}>
           {value}
         </Text>
       )}

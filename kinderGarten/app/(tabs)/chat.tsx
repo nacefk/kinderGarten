@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Send, ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
+import colors from "@/config/colors";
 
 type Message = {
   id: string;
@@ -22,15 +23,15 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Hi there 👋",
+      text: "Salut 👋",
       sender: "other",
-      time: "9:00 AM",
+      time: "09:00",
     },
     {
       id: "2",
-      text: "Welcome to the chat screen!",
+      text: "Bienvenue sur l’écran de discussion !",
       sender: "other",
-      time: "9:01 AM",
+      time: "09:01",
     },
   ]);
   const [input, setInput] = useState("");
@@ -41,7 +42,7 @@ export default function Chat() {
       id: Date.now().toString(),
       text: input,
       sender: "user",
-      time: new Date().toLocaleTimeString([], {
+      time: new Date().toLocaleTimeString("fr-FR", {
         hour: "2-digit",
         minute: "2-digit",
       }),
@@ -52,13 +53,15 @@ export default function Chat() {
 
   return (
     <View className="flex-1 bg-[#FAF8F5]">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pt-16 pb-4 bg-[#EAF1FB]">
-        <View className="flex-row items-center">
+      {/* En-tête */}
+   <View
+        className="flex-row items-center justify-between px-5 pt-16 pb-6"
+        style={{ backgroundColor: colors.accentLight }}
+      >        <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
             <ChevronLeft color="#374151" size={28} />
           </TouchableOpacity>
-          <Text className="text-xl font-semibold text-gray-800">Chat</Text>
+
         </View>
       </View>
 
@@ -106,12 +109,12 @@ export default function Chat() {
           contentContainerStyle={{ paddingVertical: 10 }}
         />
 
-        {/* Input area */}
+        {/* Zone de saisie */}
         <View className="flex-row items-center bg-white px-4 py-3 border-t border-gray-200">
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder="Type a message..."
+            placeholder="Écrire un message..."
             className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-gray-800"
           />
           <TouchableOpacity

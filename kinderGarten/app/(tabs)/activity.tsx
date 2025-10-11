@@ -30,7 +30,7 @@ export default function Activity() {
   const childId = "child_014";
 
   const [selectedFilter, setSelectedFilter] = useState<"today" | "week" | "upcoming">("today");
-  const [selectedDay, setSelectedDay] = useState<string>("Monday");
+  const [selectedDay, setSelectedDay] = useState<string>("Lundi");
   const [showDayDropdown, setShowDayDropdown] = useState<boolean>(false);
 
   /** 🧩 Build activity data dynamically if missing */
@@ -44,22 +44,22 @@ export default function Activity() {
     const today = new Date().toLocaleDateString("fr-FR", { weekday: "long" });
     const capitalizedDay = today.charAt(0).toUpperCase() + today.slice(1);
 
-    // ✅ TODAY timeline
+    // ✅ AUJOURD’HUI timeline
     const computedTodayTimeline = todayTimeline?.length
       ? todayTimeline
       : classPlan?.[capitalizedDay] || [
-          { time: "08:30", icon: "✅", title: "Checked in", detail: "Started the day." },
-          { time: "09:00", icon: "🧩", title: "Playtime", detail: "Building with blocks." },
+          { time: "08:30", icon: "✅", title: "Arrivée", detail: "Début de la journée." },
+          { time: "09:00", icon: "🧩", title: "Jeu libre", detail: "Construction avec des blocs." },
         ];
 
-    // ✅ WEEKLY timeline
+    // ✅ HEBDOMADAIRE
     const computedTimelineByDay = Object.keys(timelineByDay || {}).length
       ? timelineByDay
       : classPlan || {
-          Monday: [{ time: "09:00", icon: "🎨", title: "Drawing", detail: "Art class fun!" }],
+          Lundi: [{ time: "09:00", icon: "🎨", title: "Dessin", detail: "Atelier artistique amusant !" }],
         };
 
-    // ✅ GALLERY
+    // ✅ GALERIE
     const computedGallery = galleryItems?.length
       ? galleryItems
       : [
@@ -68,68 +68,56 @@ export default function Activity() {
           { id: "3", type: "image", uri: "https://i.pravatar.cc/300?img=45" },
         ];
 
-    // ✅ UPCOMING
+    // ✅ ÉVÉNEMENTS À VENIR
+    let computedUpcoming = [];
     const now = new Date();
-// ✅ Upcoming Events
-let computedUpcoming = [];
 
-if (calendarEvents && calendarEvents.length > 0) {
-  const now = new Date();
+    if (calendarEvents && calendarEvents.length > 0) {
+      computedUpcoming = calendarEvents
+        .filter((e: any) => {
+          const matchesClass =
+            e.className?.toLowerCase() === child.className?.toLowerCase() ||
+            e.className?.toLowerCase() === "toutes les classes";
 
-  computedUpcoming = calendarEvents
-    .filter((e: any) => {
-      // Include all events for this child's class OR global ones
-      const matchesClass =
-        e.className?.toLowerCase() === child.className?.toLowerCase() ||
-        e.className?.toLowerCase() === "toutes les classes";
+          const [year, month, day] = e.date.split("-").map(Number);
+          const eventDate = new Date(year, month - 1, day);
 
-      // Parse date safely (treat YYYY-MM-DD as local)
-      const [year, month, day] = e.date.split("-").map(Number);
-      const eventDate = new Date(year, month - 1, day);
+          return matchesClass && eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        })
+        .sort((a: any, b: any) => new Date(a.date) - new Date(b.date))
+        .map((e: any) => ({
+          icon: "🎉",
+          title: e.title || "Événement",
+          detail: e.description || "Aucune description fournie",
+          date: new Date(e.date).toLocaleDateString("fr-FR", {
+            weekday: "long",
+            day: "numeric",
+            month: "short",
+          }),
+        }));
+    }
 
-      // Keep all future events or today’s
-      return matchesClass && eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    })
-    .sort((a: any, b: any) => new Date(a.date) - new Date(b.date))
-    .map((e: any) => ({
-      icon: "🎉",
-      title: e.title || "Event",
-      detail: e.description || "No description provided",
-      date: new Date(e.date).toLocaleDateString("fr-FR", {
-        weekday: "long",
-        day: "numeric",
-        month: "short",
-      }),
-    }));
-}
+    if (!computedUpcoming.length && calendarEvents?.length > 0) {
+      computedUpcoming = calendarEvents.map((e: any) => ({
+        icon: "🎉",
+        title: e.title || "Événement",
+        detail: e.description || "Aucune description",
+        date: new Date(e.date).toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "short",
+        }),
+      }));
+    }
 
-// 🩹 fallback if still empty
-if (!computedUpcoming.length && calendarEvents?.length > 0) {
-  computedUpcoming = calendarEvents.map((e: any) => ({
-    icon: "🎉",
-    title: e.title || "Event",
-    detail: e.description || "No description",
-    date: new Date(e.date).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "short",
-    }),
-  }));
-}
-
-// ✅ Sync to store
-setData("upcomingActivities", computedUpcoming);
-
-
-
-    // ✅ Sync to store for reuse
+    // ✅ Sync to store
+    setData("upcomingActivities", computedUpcoming);
     setData("todayTimeline", computedTodayTimeline);
     setData("timelineByDay", computedTimelineByDay);
     setData("galleryItems", computedGallery);
-    setData("upcomingActivities", computedUpcoming);
   }, [childrenList, weeklyPlans, calendarEvents]);
 
-  const weekDays = Object.keys(timelineByDay || { Monday: [] });
+  const weekDays = Object.keys(timelineByDay || { Lundi: [] });
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
@@ -144,24 +132,22 @@ setData("upcomingActivities", computedUpcoming);
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
             <ChevronLeft color={colors.textDark} size={28} />
           </TouchableOpacity>
-          <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
-            Activities
-          </Text>
+
         </View>
         <TouchableOpacity>
           <Bell color={colors.textDark} size={28} />
         </TouchableOpacity>
       </View>
 
-      {/* Filter Tabs */}
+      {/* Onglets de filtre */}
       <View
         className="flex-row justify-around mx-5 rounded-2xl shadow-sm mt-4 py-2 mb-5"
         style={{ backgroundColor: colors.cardBackground }}
       >
         {[
-          { key: "today", label: "Today" },
-          { key: "week", label: "This Week" },
-          { key: "upcoming", label: "Upcoming" },
+          { key: "today", label: "Aujourd’hui" },
+          { key: "week", label: "Cette semaine" },
+          { key: "upcoming", label: "À venir" },
         ].map((tab) => (
           <TouchableOpacity
             key={tab.key}
@@ -184,32 +170,29 @@ setData("upcomingActivities", computedUpcoming);
         ))}
       </View>
 
-      {/* Content */}
+      {/* Contenu */}
       <ScrollView
         className="flex-1 px-5"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 80 }}
       >
-        {/* 📅 TODAY */}
+        {/* 📅 AUJOURD’HUI */}
         {selectedFilter === "today" && (
           <>
             <LiveView />
-            <Card title="Today’s Timeline">
+            <Card title="Programme du jour">
               {todayTimeline?.length > 0 ? (
                 todayTimeline.map((item, index) => (
                   <TimelineItem key={index} item={item} />
                 ))
               ) : (
-                <Text
-                  className="text-center py-4"
-                  style={{ color: colors.textLight }}
-                >
-                  No activities recorded today.
+                <Text className="text-center py-4" style={{ color: colors.textLight }}>
+                  Aucune activité enregistrée aujourd’hui.
                 </Text>
               )}
             </Card>
 
-            <Card title="Today’s Photos & Videos">
+            <Card title="Photos & vidéos du jour">
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {galleryItems?.length > 0 ? (
                   galleryItems.map((item, index) => (
@@ -233,7 +216,7 @@ setData("upcomingActivities", computedUpcoming);
                           style={{ backgroundColor: colors.textDark }}
                         >
                           <Text className="text-xs" style={{ color: "#FFF" }}>
-                            🎬 Video
+                            🎬 Vidéo
                           </Text>
                         </View>
                       )}
@@ -241,7 +224,7 @@ setData("upcomingActivities", computedUpcoming);
                   ))
                 ) : (
                   <Text style={{ color: colors.textLight }}>
-                    No media available.
+                    Aucun média disponible.
                   </Text>
                 )}
               </ScrollView>
@@ -249,7 +232,7 @@ setData("upcomingActivities", computedUpcoming);
           </>
         )}
 
-        {/* 📆 THIS WEEK */}
+        {/* 📆 CETTE SEMAINE */}
         {selectedFilter === "week" && (
           <View className="mt-6">
             <TouchableOpacity
@@ -257,10 +240,7 @@ setData("upcomingActivities", computedUpcoming);
               className="flex-row justify-between items-center rounded-2xl p-4 shadow-sm"
               style={{ backgroundColor: colors.cardBackground }}
             >
-              <Text
-                className="font-semibold text-base"
-                style={{ color: colors.textDark }}
-              >
+              <Text className="font-semibold text-base" style={{ color: colors.textDark }}>
                 {selectedDay}
               </Text>
               <ChevronDown color={colors.textDark} size={22} />
@@ -299,26 +279,23 @@ setData("upcomingActivities", computedUpcoming);
               </View>
             )}
 
-            <Card title={`${selectedDay} Timeline`}>
+            <Card title={`Programme du ${selectedDay}`}>
               {timelineByDay?.[selectedDay]?.length > 0 ? (
                 timelineByDay[selectedDay].map((item, index) => (
                   <TimelineItem key={index} item={item} />
                 ))
               ) : (
-                <Text
-                  className="text-center py-4"
-                  style={{ color: colors.textLight }}
-                >
-                  No activities recorded for {selectedDay}.
+                <Text className="text-center py-4" style={{ color: colors.textLight }}>
+                  Aucune activité enregistrée pour {selectedDay}.
                 </Text>
               )}
             </Card>
           </View>
         )}
 
-        {/* 🔮 UPCOMING */}
+        {/* 🔮 À VENIR */}
         {selectedFilter === "upcoming" && (
-          <Card title="Upcoming Events">
+          <Card title="Événements à venir">
             {upcomingActivities?.length > 0 ? (
               upcomingActivities.map((item, index) => (
                 <View key={index} className="flex-row items-center mb-4">
@@ -329,30 +306,21 @@ setData("upcomingActivities", computedUpcoming);
                     <Text className="text-lg">{item.icon}</Text>
                   </View>
                   <View className="flex-1">
-                    <Text
-                      className="font-medium"
-                      style={{ color: colors.textDark }}
-                    >
+                    <Text className="font-medium" style={{ color: colors.textDark }}>
                       {item.title}
                     </Text>
                     <Text style={{ color: colors.text }}>
-                      {item.detail || "Upcoming activity"}
+                      {item.detail || "Activité à venir"}
                     </Text>
-                    <Text
-                      className="text-sm mt-1"
-                      style={{ color: colors.textLight }}
-                    >
-                      {item.date || "TBD"}
+                    <Text className="text-sm mt-1" style={{ color: colors.textLight }}>
+                      {item.date || "À déterminer"}
                     </Text>
                   </View>
                 </View>
               ))
             ) : (
-              <Text
-                className="text-center py-4"
-                style={{ color: colors.textLight }}
-              >
-                No upcoming events.
+              <Text className="text-center py-4" style={{ color: colors.textLight }}>
+                Aucun événement à venir.
               </Text>
             )}
           </Card>
