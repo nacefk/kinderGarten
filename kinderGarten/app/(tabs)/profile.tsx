@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { Check, ChevronLeft, Pencil, ChevronDown } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Linking,
@@ -18,15 +18,15 @@ import colors from "../../config/colors";
 import Card from "../../components/Card";
 import Row from "../../components/Row";
 
-export default function Profile() {
-  const { profile, setData } = useAppStore();
+export default function Profile({ childId = "child_014" }) {
+  const { childrenList, classes, setData } = useAppStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
-  const [localProfile, setLocalProfile] = useState(profile);
+  const [localProfile, setLocalProfile] = useState<any>(null);
 
-  // 🧮 Helper to calculate age based on birthdate
+  /** 🧮 Helper to calculate age */
   const getAge = (birthdate?: string) => {
     if (!birthdate) return "";
     const parsed = new Date(birthdate);
@@ -42,8 +42,51 @@ export default function Profile() {
     return `${years} year${years > 1 ? "s" : ""}${months > 0 ? ` ${months} mo` : ""}`;
   };
 
+  /** 📦 Build child data dynamically */
+  useEffect(() => {
+    if (!childrenList || !classes) return;
+
+    const child = childrenList.find((c: any) => c.id === childId);
+    if (!child) return;
+
+    // find the class for this child
+    const classInfo = classes.find((cl: any) => cl.name === child.className);
+
+    const fullProfile = {
+      id: child.id,
+      name: child.name,
+      avatar: child.avatar,
+      group: child.className || "Unknown Class",
+      birthdate: child.birthdate || "2020-01-01",
+      age: child.age || getAge(child.birthdate || "2020-01-01"),
+      weight: child.weight || "N/A",
+      height: child.height || "N/A",
+      gender: child.gender || "Female",
+      allergies: child.allergies || "None",
+      conditions: child.medicalNote || "None",
+      medication: "N/A",
+      doctor: classInfo ? `${classInfo.teacher} — ${classInfo.room}` : "N/A",
+      emergencyContact: child.emergencyContact || {
+        name: "N/A",
+        relation: "N/A",
+        phone: "N/A",
+      },
+      authorizedPickups: child.authorizedPickups || [],
+      classInfo: {
+        teacherName: classInfo?.teacher || "Unknown",
+        teacherPhone: "",
+        classroomName: classInfo?.room || "N/A",
+        responsibleName: classInfo?.assistant || "N/A",
+        responsiblePhone: "",
+      },
+    };
+
+    setLocalProfile(fullProfile);
+    setData("profile", fullProfile); // sync with store
+  }, [childId, childrenList, classes]);
+
   const updateField = (key: string, value: any) => {
-    setLocalProfile((prev) => ({ ...prev, [key]: value }));
+    setLocalProfile((prev: any) => ({ ...prev, [key]: value }));
   };
 
   const saveProfile = () => {
@@ -52,6 +95,7 @@ export default function Profile() {
   };
 
   const handlePhoneCall = (phone: string) => {
+    if (!phone || phone === "N/A") return;
     const sanitized = phone.replace(/[^+\d]/g, "");
     const url = `tel:${sanitized}`;
     Linking.canOpenURL(url)
@@ -61,6 +105,14 @@ export default function Profile() {
       })
       .catch(() => Alert.alert("Error", "Something went wrong while making the call."));
   };
+
+  if (!localProfile) {
+    return (
+      <View className="flex-1 items-center justify-center" style={{ backgroundColor: colors.background }}>
+        <Text style={{ color: colors.textLight }}>Loading profile...</Text>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
@@ -139,6 +191,7 @@ export default function Profile() {
 
         {/* 📏 Physical Info */}
         <Card title="Physical Info">
+          {/* 🎂 Birthdate */}
           <Row label="🎂 Birthdate">
             {isEditing ? (
               <>
@@ -181,13 +234,17 @@ export default function Profile() {
             )}
           </Row>
 
+          {/* ⚖️ Weight */}
           {renderRow("⚖️ Weight", "weight", localProfile?.weight, isEditing, (v) =>
             updateField("weight", v)
           )}
+
+          {/* 📏 Height */}
           {renderRow("📏 Height", "height", localProfile?.height, isEditing, (v) =>
             updateField("height", v)
           )}
 
+          {/* 👧 Gender */}
           <Row label="👧 Gender">
             {isEditing ? (
               <TouchableOpacity
@@ -275,81 +332,6 @@ export default function Profile() {
           )}
         </Card>
 
-        {/* 🧍 Authorized Pick-Up */}
-        <Card title="Authorized Pick-Up">
-          {localProfile?.authorizedPickups?.length > 0 ? (
-            localProfile.authorizedPickups.map((person, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => !isEditing && person.phone && handlePhoneCall(person.phone)}
-                activeOpacity={isEditing ? 1 : 0.7}
-                className={`flex-row justify-between items-center ${
-                  index !== localProfile.authorizedPickups.length - 1
-                    ? "border-b border-gray-200 mb-3 pb-3"
-                    : ""
-                }`}
-              >
-                {isEditing ? (
-                  <>
-                    <TextInput
-                      value={person.name}
-                      onChangeText={(v) => {
-                        const updated = [...localProfile.authorizedPickups];
-                        updated[index].name = v;
-                        updateField("authorizedPickups", updated);
-                      }}
-                      className="border-b border-gray-300 w-40"
-                      style={{ color: colors.textDark }}
-                      placeholder="Name"
-                    />
-                    <TextInput
-                      value={person.phone}
-                      onChangeText={(v) => {
-                        const updated = [...localProfile.authorizedPickups];
-                        updated[index].phone = v;
-                        updateField("authorizedPickups", updated);
-                      }}
-                      className="border-b border-gray-300 text-right w-40"
-                      style={{ color: colors.textDark }}
-                      placeholder="Phone Number"
-                      keyboardType="phone-pad"
-                    />
-                  </>
-                ) : (
-                  <>
-                    <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-                      {person.name}
-                    </Text>
-                    <Text style={{ color: colors.textDark }}>{person.phone}</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Text style={{ color: colors.textLight }}>No authorized people added.</Text>
-          )}
-
-          {isEditing && (
-            <TouchableOpacity
-              onPress={() =>
-                updateField("authorizedPickups", [
-                  ...localProfile.authorizedPickups,
-                  { name: "", phone: "" },
-                ])
-              }
-              className="mt-4 border border-dashed rounded-xl py-2"
-              style={{ borderColor: colors.accent }}
-            >
-              <Text
-                className="text-center font-medium"
-                style={{ color: colors.accent }}
-              >
-                + Add Authorized Person
-              </Text>
-            </TouchableOpacity>
-          )}
-        </Card>
-
         {/* 🎓 Class Info */}
         <Card title="Class Information">
           {renderRow("👩‍🏫 Teacher", "classInfo.teacherName", localProfile?.classInfo?.teacherName, isEditing, (v) =>
@@ -361,38 +343,16 @@ export default function Profile() {
           {renderRow("🧑 Responsible", "classInfo.responsibleName", localProfile?.classInfo?.responsibleName, isEditing, (v) =>
             updateField("classInfo", { ...localProfile?.classInfo, responsibleName: v })
           )}
-          <Row label="📞 Responsible Phone">
-            {isEditing ? (
-              <TextInput
-                value={localProfile?.classInfo?.responsiblePhone}
-                onChangeText={(v) =>
-                  updateField("classInfo", { ...localProfile?.classInfo, responsiblePhone: v })
-                }
-                className="border-b border-gray-300 text-right w-40"
-                style={{ color: colors.textDark }}
-                placeholder="Phone Number"
-                keyboardType="phone-pad"
-              />
-            ) : (
-              <TouchableOpacity
-                onPress={() => handlePhoneCall(localProfile?.classInfo?.responsiblePhone)}
-              >
-                <Text
-                  className="font-medium text-right"
-                  style={{ color: colors.textDark }}
-                >
-                  {localProfile?.classInfo?.responsiblePhone}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </Row>
+          {renderRow("📞 Responsible Phone", "classInfo.responsiblePhone", localProfile?.classInfo?.responsiblePhone, isEditing, (v) =>
+            updateField("classInfo", { ...localProfile?.classInfo, responsiblePhone: v })
+          )}
         </Card>
       </ScrollView>
     </View>
   );
 }
 
-/* 🧱 Helper for inline editable rows */
+/* 🧱 Reusable row helper */
 function renderRow(
   label: string,
   key: string,

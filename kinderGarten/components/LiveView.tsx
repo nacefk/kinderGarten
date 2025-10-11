@@ -37,7 +37,7 @@ export default function LiveView() {
     useCallback(() => {
       // When entering screen
       return () => {
-        player.pause();
+      //  player.pause();
         setIsPlaying(false);
       };
     }, [])

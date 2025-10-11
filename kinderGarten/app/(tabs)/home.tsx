@@ -1,31 +1,129 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, StatusBar, Text, TouchableOpacity, View, Image } from "react-native";
 import { Bell } from "lucide-react-native";
 import { useAppStore } from "../../store/useAppStore";
 import colors from "../../config/colors";
 import Card from "../../components/Card";
 
-export default function Home() {
-  const { profile, dailySummary, timeline, upcomingEvents, extraHours, setData } = useAppStore();
+export default function Home({ childId = "child_014" }) {
+  const { childrenList, dailyReports, weeklyPlans, calendarEvents } = useAppStore();
+
+  const [profile, setProfile] = useState<any>(null);
+  const [dailySummary, setDailySummary] = useState<any>(null);
+  const [timeline, setTimeline] = useState<any[]>([]);
+  const [upcoming, setUpcoming] = useState<any[]>([]);
+  const [extraHours, setExtraHours] = useState({
+    baseEndTime: "17:00",
+    status: "none",
+    requestedMinutes: null,
+  });
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
 
+  /** 📦 Build child-specific data */
+  useEffect(() => {
+    if (!childrenList || !dailyReports || !weeklyPlans) return;
+
+    const child = childrenList.find((c: any) => c.id === childId);
+    if (!child) return;
+
+    setProfile({
+      id: child.id,
+      name: child.name,
+      avatar: child.avatar,
+      present: child.attendanceStatus === "present",
+      className: child.className,
+    });
+
+    const report = dailyReports.find((r: any) => r.childId === child.id);
+    if (report) {
+      setDailySummary({
+        lunch: report.meal,
+        napDuration: report.nap,
+        activityMood: report.activity,
+      });
+    }
+
+    // 🕒 Build timeline & upcoming from weekly plan
+    const today = new Date().toLocaleDateString("fr-FR", { weekday: "long" });
+    const capitalizedDay = today.charAt(0).toUpperCase() + today.slice(1);
+    const classPlan = weeklyPlans?.[child.className]?.[capitalizedDay] || [];
+
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+
+    let lastActivity = null;
+    let nextActivity = null;
+
+    for (let i = 0; i < classPlan.length; i++) {
+      const [h, m] = classPlan[i].time.split(":").map(Number);
+      const activityTime = h * 60 + m;
+
+      if (activityTime <= currentTime) lastActivity = classPlan[i];
+      if (activityTime > currentTime) {
+        nextActivity = classPlan[i];
+        break;
+      }
+    }
+
+    if (lastActivity)
+      setTimeline([
+        {
+          title: lastActivity.title,
+          description: `${child.className} — current activity`,
+          image: "https://i.pravatar.cc/100?img=30",
+        },
+      ]);
+
+    if (nextActivity)
+      setUpcoming([
+        {
+          title: nextActivity.title,
+          datetime: new Date(
+            new Date().setHours(...nextActivity.time.split(":").map(Number))
+          ),
+          image: "https://i.pravatar.cc/100?img=12",
+        },
+      ]);
+    else if (calendarEvents?.length) {
+      // fallback: next class-related calendar event
+      const nextEvent = calendarEvents
+        .filter(
+          (e: any) =>
+            e.className === child.className || e.className === "Toutes les classes"
+        )
+        .map((e: any) => ({ ...e, dateObj: new Date(e.date) }))
+        .filter((e: any) => e.dateObj > now)
+        .sort((a: any, b: any) => a.dateObj - b.dateObj)[0];
+      if (nextEvent)
+        setUpcoming([
+          {
+            title: nextEvent.title,
+            datetime: nextEvent.dateObj,
+            image: "https://i.pravatar.cc/100?img=12",
+          },
+        ]);
+    }
+  }, [childId, childrenList, dailyReports, weeklyPlans, calendarEvents]);
+
+  /** ⏰ Extra Hours Logic */
   const handleRequestExtraHours = () => {
     if (!selectedOption) return;
-    setData("extraHours", { ...extraHours, status: "pending" });
+    setExtraHours((prev) => ({ ...prev, status: "pending", requestedMinutes: selectedOption }));
     setTimeout(() => {
-      setData("extraHours", { ...extraHours, status: "approved" });
+      setExtraHours((prev) => ({ ...prev, status: "approved" }));
     }, 3000);
   };
 
   const calculateNewEndTime = () => {
-    if (!selectedOption) return extraHours?.baseEndTime || "17:00";
-    const [hour, minute] = (extraHours?.baseEndTime || "17:00").split(":").map(Number);
+    if (!selectedOption) return extraHours.baseEndTime || "17:00";
+    const [hour, minute] = (extraHours.baseEndTime || "17:00").split(":").map(Number);
     const totalMinutes = hour * 60 + minute + selectedOption;
     const newHour = Math.floor(totalMinutes / 60).toString().padStart(2, "0");
     const newMinute = (totalMinutes % 60).toString().padStart(2, "0");
     return `${newHour}:${newMinute}`;
   };
 
+  /** 🧭 UI Rendering */
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
@@ -124,8 +222,8 @@ export default function Home() {
 
         {/* 📆 Upcoming */}
         <Card title="Upcoming">
-          {upcomingEvents?.length > 0 ? (
-            upcomingEvents.map((event, index) => (
+          {upcoming?.length > 0 ? (
+            upcoming.map((event, index) => (
               <View key={index} className="flex-row items-center mb-3">
                 <Image
                   source={{ uri: event.image }}
@@ -147,105 +245,104 @@ export default function Home() {
         </Card>
 
         {/* ⏰ Extra Hours */}
-<Card title="Extra Hours">
-  {extraHours?.status === "none" && (
-    <>
-      <Text style={{ color: colors.text, marginBottom: 12 }}>
-        Request additional care time
-      </Text>
-      <View className="flex-row justify-between mb-4">
-        {[15, 30, 60].map((option) => (
-          <TouchableOpacity
-            key={option}
-            onPress={() => setSelectedOption(option)}
-            className="flex-1 mx-1 py-3 rounded-xl border"
-            style={{
-              backgroundColor:
-                selectedOption === option ? colors.accent : colors.cardBackground,
-              borderColor:
-                selectedOption === option ? colors.accent : "#D1D5DB",
-            }}
-          >
-            <Text
-              className="text-center font-medium"
-              style={{
-                color: selectedOption === option ? "#FFF" : colors.text,
-              }}
-            >
-              +{option === 60 ? "1h" : `${option} min`}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <Card title="Extra Hours">
+          {extraHours.status === "none" && (
+            <>
+              <Text style={{ color: colors.text, marginBottom: 12 }}>
+                Request additional care time
+              </Text>
+              <View className="flex-row justify-between mb-4">
+                {[15, 30, 60].map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    onPress={() => setSelectedOption(option)}
+                    className="flex-1 mx-1 py-3 rounded-xl border"
+                    style={{
+                      backgroundColor:
+                        selectedOption === option ? colors.accent : colors.cardBackground,
+                      borderColor:
+                        selectedOption === option ? colors.accent : "#D1D5DB",
+                    }}
+                  >
+                    <Text
+                      className="text-center font-medium"
+                      style={{
+                        color: selectedOption === option ? "#FFF" : colors.text,
+                      }}
+                    >
+                      +{option === 60 ? "1h" : `${option} min`}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-      <View className="flex-row justify-between mb-2">
-        <Text style={{ color: colors.text }}>🕕 Original End:</Text>
-        <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-          {extraHours?.baseEndTime || "17:00"}
-        </Text>
-      </View>
+              <View className="flex-row justify-between mb-2">
+                <Text style={{ color: colors.text }}>🕕 Original End:</Text>
+                <Text style={{ color: colors.textDark, fontWeight: "500" }}>
+                  {extraHours.baseEndTime || "17:00"}
+                </Text>
+              </View>
 
-      <View className="flex-row justify-between mb-4">
-        <Text style={{ color: colors.text }}>🕒 New End:</Text>
-        <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-          {calculateNewEndTime()}
-        </Text>
-      </View>
+              <View className="flex-row justify-between mb-4">
+                <Text style={{ color: colors.text }}>🕒 New End:</Text>
+                <Text style={{ color: colors.textDark, fontWeight: "500" }}>
+                  {calculateNewEndTime()}
+                </Text>
+              </View>
 
-      <TouchableOpacity
-        disabled={!selectedOption}
-        onPress={handleRequestExtraHours}
-        className="py-3 rounded-xl"
-        style={{
-          backgroundColor: selectedOption ? colors.accent : colors.textLight,
-        }}
-      >
-        <Text className="text-center text-white font-semibold">
-          Request Extra Hours
-        </Text>
-      </TouchableOpacity>
-    </>
-  )}
+              <TouchableOpacity
+                disabled={!selectedOption}
+                onPress={handleRequestExtraHours}
+                className="py-3 rounded-xl"
+                style={{
+                  backgroundColor: selectedOption ? colors.accent : colors.textLight,
+                }}
+              >
+                <Text className="text-center text-white font-semibold">
+                  Request Extra Hours
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
 
-  {extraHours?.status === "pending" && (
-    <View className="items-center">
-      <Text className="text-center font-medium mb-3" style={{ color: colors.warning }}>
-        Pending approval ⏳
-      </Text>
-      <Text style={{ color: colors.text }}>
-        You requested an additional{" "}
-        <Text style={{ fontWeight: "600" }}>{selectedOption ?? extraHours.requestedMinutes} minutes</Text> of care time.
-      </Text>
-      <Text style={{ color: colors.text, marginTop: 4 }}>
-        New end time:{" "}
-        <Text style={{ fontWeight: "600" }}>{calculateNewEndTime()}</Text>
-      </Text>
-      <Text style={{ color: colors.textLight, marginTop: 6, textAlign: "center" }}>
-        The staff has been notified and will approve shortly.
-      </Text>
-    </View>
-  )}
+          {extraHours.status === "pending" && (
+            <View className="items-center">
+              <Text className="text-center font-medium mb-3" style={{ color: colors.warning }}>
+                Pending approval ⏳
+              </Text>
+              <Text style={{ color: colors.text }}>
+                You requested an additional{" "}
+                <Text style={{ fontWeight: "600" }}>{selectedOption ?? extraHours.requestedMinutes} minutes</Text> of care time.
+              </Text>
+              <Text style={{ color: colors.text, marginTop: 4 }}>
+                New end time:{" "}
+                <Text style={{ fontWeight: "600" }}>{calculateNewEndTime()}</Text>
+              </Text>
+              <Text style={{ color: colors.textLight, marginTop: 6, textAlign: "center" }}>
+                The staff has been notified and will approve shortly.
+              </Text>
+            </View>
+          )}
 
-  {extraHours?.status === "approved" && (
-    <View className="items-center">
-      <Text className="text-center font-medium mb-3" style={{ color: colors.success }}>
-        Approved ✅
-      </Text>
-      <Text style={{ color: colors.text }}>
-        Your extra time request of{" "}
-        <Text style={{ fontWeight: "600" }}>{selectedOption ?? extraHours.requestedMinutes} minutes</Text> has been approved.
-      </Text>
-      <Text style={{ color: colors.text, marginTop: 4 }}>
-        New end time:{" "}
-        <Text style={{ fontWeight: "600" }}>{calculateNewEndTime()}</Text>
-      </Text>
-      <Text style={{ color: colors.textLight, marginTop: 6, textAlign: "center" }}>
-        Thank you! The schedule has been updated accordingly.
-      </Text>
-    </View>
-  )}
-</Card>
-
+          {extraHours.status === "approved" && (
+            <View className="items-center">
+              <Text className="text-center font-medium mb-3" style={{ color: colors.success }}>
+                Approved ✅
+              </Text>
+              <Text style={{ color: colors.text }}>
+                Your extra time request of{" "}
+                <Text style={{ fontWeight: "600" }}>{selectedOption ?? extraHours.requestedMinutes} minutes</Text> has been approved.
+              </Text>
+              <Text style={{ color: colors.text, marginTop: 4 }}>
+                New end time:{" "}
+                <Text style={{ fontWeight: "600" }}>{calculateNewEndTime()}</Text>
+              </Text>
+              <Text style={{ color: colors.textLight, marginTop: 6, textAlign: "center" }}>
+                Thank you! The schedule has been updated accordingly.
+              </Text>
+            </View>
+          )}
+        </Card>
       </ScrollView>
     </View>
   );

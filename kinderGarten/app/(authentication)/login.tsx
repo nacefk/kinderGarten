@@ -16,8 +16,8 @@ import colors from "@/config/colors";
 
 export default function Login() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("1234");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -32,9 +32,9 @@ export default function Login() {
       setLoading(false);
 
       if (username === "admin" && password === "1234") {
-        router.replace("/(tabs)/admin-dashboard");
+        router.replace("/(adminTabs)/dashboard" );
       } else if (username === "parent" && password === "1234") {
-        router.replace("/(tabs)/home");
+        router.replace("/(tabs)/home" );
       } else {
         Alert.alert("Login Failed", "Invalid username or password");
       }

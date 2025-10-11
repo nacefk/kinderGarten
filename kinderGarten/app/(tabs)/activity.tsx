@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { Bell, ChevronDown, ChevronLeft } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -16,13 +16,120 @@ import TimelineItem from "../../components/TimelineItem";
 import LiveView from "@/components/LiveView";
 
 export default function Activity() {
-  const { todayTimeline, timelineByDay, galleryItems, upcomingActivities } = useAppStore();
+  const {
+    childrenList,
+    weeklyPlans,
+    calendarEvents,
+    todayTimeline,
+    timelineByDay,
+    galleryItems,
+    upcomingActivities,
+    setData,
+  } = useAppStore();
+
+  const childId = "child_014";
 
   const [selectedFilter, setSelectedFilter] = useState<"today" | "week" | "upcoming">("today");
   const [selectedDay, setSelectedDay] = useState<string>("Monday");
   const [showDayDropdown, setShowDayDropdown] = useState<boolean>(false);
 
-  const weekDays = Object.keys(timelineByDay || {});
+  /** 🧩 Build activity data dynamically if missing */
+  useEffect(() => {
+    if (!childrenList || !weeklyPlans) return;
+
+    const child = childrenList.find((c: any) => c.id === childId);
+    if (!child) return;
+
+    const classPlan = weeklyPlans?.[child.className] || {};
+    const today = new Date().toLocaleDateString("fr-FR", { weekday: "long" });
+    const capitalizedDay = today.charAt(0).toUpperCase() + today.slice(1);
+
+    // ✅ TODAY timeline
+    const computedTodayTimeline = todayTimeline?.length
+      ? todayTimeline
+      : classPlan?.[capitalizedDay] || [
+          { time: "08:30", icon: "✅", title: "Checked in", detail: "Started the day." },
+          { time: "09:00", icon: "🧩", title: "Playtime", detail: "Building with blocks." },
+        ];
+
+    // ✅ WEEKLY timeline
+    const computedTimelineByDay = Object.keys(timelineByDay || {}).length
+      ? timelineByDay
+      : classPlan || {
+          Monday: [{ time: "09:00", icon: "🎨", title: "Drawing", detail: "Art class fun!" }],
+        };
+
+    // ✅ GALLERY
+    const computedGallery = galleryItems?.length
+      ? galleryItems
+      : [
+          { id: "1", type: "image", uri: "https://i.pravatar.cc/300?img=30" },
+          { id: "2", type: "video", uri: "https://www.w3schools.com/html/mov_bbb.mp4" },
+          { id: "3", type: "image", uri: "https://i.pravatar.cc/300?img=45" },
+        ];
+
+    // ✅ UPCOMING
+    const now = new Date();
+// ✅ Upcoming Events
+let computedUpcoming = [];
+
+if (calendarEvents && calendarEvents.length > 0) {
+  const now = new Date();
+
+  computedUpcoming = calendarEvents
+    .filter((e: any) => {
+      // Include all events for this child's class OR global ones
+      const matchesClass =
+        e.className?.toLowerCase() === child.className?.toLowerCase() ||
+        e.className?.toLowerCase() === "toutes les classes";
+
+      // Parse date safely (treat YYYY-MM-DD as local)
+      const [year, month, day] = e.date.split("-").map(Number);
+      const eventDate = new Date(year, month - 1, day);
+
+      // Keep all future events or today’s
+      return matchesClass && eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    })
+    .sort((a: any, b: any) => new Date(a.date) - new Date(b.date))
+    .map((e: any) => ({
+      icon: "🎉",
+      title: e.title || "Event",
+      detail: e.description || "No description provided",
+      date: new Date(e.date).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "short",
+      }),
+    }));
+}
+
+// 🩹 fallback if still empty
+if (!computedUpcoming.length && calendarEvents?.length > 0) {
+  computedUpcoming = calendarEvents.map((e: any) => ({
+    icon: "🎉",
+    title: e.title || "Event",
+    detail: e.description || "No description",
+    date: new Date(e.date).toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+    }),
+  }));
+}
+
+// ✅ Sync to store
+setData("upcomingActivities", computedUpcoming);
+
+
+
+    // ✅ Sync to store for reuse
+    setData("todayTimeline", computedTodayTimeline);
+    setData("timelineByDay", computedTimelineByDay);
+    setData("galleryItems", computedGallery);
+    setData("upcomingActivities", computedUpcoming);
+  }, [childrenList, weeklyPlans, calendarEvents]);
+
+  const weekDays = Object.keys(timelineByDay || { Monday: [] });
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
@@ -57,23 +164,22 @@ export default function Activity() {
           { key: "upcoming", label: "Upcoming" },
         ].map((tab) => (
           <TouchableOpacity
-        key={tab.key}
-        onPress={() => setSelectedFilter(tab.key as any)}
-        className="px-4 py-2 rounded-xl"
-        style={{
-          backgroundColor:
-            selectedFilter === tab.key ? colors.accent : "transparent",
-        }}
+            key={tab.key}
+            onPress={() => setSelectedFilter(tab.key as any)}
+            className="px-4 py-2 rounded-xl"
+            style={{
+              backgroundColor:
+                selectedFilter === tab.key ? colors.accent : "transparent",
+            }}
           >
-        <Text
-          className="font-medium"
-          style={{
-            color:
-          selectedFilter === tab.key ? "#FFF" : colors.textDark,
-          }}
-        >
-          {tab.label}
-        </Text>
+            <Text
+              className="font-medium"
+              style={{
+                color: selectedFilter === tab.key ? "#FFF" : colors.textDark,
+              }}
+            >
+              {tab.label}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -229,12 +335,14 @@ export default function Activity() {
                     >
                       {item.title}
                     </Text>
-                    <Text style={{ color: colors.text }}>{item.detail}</Text>
+                    <Text style={{ color: colors.text }}>
+                      {item.detail || "Upcoming activity"}
+                    </Text>
                     <Text
                       className="text-sm mt-1"
                       style={{ color: colors.textLight }}
                     >
-                      {item.date}
+                      {item.date || "TBD"}
                     </Text>
                   </View>
                 </View>
