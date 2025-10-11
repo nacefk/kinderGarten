@@ -60,21 +60,14 @@ export default function Login() {
             elevation: 4,
           }}
         >
-          {/* Logo */}
-          <View className="items-center mb-8">
-            <Image
-              source={require("../../assets/images/logo.png")}
-              className="w-32 h-32"
-              resizeMode="contain"
-            />
-          </View>
+
 
           {/* Title */}
           <Text
             className="text-2xl font-bold text-center mb-1"
             style={{ color: colors.textDark }}
           >
-            Welcome Back 👋
+            Welcome 👋
           </Text>
           <Text
             className="text-base text-center mb-8"
