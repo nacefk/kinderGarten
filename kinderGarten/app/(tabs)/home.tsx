@@ -147,86 +147,105 @@ export default function Home() {
         </Card>
 
         {/* ⏰ Extra Hours */}
-        <Card title="Extra Hours">
-          {extraHours?.status === "none" && (
-            <>
-              <Text style={{ color: colors.text, marginBottom: 12 }}>
-                Request additional care time
-              </Text>
-              <View className="flex-row justify-between mb-4">
-                {[15, 30, 60].map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    onPress={() => setSelectedOption(option)}
-                    className="flex-1 mx-1 py-3 rounded-xl border"
-                    style={{
-                      backgroundColor:
-                        selectedOption === option ? colors.accent : colors.cardBackground,
-                      borderColor:
-                        selectedOption === option ? colors.accent : "#D1D5DB",
-                    }}
-                  >
-                    <Text
-                      className="text-center font-medium"
-                      style={{
-                        color: selectedOption === option ? "#FFF" : colors.text,
-                      }}
-                    >
-                      +{option === 60 ? "1h" : `${option} min`}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View className="flex-row justify-between mb-2">
-                <Text style={{ color: colors.text }}>🕕 Original End:</Text>
-                <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-                  {extraHours?.baseEndTime || "17:00"}
-                </Text>
-              </View>
-
-              <View className="flex-row justify-between mb-4">
-                <Text style={{ color: colors.text }}>🕒 New End:</Text>
-                <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-                  {calculateNewEndTime()}
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                disabled={!selectedOption}
-                onPress={handleRequestExtraHours}
-                className="py-3 rounded-xl"
-                style={{
-                  backgroundColor: selectedOption
-                    ? colors.accent
-                    : colors.textLight,
-                }}
-              >
-                <Text className="text-center text-white font-semibold">
-                  Request Extra Hours
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {extraHours?.status === "pending" && (
+<Card title="Extra Hours">
+  {extraHours?.status === "none" && (
+    <>
+      <Text style={{ color: colors.text, marginBottom: 12 }}>
+        Request additional care time
+      </Text>
+      <View className="flex-row justify-between mb-4">
+        {[15, 30, 60].map((option) => (
+          <TouchableOpacity
+            key={option}
+            onPress={() => setSelectedOption(option)}
+            className="flex-1 mx-1 py-3 rounded-xl border"
+            style={{
+              backgroundColor:
+                selectedOption === option ? colors.accent : colors.cardBackground,
+              borderColor:
+                selectedOption === option ? colors.accent : "#D1D5DB",
+            }}
+          >
             <Text
               className="text-center font-medium"
-              style={{ color: colors.warning }}
+              style={{
+                color: selectedOption === option ? "#FFF" : colors.text,
+              }}
             >
-              Pending approval ⏳
+              +{option === 60 ? "1h" : `${option} min`}
             </Text>
-          )}
+          </TouchableOpacity>
+        ))}
+      </View>
 
-          {extraHours?.status === "approved" && (
-            <Text
-              className="text-center font-medium"
-              style={{ color: colors.success }}
-            >
-              Approved ✅
-            </Text>
-          )}
-        </Card>
+      <View className="flex-row justify-between mb-2">
+        <Text style={{ color: colors.text }}>🕕 Original End:</Text>
+        <Text style={{ color: colors.textDark, fontWeight: "500" }}>
+          {extraHours?.baseEndTime || "17:00"}
+        </Text>
+      </View>
+
+      <View className="flex-row justify-between mb-4">
+        <Text style={{ color: colors.text }}>🕒 New End:</Text>
+        <Text style={{ color: colors.textDark, fontWeight: "500" }}>
+          {calculateNewEndTime()}
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        disabled={!selectedOption}
+        onPress={handleRequestExtraHours}
+        className="py-3 rounded-xl"
+        style={{
+          backgroundColor: selectedOption ? colors.accent : colors.textLight,
+        }}
+      >
+        <Text className="text-center text-white font-semibold">
+          Request Extra Hours
+        </Text>
+      </TouchableOpacity>
+    </>
+  )}
+
+  {extraHours?.status === "pending" && (
+    <View className="items-center">
+      <Text className="text-center font-medium mb-3" style={{ color: colors.warning }}>
+        Pending approval ⏳
+      </Text>
+      <Text style={{ color: colors.text }}>
+        You requested an additional{" "}
+        <Text style={{ fontWeight: "600" }}>{selectedOption ?? extraHours.requestedMinutes} minutes</Text> of care time.
+      </Text>
+      <Text style={{ color: colors.text, marginTop: 4 }}>
+        New end time:{" "}
+        <Text style={{ fontWeight: "600" }}>{calculateNewEndTime()}</Text>
+      </Text>
+      <Text style={{ color: colors.textLight, marginTop: 6, textAlign: "center" }}>
+        The staff has been notified and will approve shortly.
+      </Text>
+    </View>
+  )}
+
+  {extraHours?.status === "approved" && (
+    <View className="items-center">
+      <Text className="text-center font-medium mb-3" style={{ color: colors.success }}>
+        Approved ✅
+      </Text>
+      <Text style={{ color: colors.text }}>
+        Your extra time request of{" "}
+        <Text style={{ fontWeight: "600" }}>{selectedOption ?? extraHours.requestedMinutes} minutes</Text> has been approved.
+      </Text>
+      <Text style={{ color: colors.text, marginTop: 4 }}>
+        New end time:{" "}
+        <Text style={{ fontWeight: "600" }}>{calculateNewEndTime()}</Text>
+      </Text>
+      <Text style={{ color: colors.textLight, marginTop: 6, textAlign: "center" }}>
+        Thank you! The schedule has been updated accordingly.
+      </Text>
+    </View>
+  )}
+</Card>
+
       </ScrollView>
     </View>
   );
