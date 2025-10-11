@@ -13,6 +13,7 @@ import { useAppStore } from "../../store/useAppStore";
 import colors from "../../config/colors";
 import Card from "../../components/Card";
 import TimelineItem from "../../components/TimelineItem";
+import LiveView from "@/components/LiveView";
 
 export default function Activity() {
   const { todayTimeline, timelineByDay, galleryItems, upcomingActivities } = useAppStore();
@@ -47,7 +48,7 @@ export default function Activity() {
 
       {/* Filter Tabs */}
       <View
-        className="flex-row justify-around mx-5 rounded-2xl shadow-sm mt-4 py-2"
+        className="flex-row justify-around mx-5 rounded-2xl shadow-sm mt-4 py-2 mb-5"
         style={{ backgroundColor: colors.cardBackground }}
       >
         {[
@@ -56,23 +57,23 @@ export default function Activity() {
           { key: "upcoming", label: "Upcoming" },
         ].map((tab) => (
           <TouchableOpacity
-            key={tab.key}
-            onPress={() => setSelectedFilter(tab.key as any)}
-            className="px-4 py-2 rounded-xl"
-            style={{
-              backgroundColor:
-                selectedFilter === tab.key ? colors.accent : "transparent",
-            }}
+        key={tab.key}
+        onPress={() => setSelectedFilter(tab.key as any)}
+        className="px-4 py-2 rounded-xl"
+        style={{
+          backgroundColor:
+            selectedFilter === tab.key ? colors.accent : "transparent",
+        }}
           >
-            <Text
-              className="font-medium"
-              style={{
-                color:
-                  selectedFilter === tab.key ? "#FFF" : colors.textDark,
-              }}
-            >
-              {tab.label}
-            </Text>
+        <Text
+          className="font-medium"
+          style={{
+            color:
+          selectedFilter === tab.key ? "#FFF" : colors.textDark,
+          }}
+        >
+          {tab.label}
+        </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -86,6 +87,7 @@ export default function Activity() {
         {/* 📅 TODAY */}
         {selectedFilter === "today" && (
           <>
+            <LiveView />
             <Card title="Today’s Timeline">
               {todayTimeline?.length > 0 ? (
                 todayTimeline.map((item, index) => (
