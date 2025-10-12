@@ -107,7 +107,10 @@ export default function Profile({ childId = "child_014" }) {
 
   if (!localProfile) {
     return (
-      <View className="flex-1 items-center justify-center" style={{ backgroundColor: colors.background }}>
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
         <Text style={{ color: colors.textLight }}>Chargement du profil...</Text>
       </View>
     );
@@ -126,7 +129,6 @@ export default function Profile({ childId = "child_014" }) {
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
             <ChevronLeft color={colors.textDark} size={28} />
           </TouchableOpacity>
-
         </View>
 
         <TouchableOpacity
@@ -151,10 +153,7 @@ export default function Profile({ childId = "child_014" }) {
         {/* 👶 Informations sur l’enfant */}
         <Card title="Informations de l’enfant">
           <View className="items-center">
-            <Image
-              source={{ uri: localProfile?.avatar }}
-              className="w-28 h-28 rounded-full mb-3"
-            />
+            <Image source={{ uri: localProfile?.avatar }} className="w-28 h-28 rounded-full mb-3" />
             {isEditing ? (
               <>
                 <TextInput
@@ -223,10 +222,14 @@ export default function Profile({ childId = "child_014" }) {
           </Row>
 
           {/* ⚖️ Poids */}
-          {renderRow("⚖️ Poids", "weight", localProfile?.weight, isEditing, (v) => updateField("weight", v))}
+          {renderRow("⚖️ Poids", "weight", localProfile?.weight, isEditing, (v) =>
+            updateField("weight", v)
+          )}
 
           {/* 📏 Taille */}
-          {renderRow("📏 Taille", "height", localProfile?.height, isEditing, (v) => updateField("height", v))}
+          {renderRow("📏 Taille", "height", localProfile?.height, isEditing, (v) =>
+            updateField("height", v)
+          )}
 
           {/* 👧 Sexe */}
           <Row label="👧 Sexe">
@@ -280,38 +283,75 @@ export default function Profile({ childId = "child_014" }) {
 
         {/* 🚑 Santé & Allergies */}
         <Card title="Santé & allergies">
-          {renderRow("Allergies", "allergies", localProfile?.allergies, isEditing, (v) => updateField("allergies", v))}
-          {renderRow("Conditions", "conditions", localProfile?.conditions, isEditing, (v) => updateField("conditions", v))}
-          {renderRow("Médication", "medication", localProfile?.medication, isEditing, (v) => updateField("medication", v))}
-          {renderRow("Médecin", "doctor", localProfile?.doctor, isEditing, (v) => updateField("doctor", v))}
+          {renderRow("Allergies", "allergies", localProfile?.allergies, isEditing, (v) =>
+            updateField("allergies", v)
+          )}
+          {renderRow("Conditions", "conditions", localProfile?.conditions, isEditing, (v) =>
+            updateField("conditions", v)
+          )}
+          {renderRow("Médication", "medication", localProfile?.medication, isEditing, (v) =>
+            updateField("medication", v)
+          )}
+          {renderRow("Médecin", "doctor", localProfile?.doctor, isEditing, (v) =>
+            updateField("doctor", v)
+          )}
         </Card>
 
         {/* 🚨 Contact d’urgence */}
         <Card title="Contact d’urgence">
-          {renderRow("Nom", "emergencyContact.name", localProfile?.emergencyContact?.name, isEditing, (v) =>
-            updateField("emergencyContact", { ...localProfile?.emergencyContact, name: v })
+          {renderRow(
+            "Nom",
+            "emergencyContact.name",
+            localProfile?.emergencyContact?.name,
+            isEditing,
+            (v) => updateField("emergencyContact", { ...localProfile?.emergencyContact, name: v })
           )}
-          {renderRow("Relation", "emergencyContact.relation", localProfile?.emergencyContact?.relation, isEditing, (v) =>
-            updateField("emergencyContact", { ...localProfile?.emergencyContact, relation: v })
+          {renderRow(
+            "Relation",
+            "emergencyContact.relation",
+            localProfile?.emergencyContact?.relation,
+            isEditing,
+            (v) =>
+              updateField("emergencyContact", { ...localProfile?.emergencyContact, relation: v })
           )}
-          {renderRow("Téléphone", "emergencyContact.phone", localProfile?.emergencyContact?.phone, isEditing, (v) =>
-            updateField("emergencyContact", { ...localProfile?.emergencyContact, phone: v })
+          {renderRow(
+            "Téléphone",
+            "emergencyContact.phone",
+            localProfile?.emergencyContact?.phone,
+            isEditing,
+            (v) => updateField("emergencyContact", { ...localProfile?.emergencyContact, phone: v })
           )}
         </Card>
 
         {/* 🎓 Informations sur la classe */}
         <Card title="Informations sur la classe">
-          {renderRow("👩‍🏫 Enseignant(e)", "classInfo.teacherName", localProfile?.classInfo?.teacherName, isEditing, (v) =>
-            updateField("classInfo", { ...localProfile?.classInfo, teacherName: v })
+          {renderRow(
+            "👩‍🏫 Enseignant(e)",
+            "classInfo.teacherName",
+            localProfile?.classInfo?.teacherName,
+            isEditing,
+            (v) => updateField("classInfo", { ...localProfile?.classInfo, teacherName: v })
           )}
-          {renderRow("🚪 Salle", "classInfo.classroomName", localProfile?.classInfo?.classroomName, isEditing, (v) =>
-            updateField("classInfo", { ...localProfile?.classInfo, classroomName: v })
+          {renderRow(
+            "🚪 Salle",
+            "classInfo.classroomName",
+            localProfile?.classInfo?.classroomName,
+            isEditing,
+            (v) => updateField("classInfo", { ...localProfile?.classInfo, classroomName: v })
           )}
-          {renderRow("🧑 Responsable", "classInfo.responsibleName", localProfile?.classInfo?.responsibleName, isEditing, (v) =>
-            updateField("classInfo", { ...localProfile?.classInfo, responsibleName: v })
+          {renderRow(
+            "🧑 Responsable",
+            "classInfo.responsibleName",
+            localProfile?.classInfo?.responsibleName,
+            isEditing,
+            (v) => updateField("classInfo", { ...localProfile?.classInfo, responsibleName: v })
           )}
-          {renderRow("📞 Téléphone du responsable", "classInfo.responsiblePhone", localProfile?.classInfo?.responsiblePhone, isEditing, (v) =>
-            updateField("classInfo", { ...localProfile?.classInfo, responsiblePhone: v })
+          {renderRow(
+            "📞 Téléphone du responsable",
+            "classInfo.responsiblePhone",
+            localProfile?.classInfo?.responsiblePhone,
+            isEditing,
+            (v) => updateField("classInfo", { ...localProfile?.classInfo, responsiblePhone: v })
           )}
         </Card>
       </ScrollView>

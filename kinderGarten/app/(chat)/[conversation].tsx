@@ -74,16 +74,17 @@ export default function ConversationScreen() {
       />
 
       <View className="flex-1 bg-[#FAF8F5]">
-           <View
-        className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
-      >        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <ChevronLeft color="#374151" size={28} />
-          </TouchableOpacity>
-
+        <View
+          className="flex-row items-center justify-between px-5 pt-16 pb-6"
+          style={{ backgroundColor: colors.accentLight }}
+        >
+          {" "}
+          <View className="flex-row items-center">
+            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+              <ChevronLeft color="#374151" size={28} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
         <KeyboardAvoidingView
           className="flex-1"
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -94,11 +95,7 @@ export default function ConversationScreen() {
             data={messages}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <View
-                className={`px-5 py-2 ${
-                  item.sender === "user" ? "items-end" : "items-start"
-                }`}
-              >
+              <View className={`px-5 py-2 ${item.sender === "user" ? "items-end" : "items-start"}`}>
                 <View
                   className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                     item.sender === "user"
@@ -129,30 +126,26 @@ export default function ConversationScreen() {
           />
 
           {/* Input area */}
-       {/* Input area */}
-<View
-  className="flex-row items-center bg-white px-4 py-4 border-t border-gray-200"
-  style={{
-    paddingBottom: Platform.OS === "ios" ? 24 : 12, // extra space on iPhones
-  }}
->
-  <TextInput
-    value={input}
-    onChangeText={setInput}
-    placeholder="Écrire un message..."
-    className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-gray-800"
-    style={{
-      minHeight: 42, // ensures visibility
-    }}
-  />
-  <TouchableOpacity
-    onPress={sendMessage}
-    className="ml-3 bg-[#C6A57B] rounded-full p-3"
-  >
-    <Send color="#fff" size={20} />
-  </TouchableOpacity>
-</View>
-
+          {/* Input area */}
+          <View
+            className="flex-row items-center bg-white px-4 py-4 border-t border-gray-200"
+            style={{
+              paddingBottom: Platform.OS === "ios" ? 24 : 12, // extra space on iPhones
+            }}
+          >
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder="Écrire un message..."
+              className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-gray-800"
+              style={{
+                minHeight: 42, // ensures visibility
+              }}
+            />
+            <TouchableOpacity onPress={sendMessage} className="ml-3 bg-[#C6A57B] rounded-full p-3">
+              <Send color="#fff" size={20} />
+            </TouchableOpacity>
+          </View>
         </KeyboardAvoidingView>
       </View>
     </>

@@ -64,26 +64,16 @@ export default function ChildrenScreen() {
       }}
       onPress={() => router.push(`/child/${item.id}` as never)}
     >
-      <Image
-        source={{ uri: item.avatar }}
-        className="w-12 h-12 rounded-full mr-3"
-      />
+      <Image source={{ uri: item.avatar }} className="w-12 h-12 rounded-full mr-3" />
       <View className="flex-1">
-        <Text
-          className="text-base font-medium"
-          style={{ color: colors.textDark }}
-        >
+        <Text className="text-base font-medium" style={{ color: colors.textDark }}>
           {item.name}
         </Text>
         <Text className="text-xs" style={{ color: colors.textLight }}>
           {item.className} · {item.age} ans
         </Text>
       </View>
-      <Ionicons
-        name="chevron-forward-outline"
-        size={18}
-        color={colors.textLight}
-      />
+      <Ionicons name="chevron-forward-outline" size={18} color={colors.textLight} />
     </TouchableOpacity>
   );
 
@@ -149,10 +139,7 @@ export default function ChildrenScreen() {
       <View className="flex-1 px-5 pt-4">
         {/* ✅ Header with stacked buttons */}
         <View className="mb-6" style={{ width: "100%" }}>
-          <Text
-            className="text-2xl font-bold mb-4"
-            style={{ color: colors.textDark }}
-          >
+          <Text className="text-2xl font-bold mb-4" style={{ color: colors.textDark }}>
             Gestion des Enfants
           </Text>
 
@@ -174,15 +161,8 @@ export default function ChildrenScreen() {
               }}
               onPress={() => setShowAddClass(true)}
             >
-              <Ionicons
-                name="layers-outline"
-                size={18}
-                color={colors.accent}
-              />
-              <Text
-                className="ml-2 text-base font-medium"
-                style={{ color: colors.accent }}
-              >
+              <Ionicons name="layers-outline" size={18} color={colors.accent} />
+              <Text className="ml-2 text-base font-medium" style={{ color: colors.accent }}>
                 Ajouter une Classe
               </Text>
             </TouchableOpacity>
@@ -202,9 +182,7 @@ export default function ChildrenScreen() {
               onPress={() => setShowAddChild(true)}
             >
               <Ionicons name="add" size={20} color="#fff" />
-              <Text className="text-white text-base ml-2 font-medium">
-                Ajouter un Enfant
-              </Text>
+              <Text className="text-white text-base ml-2 font-medium">Ajouter un Enfant</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -215,10 +193,7 @@ export default function ChildrenScreen() {
             activeOpacity={0.8}
             onPress={() => setSelectedClass("all")}
             style={{
-              backgroundColor:
-                selectedClass === "all"
-                  ? colors.accent
-                  : colors.cardBackground,
+              backgroundColor: selectedClass === "all" ? colors.accent : colors.cardBackground,
               borderRadius: 12,
               paddingHorizontal: 12,
               paddingVertical: 6,
@@ -241,15 +216,8 @@ export default function ChildrenScreen() {
               onPress={() => setSelectedClass(null)}
               className="flex-row items-center ml-4"
             >
-              <Ionicons
-                name="arrow-back-outline"
-                size={18}
-                color={colors.textDark}
-              />
-              <Text
-                className="ml-1 text-base"
-                style={{ color: colors.textDark }}
-              >
+              <Ionicons name="arrow-back-outline" size={18} color={colors.textDark} />
+              <Text className="ml-1 text-base" style={{ color: colors.textDark }}>
                 Retour aux classes
               </Text>
             </TouchableOpacity>
@@ -266,11 +234,7 @@ export default function ChildrenScreen() {
               borderColor: "#E5E7EB",
             }}
           >
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color={colors.textLight}
-            />
+            <Ionicons name="search-outline" size={20} color={colors.textLight} />
             <TextInput
               className="flex-1 ml-2 text-base"
               placeholder="Rechercher un enfant..."
@@ -304,26 +268,14 @@ export default function ChildrenScreen() {
               >
                 <View className="flex-row justify-between items-center">
                   <View>
-                    <Text
-                      className="text-lg font-semibold mb-1"
-                      style={{ color: colors.textDark }}
-                    >
+                    <Text className="text-lg font-semibold mb-1" style={{ color: colors.textDark }}>
                       {item.name}
                     </Text>
                     <Text className="text-sm" style={{ color: colors.text }}>
-                      {
-                        children.filter(
-                          (c: any) => c.className === item.name
-                        ).length
-                      }{" "}
-                      enfants
+                      {children.filter((c: any) => c.className === item.name).length} enfants
                     </Text>
                   </View>
-                  <Ionicons
-                    name="chevron-forward-outline"
-                    size={22}
-                    color={colors.textLight}
-                  />
+                  <Ionicons name="chevron-forward-outline" size={22} color={colors.textLight} />
                 </View>
               </TouchableOpacity>
             )}
@@ -334,18 +286,13 @@ export default function ChildrenScreen() {
             data={
               selectedClass === "all"
                 ? filteredChildren
-                : children.filter(
-                    (c: any) => c.className === selectedClass
-                  )
+                : children.filter((c: any) => c.className === selectedClass)
             }
             renderItem={renderChild}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
-              <Text
-                className="text-center mt-10 text-base"
-                style={{ color: colors.textLight }}
-              >
+              <Text className="text-center mt-10 text-base" style={{ color: colors.textLight }}>
                 Aucun enfant trouvé.
               </Text>
             }
@@ -361,10 +308,7 @@ export default function ChildrenScreen() {
             className="w-full rounded-2xl p-6"
             style={{ backgroundColor: colors.cardBackground }}
           >
-            <Text
-              className="text-lg font-semibold mb-4"
-              style={{ color: colors.textDark }}
-            >
+            <Text className="text-lg font-semibold mb-4" style={{ color: colors.textDark }}>
               Nouvelle Classe
             </Text>
 
@@ -413,10 +357,7 @@ export default function ChildrenScreen() {
             className="w-full rounded-2xl p-6"
             style={{ backgroundColor: colors.cardBackground }}
           >
-            <Text
-              className="text-lg font-semibold mb-4"
-              style={{ color: colors.textDark }}
-            >
+            <Text className="text-lg font-semibold mb-4" style={{ color: colors.textDark }}>
               Nouvel Enfant
             </Text>
 
@@ -473,9 +414,7 @@ export default function ChildrenScreen() {
               }}
             >
               <Text style={{ color: colors.textDark }}>Classe :</Text>
-              <Text style={{ color: colors.accent, fontWeight: "500" }}>
-                {childClass}
-              </Text>
+              <Text style={{ color: colors.accent, fontWeight: "500" }}>{childClass}</Text>
             </View>
 
             <View className="mb-5">
@@ -491,10 +430,7 @@ export default function ChildrenScreen() {
                 >
                   <Text
                     style={{
-                      color:
-                        childClass === cls.name
-                          ? colors.accent
-                          : colors.textDark,
+                      color: childClass === cls.name ? colors.accent : colors.textDark,
                       fontWeight: childClass === cls.name ? "600" : "400",
                     }}
                   >

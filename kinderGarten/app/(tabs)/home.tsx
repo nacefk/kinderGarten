@@ -7,7 +7,8 @@ import Card from "../../components/Card";
 import { router } from "expo-router";
 
 export default function Home({ childId = "child_014" }) {
-  const { childrenList, dailyReports, weeklyPlans, calendarEvents } = useAppStore();
+  const { data } = useAppStore();
+  const { childrenList, dailyReports, weeklyPlans, calendarEvents } = data || {};
 
   const [profile, setProfile] = useState<any>(null);
   const [dailySummary, setDailySummary] = useState<any>(null);
@@ -79,19 +80,14 @@ export default function Home({ childId = "child_014" }) {
       setUpcoming([
         {
           title: nextActivity.title,
-          datetime: new Date(
-            new Date().setHours(...nextActivity.time.split(":").map(Number))
-          ),
+          datetime: new Date(new Date().setHours(...nextActivity.time.split(":").map(Number))),
           image: "https://i.pravatar.cc/100?img=12",
         },
       ]);
     else if (calendarEvents?.length) {
       // fallback: prochain événement du calendrier
       const nextEvent = calendarEvents
-        .filter(
-          (e: any) =>
-            e.className === child.className || e.className === "Toutes les classes"
-        )
+        .filter((e: any) => e.className === child.className || e.className === "Toutes les classes")
         .map((e: any) => ({ ...e, dateObj: new Date(e.date) }))
         .filter((e: any) => e.dateObj > now)
         .sort((a: any, b: any) => a.dateObj - b.dateObj)[0];
@@ -119,7 +115,9 @@ export default function Home({ childId = "child_014" }) {
     if (!selectedOption) return extraHours.baseEndTime || "17:00";
     const [hour, minute] = (extraHours.baseEndTime || "17:00").split(":").map(Number);
     const totalMinutes = hour * 60 + minute + selectedOption;
-    const newHour = Math.floor(totalMinutes / 60).toString().padStart(2, "0");
+    const newHour = Math.floor(totalMinutes / 60)
+      .toString()
+      .padStart(2, "0");
     const newMinute = (totalMinutes % 60).toString().padStart(2, "0");
     return `${newHour}:${newMinute}`;
   };
@@ -135,10 +133,7 @@ export default function Home({ childId = "child_014" }) {
         style={{ backgroundColor: colors.accentLight }}
       >
         <View className="flex-row items-center">
-          <Image
-            source={{ uri: profile?.avatar }}
-            className="w-16 h-16 rounded-full mr-5"
-          />
+          <Image source={{ uri: profile?.avatar }} className="w-16 h-16 rounded-full mr-5" />
           <View>
             <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
               {profile?.name ?? "Chargement..."}
@@ -151,7 +146,7 @@ export default function Home({ childId = "child_014" }) {
             </Text>
           </View>
         </View>
-       {/* 🔔 Notifications + 🔓 Déconnexion */}
+        {/* 🔔 Notifications + 🔓 Déconnexion */}
         <View className="flex-row items-center">
           <TouchableOpacity className="mr-4">
             <Bell color={colors.textDark} size={28} />
@@ -163,8 +158,7 @@ export default function Home({ childId = "child_014" }) {
           >
             <LogOut color={colors.textDark} size={28} />
           </TouchableOpacity>
-
-      </View>
+        </View>
       </View>
 
       {/* 📜 Contenu défilant */}
@@ -204,9 +198,7 @@ export default function Home({ childId = "child_014" }) {
             className="mt-4 py-2 rounded-xl"
             style={{ backgroundColor: colors.accent }}
           >
-            <Text className="text-center text-white font-semibold">
-              Voir le rapport complet
-            </Text>
+            <Text className="text-center text-white font-semibold">Voir le rapport complet</Text>
           </TouchableOpacity>
         </Card>
 
@@ -215,14 +207,9 @@ export default function Home({ childId = "child_014" }) {
           {timeline?.length > 0 ? (
             timeline.map((item, index) => (
               <View key={index} className="flex-row items-center mb-3">
-                <Image
-                  source={{ uri: item.image }}
-                  className="w-12 h-12 rounded-lg mr-3"
-                />
+                <Image source={{ uri: item.image }} className="w-12 h-12 rounded-lg mr-3" />
                 <View>
-                  <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-                    {item.title}
-                  </Text>
+                  <Text style={{ color: colors.textDark, fontWeight: "500" }}>{item.title}</Text>
                   <Text style={{ color: colors.text }}>{item.description}</Text>
                 </View>
               </View>
@@ -237,14 +224,9 @@ export default function Home({ childId = "child_014" }) {
           {upcoming?.length > 0 ? (
             upcoming.map((event, index) => (
               <View key={index} className="flex-row items-center mb-3">
-                <Image
-                  source={{ uri: event.image }}
-                  className="w-10 h-10 rounded-full mr-3"
-                />
+                <Image source={{ uri: event.image }} className="w-10 h-10 rounded-full mr-3" />
                 <View>
-                  <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-                    {event.title}
-                  </Text>
+                  <Text style={{ color: colors.textDark, fontWeight: "500" }}>{event.title}</Text>
                   <Text style={{ color: colors.text }}>
                     {new Date(event.datetime).toLocaleString()}
                   </Text>
@@ -272,8 +254,7 @@ export default function Home({ childId = "child_014" }) {
                     style={{
                       backgroundColor:
                         selectedOption === option ? colors.accent : colors.cardBackground,
-                      borderColor:
-                        selectedOption === option ? colors.accent : "#D1D5DB",
+                      borderColor: selectedOption === option ? colors.accent : "#D1D5DB",
                     }}
                   >
                     <Text

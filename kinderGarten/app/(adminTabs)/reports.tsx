@@ -1,18 +1,11 @@
 import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function ReportsScreen() {
-const childrenList = useAppStore((state) => state.data.childrenList || []);
+  const childrenList = useAppStore((state) => state.data.childrenList || []);
 
   // 🏫 Build class list dynamically from childrenList
   const classes = useMemo(() => {
@@ -47,10 +40,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
     }
 
     if (!meal || !nap || !activity) {
-      Alert.alert(
-        "Champs manquants",
-        "Veuillez remplir tous les champs principaux."
-      );
+      Alert.alert("Champs manquants", "Veuillez remplir tous les champs principaux.");
       return;
     }
 
@@ -92,18 +82,13 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
         >
           <View className="flex-row items-center">
             <Ionicons name="save-outline" size={20} color="#fff" />
-            <Text className="text-white text-base ml-1 font-medium">
-              Enregistrer
-            </Text>
+            <Text className="text-white text-base ml-1 font-medium">Enregistrer</Text>
           </View>
         </TouchableOpacity>
       </View>
 
       {/* Step 1: Select Class */}
-      <View
-        className="rounded-2xl p-5 mb-5"
-        style={{ backgroundColor: colors.cardBackground }}
-      >
+      <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
         <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
           Sélection de la Classe 🏫
         </Text>
@@ -136,10 +121,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
 
       {/* Step 2: Select Child */}
       {selectedClass && (
-        <View
-          className="rounded-2xl p-5 mb-5"
-          style={{ backgroundColor: colors.cardBackground }}
-        >
+        <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
           <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
             Enfant 👧
           </Text>
@@ -151,8 +133,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
                 className="py-3 px-4 mb-2 rounded-xl"
                 onPress={() => setSelectedChild(child.id)}
                 style={{
-                  backgroundColor:
-                    selectedChild === child.id ? colors.accent : "#F8F8F8",
+                  backgroundColor: selectedChild === child.id ? colors.accent : "#F8F8F8",
                   borderWidth: 1,
                   borderColor: colors.accent,
                 }}
@@ -176,10 +157,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
       {/* Step 3: Report Form */}
       {selectedChild && (
         <>
-          <View
-            className="rounded-2xl p-5 mb-5"
-            style={{ backgroundColor: colors.cardBackground }}
-          >
+          <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
               Repas 🍽️
             </Text>
@@ -198,10 +176,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
             />
           </View>
 
-          <View
-            className="rounded-2xl p-5 mb-5"
-            style={{ backgroundColor: colors.cardBackground }}
-          >
+          <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
               Sieste 💤
             </Text>
@@ -220,10 +195,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
             />
           </View>
 
-          <View
-            className="rounded-2xl p-5 mb-5"
-            style={{ backgroundColor: colors.cardBackground }}
-          >
+          <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
               Activités 🎨
             </Text>
@@ -243,10 +215,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
           </View>
 
           {/* Behavior options */}
-          <View
-            className="rounded-2xl p-5 mb-5"
-            style={{ backgroundColor: colors.cardBackground }}
-          >
+          <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
               Comportement / Santé 💬
             </Text>
@@ -258,8 +227,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
                   onPress={() => setBehavior(option)}
                   className="px-3 py-2 rounded-xl mr-2 mb-2"
                   style={{
-                    backgroundColor:
-                      behavior === option ? colors.accent : "#F3F4F6",
+                    backgroundColor: behavior === option ? colors.accent : "#F3F4F6",
                   }}
                 >
                   <Text
@@ -275,10 +243,7 @@ const childrenList = useAppStore((state) => state.data.childrenList || []);
             </View>
           </View>
 
-          <View
-            className="rounded-2xl p-5 mb-8"
-            style={{ backgroundColor: colors.cardBackground }}
-          >
+          <View className="rounded-2xl p-5 mb-8" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
               Notes ou Leçons 📝
             </Text>

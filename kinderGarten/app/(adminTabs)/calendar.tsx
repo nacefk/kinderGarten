@@ -85,24 +85,20 @@ export default function CalendarScreen() {
 
   const handleDeleteEvent = () => {
     if (!editingEvent) return;
-    Alert.alert(
-      "Supprimer l'événement",
-      "Voulez-vous vraiment supprimer cet événement ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: () => {
-            const updated = calendarEvents.filter((e) => e.id !== editingEvent.id);
-            setData("calendarEvents", updated);
-            setShowEventModal(false);
-            setEditingEvent(null);
-            Alert.alert("Supprimé ✅", "L'événement a été supprimé.");
-          },
+    Alert.alert("Supprimer l'événement", "Voulez-vous vraiment supprimer cet événement ?", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: () => {
+          const updated = calendarEvents.filter((e) => e.id !== editingEvent.id);
+          setData("calendarEvents", updated);
+          setShowEventModal(false);
+          setEditingEvent(null);
+          Alert.alert("Supprimé ✅", "L'événement a été supprimé.");
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const renderEvent = ({ item }: { item: EventItem }) => {
@@ -186,10 +182,9 @@ export default function CalendarScreen() {
         title: newPlanTitle.trim(),
       };
     } else {
-      updatedDayPlan = [
-        ...currentDayPlan,
-        { time: newPlanTime, title: newPlanTitle.trim() },
-      ].sort((a, b) => a.time.localeCompare(b.time));
+      updatedDayPlan = [...currentDayPlan, { time: newPlanTime, title: newPlanTitle.trim() }].sort(
+        (a, b) => a.time.localeCompare(b.time)
+      );
     }
 
     const updatedClassPlan = {
@@ -247,9 +242,8 @@ export default function CalendarScreen() {
 
   const renderDayPlan = (day: string) => {
     const dailyItems =
-      weeklyPlans[selectedClass]?.[day]?.sort(
-        (a: any, b: any) => a.time.localeCompare(b.time)
-      ) || [];
+      weeklyPlans[selectedClass]?.[day]?.sort((a: any, b: any) => a.time.localeCompare(b.time)) ||
+      [];
 
     return (
       <View
@@ -378,9 +372,7 @@ export default function CalendarScreen() {
                   paddingVertical: 6,
                 }}
               >
-                <Text className="text-white text-sm font-medium">
-                  Changer de classe
-                </Text>
+                <Text className="text-white text-sm font-medium">Changer de classe</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -393,8 +385,14 @@ export default function CalendarScreen() {
 
       {/* EVENT MODAL */}
       <Modal visible={showEventModal} animationType="slide" transparent>
-        <View className="flex-1 justify-center items-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
-          <View className="w-full rounded-2xl p-6" style={{ backgroundColor: colors.cardBackground }}>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <View
+            className="w-full rounded-2xl p-6"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
               {editingEvent ? "Modifier l'Événement" : "Nouvel Événement"}
             </Text>
@@ -495,8 +493,14 @@ export default function CalendarScreen() {
 
       {/* PLAN MODAL */}
       <Modal visible={showPlanModal} animationType="fade" transparent>
-        <View className="flex-1 justify-center items-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
-          <View className="w-full rounded-2xl p-6" style={{ backgroundColor: colors.cardBackground }}>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <View
+            className="w-full rounded-2xl p-6"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
             <Text className="text-lg font-semibold mb-4" style={{ color: colors.textDark }}>
               {editingPlan ? "Modifier l'Activité" : `Nouvelle Activité (${newPlanDay})`}
             </Text>
@@ -529,46 +533,43 @@ export default function CalendarScreen() {
               }}
             />
 
-          <View className="flex-row justify-between items-center">
-  {editingPlan && (
-    <TouchableOpacity
-      onPress={handleDeletePlan}
-      className="flex-1 rounded-xl py-3 mx-1"
-      style={{ backgroundColor: "#FEE2E2" }}
-    >
-      <Text
-        style={{
-          color: "#BC1C1C",
-          fontWeight: "500",
-          textAlign: "center",
-        }}
-      >
-        Supprimer
-      </Text>
-    </TouchableOpacity>
-  )}
+            <View className="flex-row justify-between items-center">
+              {editingPlan && (
+                <TouchableOpacity
+                  onPress={handleDeletePlan}
+                  className="flex-1 rounded-xl py-3 mx-1"
+                  style={{ backgroundColor: "#FEE2E2" }}
+                >
+                  <Text
+                    style={{
+                      color: "#BC1C1C",
+                      fontWeight: "500",
+                      textAlign: "center",
+                    }}
+                  >
+                    Supprimer
+                  </Text>
+                </TouchableOpacity>
+              )}
 
-  <TouchableOpacity
-    onPress={() => setShowPlanModal(false)}
-    className="flex-1 rounded-xl py-3 mx-1"
-    style={{ backgroundColor: "#F3F4F6" }}
-  >
-    <Text style={{ color: colors.text, textAlign: "center" }}>Annuler</Text>
-  </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowPlanModal(false)}
+                className="flex-1 rounded-xl py-3 mx-1"
+                style={{ backgroundColor: "#F3F4F6" }}
+              >
+                <Text style={{ color: colors.text, textAlign: "center" }}>Annuler</Text>
+              </TouchableOpacity>
 
-  <TouchableOpacity
-    onPress={handleSavePlan}
-    className="flex-1 rounded-xl py-3 mx-1"
-    style={{ backgroundColor: colors.accent }}
-  >
-    <Text
-      className="text-white font-medium text-center"
-    >
-      {editingPlan ? "Modifier" : "Ajouter"}
-    </Text>
-  </TouchableOpacity>
-</View>
-
+              <TouchableOpacity
+                onPress={handleSavePlan}
+                className="flex-1 rounded-xl py-3 mx-1"
+                style={{ backgroundColor: colors.accent }}
+              >
+                <Text className="text-white font-medium text-center">
+                  {editingPlan ? "Modifier" : "Ajouter"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

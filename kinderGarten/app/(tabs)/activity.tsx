@@ -1,14 +1,7 @@
 import { router } from "expo-router";
 import { Bell, ChevronDown, ChevronLeft } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import {
-  Image,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, ScrollView, StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { useAppStore } from "../../store/useAppStore";
 import colors from "../../config/colors";
 import Card from "../../components/Card";
@@ -56,7 +49,9 @@ export default function Activity() {
     const computedTimelineByDay = Object.keys(timelineByDay || {}).length
       ? timelineByDay
       : classPlan || {
-          Lundi: [{ time: "09:00", icon: "🎨", title: "Dessin", detail: "Atelier artistique amusant !" }],
+          Lundi: [
+            { time: "09:00", icon: "🎨", title: "Dessin", detail: "Atelier artistique amusant !" },
+          ],
         };
 
     // ✅ GALERIE
@@ -82,7 +77,9 @@ export default function Activity() {
           const [year, month, day] = e.date.split("-").map(Number);
           const eventDate = new Date(year, month - 1, day);
 
-          return matchesClass && eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return (
+            matchesClass && eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          );
         })
         .sort((a: any, b: any) => new Date(a.date) - new Date(b.date))
         .map((e: any) => ({
@@ -132,7 +129,6 @@ export default function Activity() {
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
             <ChevronLeft color={colors.textDark} size={28} />
           </TouchableOpacity>
-
         </View>
         <TouchableOpacity>
           <Bell color={colors.textDark} size={28} />
@@ -154,8 +150,7 @@ export default function Activity() {
             onPress={() => setSelectedFilter(tab.key as any)}
             className="px-4 py-2 rounded-xl"
             style={{
-              backgroundColor:
-                selectedFilter === tab.key ? colors.accent : "transparent",
+              backgroundColor: selectedFilter === tab.key ? colors.accent : "transparent",
             }}
           >
             <Text
@@ -182,9 +177,7 @@ export default function Activity() {
             <LiveView />
             <Card title="Programme du jour">
               {todayTimeline?.length > 0 ? (
-                todayTimeline.map((item, index) => (
-                  <TimelineItem key={index} item={item} />
-                ))
+                todayTimeline.map((item, index) => <TimelineItem key={index} item={item} />)
               ) : (
                 <Text className="text-center py-4" style={{ color: colors.textLight }}>
                   Aucune activité enregistrée aujourd’hui.
@@ -206,10 +199,7 @@ export default function Activity() {
                       }
                     >
                       {item.type === "image" ? (
-                        <Image
-                          source={{ uri: item.uri }}
-                          className="w-24 h-24 rounded-xl mr-3"
-                        />
+                        <Image source={{ uri: item.uri }} className="w-24 h-24 rounded-xl mr-3" />
                       ) : (
                         <View
                           className="w-24 h-24 rounded-xl mr-3 items-center justify-center"
@@ -223,9 +213,7 @@ export default function Activity() {
                     </TouchableOpacity>
                   ))
                 ) : (
-                  <Text style={{ color: colors.textLight }}>
-                    Aucun média disponible.
-                  </Text>
+                  <Text style={{ color: colors.textLight }}>Aucun média disponible.</Text>
                 )}
               </ScrollView>
             </Card>
@@ -260,15 +248,13 @@ export default function Activity() {
                     }}
                     className="py-2 rounded-xl"
                     style={{
-                      backgroundColor:
-                        selectedDay === day ? colors.accentLight : "transparent",
+                      backgroundColor: selectedDay === day ? colors.accentLight : "transparent",
                     }}
                   >
                     <Text
                       className="text-base"
                       style={{
-                        color:
-                          selectedDay === day ? colors.accent : colors.textDark,
+                        color: selectedDay === day ? colors.accent : colors.textDark,
                         fontWeight: selectedDay === day ? "600" : "400",
                       }}
                     >
@@ -309,9 +295,7 @@ export default function Activity() {
                     <Text className="font-medium" style={{ color: colors.textDark }}>
                       {item.title}
                     </Text>
-                    <Text style={{ color: colors.text }}>
-                      {item.detail || "Activité à venir"}
-                    </Text>
+                    <Text style={{ color: colors.text }}>{item.detail || "Activité à venir"}</Text>
                     <Text className="text-sm mt-1" style={{ color: colors.textLight }}>
                       {item.date || "À déterminer"}
                     </Text>

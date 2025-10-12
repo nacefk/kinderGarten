@@ -32,9 +32,9 @@ export default function Login() {
       setLoading(false);
 
       if (username === "admin" && password === "1234") {
-        router.replace("/(adminTabs)/dashboard" );
+        router.replace("/(adminTabs)/dashboard");
       } else if (username === "parent" && password === "1234") {
-        router.replace("/(tabs)/home" );
+        router.replace("/(tabs)/home");
       } else {
         Alert.alert("Login Failed", "Invalid username or password");
       }
@@ -42,13 +42,8 @@ export default function Login() {
   };
 
   return (
-    <View
-      className="flex-1 justify-center px-6"
-      style={{ backgroundColor: colors.background }}
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+    <View className="flex-1 justify-center px-6" style={{ backgroundColor: colors.background }}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {/* Card */}
         <View
           className="rounded-3xl p-8"
@@ -60,19 +55,11 @@ export default function Login() {
             elevation: 4,
           }}
         >
-
-
           {/* Title */}
-          <Text
-            className="text-2xl font-bold text-center mb-1"
-            style={{ color: colors.textDark }}
-          >
+          <Text className="text-2xl font-bold text-center mb-1" style={{ color: colors.textDark }}>
             Welcome 👋
           </Text>
-          <Text
-            className="text-base text-center mb-8"
-            style={{ color: colors.text }}
-          >
+          <Text className="text-base text-center mb-8" style={{ color: colors.text }}>
             Please sign in with your administrator or parent credentials.
           </Text>
 
@@ -156,8 +143,8 @@ export default function Login() {
               className="mr-2"
             />
             <Text style={{ color: colors.text }}>
-              <Text className="font-semibold">Note:</Text> If you forgot your
-              credentials, please contact the administrator.
+              <Text className="font-semibold">Note:</Text> If you forgot your credentials, please
+              contact the administrator.
             </Text>
           </View>
         </View>

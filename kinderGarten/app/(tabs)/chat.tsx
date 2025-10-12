@@ -54,14 +54,14 @@ export default function Chat() {
   return (
     <View className="flex-1 bg-[#FAF8F5]">
       {/* En-tête */}
-   <View
+      <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
-      >        <View className="flex-row items-center">
+      >
+        <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
             <ChevronLeft color="#374151" size={28} />
           </TouchableOpacity>
-
         </View>
       </View>
 
@@ -75,11 +75,7 @@ export default function Chat() {
           data={messages}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View
-              className={`px-5 py-2 ${
-                item.sender === "user" ? "items-end" : "items-start"
-              }`}
-            >
+            <View className={`px-5 py-2 ${item.sender === "user" ? "items-end" : "items-start"}`}>
               <View
                 className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                   item.sender === "user"
@@ -88,17 +84,13 @@ export default function Chat() {
                 }`}
               >
                 <Text
-                  className={`text-base ${
-                    item.sender === "user" ? "text-white" : "text-gray-800"
-                  }`}
+                  className={`text-base ${item.sender === "user" ? "text-white" : "text-gray-800"}`}
                 >
                   {item.text}
                 </Text>
                 <Text
                   className={`text-xs mt-1 ${
-                    item.sender === "user"
-                      ? "text-gray-100 text-right"
-                      : "text-gray-400 text-left"
+                    item.sender === "user" ? "text-gray-100 text-right" : "text-gray-400 text-left"
                   }`}
                 >
                   {item.time}
@@ -117,10 +109,7 @@ export default function Chat() {
             placeholder="Écrire un message..."
             className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-gray-800"
           />
-          <TouchableOpacity
-            onPress={sendMessage}
-            className="ml-3 bg-[#C6A57B] rounded-full p-2"
-          >
+          <TouchableOpacity onPress={sendMessage} className="ml-3 bg-[#C6A57B] rounded-full p-2">
             <Send color="#fff" size={20} />
           </TouchableOpacity>
         </View>

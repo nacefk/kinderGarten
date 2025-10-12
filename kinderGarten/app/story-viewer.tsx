@@ -4,15 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { ChevronLeft, ChevronRight, Download, X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Dimensions,
-  FlatList,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Dimensions, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -54,8 +46,7 @@ export default function StoryViewer() {
         return;
       }
 
-      const fileExtension =
-        currentStory.type === "video" ? ".mp4" : ".jpg";
+      const fileExtension = currentStory.type === "video" ? ".mp4" : ".jpg";
       const fileUri = FileSystem.documentDirectory + `story${fileExtension}`;
 
       // Download file

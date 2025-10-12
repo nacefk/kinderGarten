@@ -58,23 +58,13 @@ export default function ChatListScreen() {
         elevation: 2,
       }}
     >
-      <Image
-        source={{ uri: item.avatar }}
-        className="w-12 h-12 rounded-full mr-3"
-      />
+      <Image source={{ uri: item.avatar }} className="w-12 h-12 rounded-full mr-3" />
 
       <View className="flex-1">
-        <Text
-          className="text-base font-semibold"
-          style={{ color: colors.textDark }}
-        >
+        <Text className="text-base font-semibold" style={{ color: colors.textDark }}>
           {item.name}
         </Text>
-        <Text
-          className="text-sm mt-1"
-          style={{ color: colors.textLight }}
-          numberOfLines={1}
-        >
+        <Text className="text-sm mt-1" style={{ color: colors.textLight }} numberOfLines={1}>
           {item.lastMessage}
         </Text>
       </View>
@@ -84,13 +74,8 @@ export default function ChatListScreen() {
           {item.time}
         </Text>
         {item.unread > 0 && (
-          <View
-            className="rounded-full px-2 py-0.5"
-            style={{ backgroundColor: "#C6A57B" }}
-          >
-            <Text className="text-white text-xs font-medium">
-              {item.unread}
-            </Text>
+          <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: "#C6A57B" }}>
+            <Text className="text-white text-xs font-medium">{item.unread}</Text>
           </View>
         )}
       </View>
@@ -98,14 +83,8 @@ export default function ChatListScreen() {
   );
 
   return (
-    <View
-      className="flex-1 px-5 pt-4"
-      style={{ backgroundColor: colors.background }}
-    >
-      <Text
-        className="text-2xl font-bold mb-6"
-        style={{ color: colors.textDark }}
-      >
+    <View className="flex-1 px-5 pt-4" style={{ backgroundColor: colors.background }}>
+      <Text className="text-2xl font-bold mb-6" style={{ color: colors.textDark }}>
         Messages
       </Text>
 

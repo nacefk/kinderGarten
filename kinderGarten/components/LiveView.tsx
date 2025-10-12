@@ -37,7 +37,7 @@ export default function LiveView() {
     useCallback(() => {
       // When entering screen
       return () => {
-      //  player.pause();
+        //  player.pause();
         setIsPlaying(false);
       };
     }, [])
@@ -51,10 +51,7 @@ export default function LiveView() {
       {/* Header */}
       <View className="flex-row justify-between items-center px-5 py-3 border-b border-gray-200">
         <View className="flex-row items-center">
-          <View
-            className="w-3 h-3 rounded-full mr-2"
-            style={{ backgroundColor: colors.error }}
-          />
+          <View className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: colors.error }} />
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
             Live View
           </Text>
