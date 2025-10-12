@@ -62,7 +62,7 @@ export default function AdminLayout() {
       />
 
       <Tabs.Screen
-        name="chat"
+        name="chatList"
         options={{
           title: "Chat",
           tabBarIcon: ({ color, size }) => (

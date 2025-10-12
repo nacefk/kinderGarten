@@ -12,7 +12,7 @@ import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function ReportsScreen() {
-  const { childrenList } = useAppStore();
+const childrenList = useAppStore((state) => state.data.childrenList || []);
 
   // 🏫 Build class list dynamically from childrenList
   const classes = useMemo(() => {
