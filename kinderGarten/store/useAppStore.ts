@@ -10,11 +10,16 @@ interface AppState {
   timelineByDay: Record<string, any[]>;
   galleryItems: any[];
   upcomingActivities: any[];
-
-  // new section for dynamic datasets (mock/admin data)
-  data: Record<string, any>;
-
-  // generic setter
+  data: {
+    childrenList: any[];
+    weeklyPlans: Record<string, any>;
+    calendarEvents: any[];
+    todayTimeline: any[];
+    timelineByDay: Record<string, any[]>;
+    galleryItems: any[];
+    upcomingActivities: any[];
+    attendanceToday: any[];
+  };
   setData: (key: keyof AppState | string, value: any) => void;
 }
 
@@ -29,17 +34,24 @@ export const useAppStore = create<AppState>((set) => ({
   galleryItems: [],
   upcomingActivities: [],
 
-  // ✅ initialize data object so it never crashes
-  data: {},
+  // ✅ initialize nested "data" with default empty arrays and objects
+  data: {
+    childrenList: [],
+    weeklyPlans: {},
+    calendarEvents: [],
+    todayTimeline: [],
+    timelineByDay: {},
+    galleryItems: [],
+    upcomingActivities: [],
+    attendanceToday: [],
+  },
 
-  // ✅ keep flexibility for both AppState keys and nested "data" keys
+  // ✅ safe, flexible setter
   setData: (key, value) =>
     set((state) => {
       if (key in state) {
-        // direct property update (like old behavior)
         return { [key]: value };
       }
-      // nested data update (used by loadMockData)
       return { data: { ...state.data, [key]: value } };
     }),
 }));

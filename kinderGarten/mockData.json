@@ -2034,6 +2034,60 @@
                 "time": "17:00",
                 "title": "Sortie / départs"
               }
+            ],
+              "Dimanche": [
+              {
+                "time": "08:00",
+                "title": "Accueil et pointage"
+              },
+              {
+                "time": "08:30",
+                "title": "Jeux libres / construction"
+              },
+              {
+                "time": "09:00",
+                "title": "Rituel du matin / cercle"
+              },
+              {
+                "time": "09:30",
+                "title": "Atelier langage"
+              },
+              {
+                "time": "10:00",
+                "title": "Atelier peinture / motricité fine"
+              },
+              {
+                "time": "10:45",
+                "title": "Hygiène / préparation repas"
+              },
+              {
+                "time": "12:00",
+                "title": "Déjeuner"
+              },
+              {
+                "time": "13:00",
+                "title": "Sieste"
+              },
+              {
+                "time": "14:30",
+                "title": "Réveil / collation"
+              },
+              {
+                "time": "15:00",
+                "title": "Jeux extérieurs"
+              },
+              {
+                "time": "16:00",
+                "title": "Histoire / calme"
+              },
+              {
+                "time": "16:30",
+                "title": "Jeu libre / dessin"
+              },
+              {
+                "time": "17:00",
+                "title": "Sortie / départs"
+              }
             ]
           },
           "Moyenne Section": {

@@ -168,38 +168,55 @@ export default function Home({ childId = "child_014" }) {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* 📅 Résumé du jour */}
-        <Card title="Résumé du jour">
+        <Card title="Humeur & Déjeuner">
           {dailySummary ? (
             <>
-              <View className="flex-row justify-between mb-2">
-                <Text style={{ color: colors.text }}>🍽 Déjeuner</Text>
+              {/* Humeur */}
+              <View className="flex-row justify-between mb-3">
+                <Text style={{ color: colors.text }}>Humeur du jour</Text>
                 <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-                  {dailySummary.lunch}
+                  {dailySummary.mood === "happy"
+                    ? "😄 Joyeux"
+                    : dailySummary.mood === "tired"
+                      ? "😴 Fatigué"
+                      : dailySummary.mood === "calm"
+                        ? "😊 Calme"
+                        : "🙂 Tranquille"}
                 </Text>
               </View>
-              <View className="flex-row justify-between mb-2">
-                <Text style={{ color: colors.text }}>😴 Sieste</Text>
+
+              {/* Déjeuner */}
+              <View className="flex-row justify-between mb-3">
+                <Text style={{ color: colors.text }}>Déjeuner</Text>
                 <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-                  {dailySummary.napDuration}
+                  {dailySummary.lunch === "completed"
+                    ? "✅ A bien mangé"
+                    : dailySummary.lunch === "partial"
+                      ? "🍞 A peu mangé"
+                      : "❌ N’a pas mangé"}
                 </Text>
               </View>
-              <View className="flex-row justify-between">
-                <Text style={{ color: colors.text }}>🎨 Activité</Text>
-                <Text style={{ color: colors.textDark, fontWeight: "500" }}>
-                  {dailySummary.activityMood}
-                </Text>
-              </View>
+
+              {/* Commentaire */}
+              {!dailySummary.comment && (
+                <View className="mt-2">
+                  <Text
+                    style={{
+                      color: colors.textLight,
+                      fontStyle: "italic",
+                      textAlign: "center",
+                    }}
+                  >
+                    “{dailySummary.comment}il est méchant”
+                  </Text>
+                </View>
+              )}
             </>
           ) : (
-            <Text style={{ color: colors.textLight }}>Chargement du résumé...</Text>
+            <Text style={{ color: colors.textLight }}>
+              Aucune donnée disponible pour aujourd’hui.
+            </Text>
           )}
-
-          <TouchableOpacity
-            className="mt-4 py-2 rounded-xl"
-            style={{ backgroundColor: colors.accent }}
-          >
-            <Text className="text-center text-white font-semibold">Voir le rapport complet</Text>
-          </TouchableOpacity>
         </Card>
 
         {/* 🕒 Chronologie */}

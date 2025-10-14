@@ -16,7 +16,7 @@ import colors from "@/config/colors";
 
 export default function Login() {
   const router = useRouter();
-  const [username, setUsername] = useState("admin");
+  const [username, setUsername] = useState("parent");
   const [password, setPassword] = useState("1234");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

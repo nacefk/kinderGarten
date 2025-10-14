@@ -9,16 +9,9 @@ import TimelineItem from "../../components/TimelineItem";
 import LiveView from "@/components/LiveView";
 
 export default function Activity() {
-  const {
-    childrenList,
-    weeklyPlans,
-    calendarEvents,
-    todayTimeline,
-    timelineByDay,
-    galleryItems,
-    upcomingActivities,
-    setData,
-  } = useAppStore();
+  const { todayTimeline, timelineByDay, galleryItems, upcomingActivities } = useAppStore();
+  const { data, setData } = useAppStore();
+  const { childrenList, weeklyPlans, calendarEvents } = data;
 
   const childId = "child_014";
 
