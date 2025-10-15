@@ -1,46 +1,101 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect, useMemo } from "react";
+import { View, Text, TouchableOpacity, ScrollView, Image, FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
+import { useAppStore } from "@/store/useAppStore";
+
+type PresenceStatus = "present" | "absent";
 
 export default function DashboardScreen() {
-  const quickActions = [
-    {
-      id: "1",
-      title: "Enfants",
-      icon: "people-outline",
-      color: colors.accent,
-      screen: "/(adminTabs)/children",
-    },
-    {
-      id: "2",
-      title: "Rapports",
-      icon: "clipboard-outline",
-      color: colors.accent,
-      screen: "/(adminTabs)/reports",
-    },
-    {
-      id: "3",
-      title: "Calendrier",
-      icon: "calendar-outline",
-      color: colors.accent,
-      screen: "/(adminTabs)/calendar",
-    },
-    {
-      id: "4",
-      title: "Messages",
-      icon: "chatbubbles-outline",
-      color: colors.accent,
-      screen: "/(adminTabs)/messages",
-    },
+  const router = useRouter();
+
+  const classes = useAppStore((state) => state.data.classes || []);
+  const children = useAppStore((state) => state.data.childrenList || []);
+
+  const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [presenceMap, setPresenceMap] = useState<Record<string, PresenceStatus>>({});
+
+  // ✅ Default presence: all present
+  useEffect(() => {
+    const initial = children.reduce((acc: Record<string, PresenceStatus>, c: any) => {
+      acc[c.id] = "present";
+      return acc;
+    }, {});
+    setPresenceMap(initial);
+  }, [children]);
+
+  // ✅ Toggle individual presence
+  const togglePresence = (id: string) => {
+    setPresenceMap((prev) => ({
+      ...prev,
+      [id]: prev[id] === "present" ? "absent" : "present",
+    }));
+  };
+
+  // ✅ Mark all present
+  const markAllPresent = () => {
+    const updated = Object.keys(presenceMap).reduce((acc, id) => ({ ...acc, [id]: "present" }), {});
+    setPresenceMap(updated);
+  };
+
+  // ✅ Filtered children by class
+  const filteredChildren = useMemo(() => {
+    if (selectedClass === "all") return children;
+    return children.filter((c: any) => c.className === selectedClass);
+  }, [children, selectedClass]);
+
+  // ✅ Extra hours
+  const extraHourRequests = [
+    { id: "1", name: "Sophie Dupont", hours: "17h00 → 18h30" },
+    { id: "2", name: "Alex Martin", hours: "16h30 → 17h30" },
   ];
 
-  const stats = [
-    { id: "1", label: "Enfants présents", value: 18 },
-    { id: "2", label: "Activités du jour", value: 5 },
-    { id: "3", label: "Heures supp. en attente", value: 2 },
-  ];
+  const renderChild = ({ item }: { item: any }) => {
+    const status = presenceMap[item.id] || "present";
+    const isPresent = status === "present";
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => togglePresence(item.id)}
+        className="flex-row items-center mb-3 p-3 rounded-2xl"
+        style={{
+          backgroundColor: colors.cardBackground,
+          shadowColor: "#000",
+          shadowOpacity: 0.05,
+          shadowRadius: 3,
+          elevation: 2,
+        }}
+      >
+        <Image source={{ uri: item.avatar }} className="w-12 h-12 rounded-full mr-3" />
+        <View className="flex-1">
+          <Text className="text-base font-medium" style={{ color: colors.textDark }}>
+            {item.name}
+          </Text>
+          <Text className="text-xs" style={{ color: colors.textLight }}>
+            {item.className} · {item.age} ans
+          </Text>
+        </View>
+
+        <View className="flex-row items-center">
+          <Ionicons
+            name={isPresent ? "checkmark-circle" : "close-circle"}
+            size={22}
+            color={isPresent ? "#4CAF50" : "#E53935"}
+          />
+          <Text
+            className="ml-2 font-medium"
+            style={{
+              color: isPresent ? "#4CAF50" : "#E53935",
+            }}
+          >
+            {isPresent ? "Présent" : "Absent"}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <ScrollView
@@ -54,75 +109,53 @@ export default function DashboardScreen() {
           Tableau de Bord
         </Text>
         <Text className="text-base" style={{ color: colors.text }}>
-          Résumé quotidien et actions rapides
+          Présence du jour et actions rapides
         </Text>
       </View>
-      {/* Logout Button */}
+
+      {/* --- Presence Summary Bloc --- */}
       <TouchableOpacity
-        onPress={() => router.replace("/login")}
+        activeOpacity={0.85}
+        onPress={() => router.push("/presence")}
+        className="rounded-2xl p-5 mb-6"
         style={{
-          backgroundColor: colors.accent,
-          borderRadius: 14,
-          paddingHorizontal: 12,
-          paddingVertical: 6,
+          backgroundColor: colors.cardBackground,
+          shadowColor: "#000",
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
+          elevation: 2,
         }}
       >
-        <Text className="text-white text-sm font-medium">Se déconnecter</Text>
-      </TouchableOpacity>
-      {/* Stats cards */}
-      <View className="flex-row flex-wrap justify-between mb-6">
-        {stats.map((item) => (
-          <View
-            key={item.id}
-            className="w-[48%] mb-4 rounded-2xl p-5"
-            style={{
-              backgroundColor: colors.cardBackground,
-              shadowColor: "#000",
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }}
-          >
-            <Text className="text-sm mb-2" style={{ color: colors.textLight }}>
-              {item.label}
-            </Text>
-            <Text className="text-3xl font-bold" style={{ color: colors.accent }}>
-              {item.value}
-            </Text>
-          </View>
-        ))}
-      </View>
+        <View className="flex-row justify-between items-center mb-2">
+          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+            Présence du Jour
+          </Text>
+          <Ionicons name="people-outline" size={22} color={colors.accent} />
+        </View>
 
-      {/* Quick Actions */}
-      <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
-        Actions Rapides
-      </Text>
-      <View className="flex-row flex-wrap justify-between mb-8">
-        {quickActions.map((action) => (
-          <TouchableOpacity
-            key={action.id}
-            activeOpacity={0.85}
-            className="w-[48%] mb-4 rounded-2xl p-5 items-center justify-center"
-            style={{
-              backgroundColor: colors.cardBackground,
-              shadowColor: "#000",
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }}
-            onPress={() => console.log(`Navigate to ${action.screen}`)}
-          >
-            <Ionicons name={action.icon as any} size={26} color={action.color} />
-            <Text className="mt-3 text-base font-medium" style={{ color: colors.textDark }}>
-              {action.title}
+        <Text className="text-sm mb-3" style={{ color: colors.text }}>
+          Gérez la présence quotidienne des enfants.
+        </Text>
+
+        <View className="flex-row justify-between items-center">
+          <View>
+            <Text className="text-3xl font-bold" style={{ color: colors.accent }}>
+              18
             </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <Text style={{ color: colors.textLight }}>Présents</Text>
+          </View>
+          <View>
+            <Text className="text-3xl font-bold" style={{ color: "#E53935" }}>
+              2
+            </Text>
+            <Text style={{ color: colors.textLight }}>Absents</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
 
       {/* Extra Hours Section */}
       <View
-        className="rounded-2xl p-5 mb-8"
+        className="rounded-2xl p-5 mb-10"
         style={{
           backgroundColor: colors.cardBackground,
           shadowColor: "#000",
@@ -138,50 +171,36 @@ export default function DashboardScreen() {
           <Ionicons name="time-outline" size={22} color={colors.accent} />
         </View>
 
-        <Text className="text-sm mb-4" style={{ color: colors.text }}>
-          2 demandes d’heures supplémentaires sont en attente d’approbation.
-        </Text>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="rounded-xl py-3 items-center"
-          style={{ backgroundColor: colors.accent }}
-          onPress={() => console.log("Navigate to Extra Hours")}
-        >
-          <Text className="text-white font-medium">Gérer les demandes</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Reports Summary */}
-      <View
-        className="rounded-2xl p-5 mb-10"
-        style={{
-          backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            Rapports Hebdomadaires
-          </Text>
-          <Ionicons name="document-text-outline" size={22} color={colors.accent} />
-        </View>
-
-        <Text className="text-sm mb-4" style={{ color: colors.text }}>
-          Consultez ou exportez les rapports de la semaine (présence, activités, incidents, etc.).
-        </Text>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="rounded-xl py-3 items-center"
-          style={{ backgroundColor: colors.accent }}
-          onPress={() => console.log("Export PDF")}
-        >
-          <Text className="text-white font-medium">Exporter en PDF</Text>
-        </TouchableOpacity>
+        {extraHourRequests.map((req) => (
+          <View
+            key={req.id}
+            className="flex-row items-center justify-between mb-3 border-b pb-2"
+            style={{ borderColor: "#eee" }}
+          >
+            <View>
+              <Text className="font-medium" style={{ color: colors.textDark }}>
+                {req.name}
+              </Text>
+              <Text className="text-sm" style={{ color: colors.textLight }}>
+                {req.hours}
+              </Text>
+            </View>
+            <View className="flex-row">
+              <TouchableOpacity
+                className="mr-2 px-3 py-1 rounded-lg"
+                style={{ backgroundColor: "#4CAF50" }}
+              >
+                <Text className="text-white text-sm">✔</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="px-3 py-1 rounded-lg"
+                style={{ backgroundColor: "#E53935" }}
+              >
+                <Text className="text-white text-sm">✖</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
