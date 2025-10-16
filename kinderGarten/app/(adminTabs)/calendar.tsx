@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
+import { router } from "expo-router";
+import { ChevronLeft } from "lucide-react-native";
 
 interface EventItem {
   id: string;
@@ -107,7 +109,7 @@ export default function CalendarScreen() {
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() => openEditEvent(item)}
-        className="rounded-2xl p-5 mb-4"
+        className="rounded-2xl p-5 mb-4 mx-5"
         style={{
           backgroundColor: colors.cardBackground,
           shadowColor: "#000",
@@ -297,9 +299,21 @@ export default function CalendarScreen() {
 
   // ---------- UI ----------
   return (
-    <View className="flex-1 px-5 pt-4" style={{ backgroundColor: colors.background }}>
+    <View className="flex-1 pt-4" style={{ backgroundColor: colors.background }}>
+      {/* Header */}
+      <View
+        className="flex-row items-center justify-between px-5 pt-12 pb-6"
+        style={{ backgroundColor: colors.accentLight }}
+      >
+        <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <ChevronLeft color={colors.textDark} size={28} />
+        </TouchableOpacity>
+        <Text className="text-xl text-center font-semibold" style={{ color: colors.textDark }}>
+          Calendrier
+        </Text>
+      </View>
       {/* Tabs */}
-      <View className="flex-row mb-6 bg-white rounded-2xl p-1 shadow-sm">
+      <View className="flex-row mb-6 bg-white rounded-2xl p-1 shadow-sm mx-5 mt-4">
         {["events", "plan"].map((tab) => (
           <TouchableOpacity
             key={tab}
@@ -321,7 +335,7 @@ export default function CalendarScreen() {
       {/* EVENTS LIST */}
       {activeTab === "events" ? (
         <>
-          <View className="flex-row items-center justify-between mb-4">
+          <View className="flex-row items-center justify-between mb-4 px-5">
             <Text className="text-xl font-semibold" style={{ color: colors.textDark }}>
               Liste des Événements
             </Text>
@@ -353,7 +367,7 @@ export default function CalendarScreen() {
         </>
       ) : (
         <>
-          <View className="flex-row justify-between items-center mb-4 flex-wrap">
+          <View className="flex-row justify-between items-center mb-4 flex-wrap px-5">
             <Text className="text-l font-semibold" style={{ color: colors.textDark }}>
               Planning — {selectedClass}
             </Text>

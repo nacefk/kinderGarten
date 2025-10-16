@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Image, FlatList } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Image, FlatList, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import { useRouter } from "expo-router";
 import { useAppStore } from "@/store/useAppStore";
+import { ChevronLeft, LogOut } from "lucide-react-native";
 
 type PresenceStatus = "present" | "absent";
 
@@ -99,25 +100,34 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView
-      className="flex-1 px-5 pt-4"
+      className="flex-1 "
       style={{ backgroundColor: colors.background }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <View className="mb-6">
-        <Text className="text-2xl font-bold mb-1" style={{ color: colors.textDark }}>
-          Tableau de Bord
-        </Text>
-        <Text className="text-base" style={{ color: colors.text }}>
-          Présence du jour et actions rapides
-        </Text>
+      <StatusBar barStyle={"dark-content"} />
+
+      {/* En-tête */}
+      <View
+        className="flex-row items-center justify-between px-5 pt-16 pb-6"
+        style={{ backgroundColor: colors.accentLight }}
+      >
+        <View className="flex-row items-center"></View>
+        {/* add logout button  */}
+        <View className="flex-1" />
+        <TouchableOpacity
+          onPress={() => router.replace("/login")} // 👈 Navigate to login
+          className="p-1"
+        >
+          <LogOut color={colors.textDark} size={28} />
+        </TouchableOpacity>
+        <View></View>
       </View>
 
       {/* --- Presence Summary Bloc --- */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => router.push("/presence")}
-        className="rounded-2xl p-5 mb-6"
+        className="rounded-2xl p-5 mb-6 mx-5 mt-5"
         style={{
           backgroundColor: colors.cardBackground,
           shadowColor: "#000",
@@ -155,7 +165,7 @@ export default function DashboardScreen() {
 
       {/* Extra Hours Section */}
       <View
-        className="rounded-2xl p-5 mb-10"
+        className="rounded-2xl p-5 mb-10 mx-5"
         style={{
           backgroundColor: colors.cardBackground,
           shadowColor: "#000",

@@ -1,30 +1,31 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { ChevronLeft } from "lucide-react-native";
+import { router } from "expo-router";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function ReportsScreen() {
   const childrenList = useAppStore((state) => state.data.childrenList || []);
 
-  // 🏫 Build class list dynamically from childrenList
+  // Build class list dynamically
   const classes = useMemo(() => {
     if (!childrenList) return [];
     const unique = Array.from(new Set(childrenList.map((c) => c.className)));
     return unique.sort();
   }, [childrenList]);
 
-  // 📚 Selected states
+  // UI state
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
-  const [selectedChild, setSelectedChild] = useState<string | null>(null);
+  const [selectedChildren, setSelectedChildren] = useState<any[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [groupMode, setGroupMode] = useState(false);
 
-  // 🧒 Filter children by class
-  const filteredChildren = useMemo(() => {
-    if (!selectedClass || !childrenList) return [];
-    return childrenList.filter((c) => c.className === selectedClass);
-  }, [selectedClass, childrenList]);
+  // ✅ store each child's report data
+  const [reports, setReports] = useState<{ [childId: string]: any }>({});
 
-  // 🧾 Report form fields
+  // Form fields
   const [meal, setMeal] = useState("");
   const [nap, setNap] = useState("");
   const [activity, setActivity] = useState("");
@@ -33,24 +34,12 @@ export default function ReportsScreen() {
 
   const behaviorOptions = ["Calme", "Actif(ve)", "Fatigué(e)", "Agité(e)", "Malade"];
 
-  const handleSubmit = () => {
-    if (!selectedChild || !selectedClass) {
-      Alert.alert("Sélection requise", "Veuillez choisir une classe et un enfant.");
-      return;
-    }
+  const filteredChildren = useMemo(() => {
+    if (!selectedClass) return [];
+    return childrenList.filter((c) => c.className === selectedClass);
+  }, [selectedClass, childrenList]);
 
-    if (!meal || !nap || !activity) {
-      Alert.alert("Champs manquants", "Veuillez remplir tous les champs principaux.");
-      return;
-    }
-
-    const childData = childrenList?.find((c) => c.id === selectedChild);
-
-    Alert.alert(
-      "Rapport enregistré ✅",
-      `Rapport ajouté pour ${childData?.name || "Enfant inconnu"} (${selectedClass}).`
-    );
-
+  const resetForm = () => {
     setMeal("");
     setNap("");
     setActivity("");
@@ -58,36 +47,62 @@ export default function ReportsScreen() {
     setNotes("");
   };
 
+  const loadExistingReport = (child: any) => {
+    const existing = reports[child.id];
+    if (existing) {
+      setMeal(existing.meal);
+      setNap(existing.nap);
+      setActivity(existing.activity);
+      setBehavior(existing.behavior);
+      setNotes(existing.notes);
+    } else {
+      resetForm();
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!meal || !nap || !activity) {
+      Alert.alert("Champs manquants", "Veuillez remplir tous les champs principaux.");
+      return;
+    }
+
+    // Save reports for all selected children
+    setReports((prev) => {
+      const updated = { ...prev };
+      selectedChildren.forEach((child) => {
+        updated[child.id] = { meal, nap, activity, behavior, notes };
+      });
+      return updated;
+    });
+
+    const names = selectedChildren.map((c) => c.name).join(", ");
+    Alert.alert("Rapport enregistré ✅", `Rapport ajouté pour ${names}.`);
+
+    setShowModal(false);
+    setSelectedChildren([]);
+    setGroupMode(false);
+  };
+
   return (
     <ScrollView
-      className="flex-1 px-5 pt-4"
+      className="flex-1 pt-4"
       style={{ backgroundColor: colors.background }}
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
-      <View className="flex-row items-center justify-between mb-6">
-        <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
+      <View
+        className="flex-row items-center justify-between px-5 pt-12 pb-6"
+        style={{ backgroundColor: colors.accentLight }}
+      >
+        <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <ChevronLeft color={colors.textDark} size={28} />
+        </TouchableOpacity>
+        <Text className="text-xl text-center font-semibold" style={{ color: colors.textDark }}>
           Rapport par Enfant
         </Text>
-
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={{
-            backgroundColor: colors.accent,
-            borderRadius: 14,
-            paddingHorizontal: 14,
-            paddingVertical: 8,
-          }}
-          onPress={handleSubmit}
-        >
-          <View className="flex-row items-center">
-            <Ionicons name="save-outline" size={20} color="#fff" />
-            <Text className="text-white text-base ml-1 font-medium">Enregistrer</Text>
-          </View>
-        </TouchableOpacity>
       </View>
 
-      {/* Step 1: Select Class */}
+      {/* Step 1: Class selection */}
       <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
         <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
           Sélection de la Classe 🏫
@@ -99,7 +114,8 @@ export default function ReportsScreen() {
             className="py-3 px-4 mb-2 rounded-xl"
             onPress={() => {
               setSelectedClass(cls);
-              setSelectedChild(null);
+              setSelectedChildren([]);
+              setGroupMode(false);
             }}
             style={{
               backgroundColor: selectedClass === cls ? colors.accent : "#F8F8F8",
@@ -119,52 +135,128 @@ export default function ReportsScreen() {
         ))}
       </View>
 
-      {/* Step 2: Select Child */}
+      {/* Step 2: Child selection */}
       {selectedClass && (
         <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              setGroupMode(!groupMode);
+              setSelectedChildren([]);
+            }}
+            style={{
+              backgroundColor: groupMode ? colors.accent : "#F8F8F8",
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: colors.accent,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              marginBottom: 12,
+            }}
+          >
+            <Text className="font-medium" style={{ color: groupMode ? "#fff" : colors.textDark }}>
+              {groupMode ? "Mode Groupe Activé ✅" : "Créer un rapport groupé 🧒🧒"}
+            </Text>
+          </TouchableOpacity>
+
           <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
-            Enfant 👧
+            {groupMode ? "Sélectionnez les enfants :" : "Enfant 👧"}
           </Text>
-          {filteredChildren.length > 0 ? (
-            filteredChildren.map((child) => (
+
+          {filteredChildren.map((child) => {
+            const alreadyReported = Boolean(reports[child.id]);
+            const isSelected = selectedChildren.some((c) => c.id === child.id);
+
+            return (
               <TouchableOpacity
                 key={child.id}
                 activeOpacity={0.8}
-                className="py-3 px-4 mb-2 rounded-xl"
-                onPress={() => setSelectedChild(child.id)}
+                onPress={() => {
+                  if (groupMode) {
+                    setSelectedChildren((prev) =>
+                      isSelected ? prev.filter((c) => c.id !== child.id) : [...prev, child]
+                    );
+                  } else {
+                    setSelectedChildren([child]);
+                    loadExistingReport(child);
+                    setShowModal(true);
+                  }
+                }}
+                className="py-3 px-4 mb-2 rounded-xl flex-row justify-between items-center"
                 style={{
-                  backgroundColor: selectedChild === child.id ? colors.accent : "#F8F8F8",
+                  backgroundColor: isSelected
+                    ? colors.accentLight
+                    : alreadyReported
+                      ? "#E0F7E9"
+                      : "#F8F8F8",
                   borderWidth: 1,
-                  borderColor: colors.accent,
+                  borderColor: isSelected
+                    ? colors.accent
+                    : alreadyReported
+                      ? "#4CAF50"
+                      : colors.accent,
                 }}
               >
-                <Text
-                  className="text-base font-medium"
-                  style={{
-                    color: selectedChild === child.id ? "#fff" : colors.textDark,
-                  }}
-                >
+                <Text className="text-base font-medium" style={{ color: colors.textDark }}>
                   {child.name}
                 </Text>
+
+                {alreadyReported && <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />}
               </TouchableOpacity>
-            ))
-          ) : (
-            <Text style={{ color: colors.textLight }}>Aucun enfant trouvé.</Text>
+            );
+          })}
+
+          {groupMode && selectedChildren.length > 0 && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              style={{
+                backgroundColor: colors.accent,
+                borderRadius: 10,
+                paddingVertical: 12,
+                marginTop: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text className="text-white font-medium">
+                Créer le rapport pour {selectedChildren.length} enfants
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
       )}
 
-      {/* Step 3: Report Form */}
-      {selectedChild && (
-        <>
+      {/* Modal */}
+      <Modal visible={showModal} animationType="slide" onRequestClose={() => setShowModal(false)}>
+        <ScrollView
+          className="flex-1 px-5 pt-4"
+          style={{ backgroundColor: colors.background }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View className="flex-row items-center justify-between mb-6">
+            <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
+              {selectedChildren.length > 1
+                ? `Rapport de groupe (${selectedChildren.length} enfants)`
+                : `Rapport de ${selectedChildren[0]?.name}`}
+            </Text>
+            <TouchableOpacity onPress={() => setShowModal(false)}>
+              <Ionicons name="close-circle" size={28} color={colors.accent} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Form fields */}
           <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
               Repas 🍽️
             </Text>
             <TextInput
-              className="rounded-xl px-4 py-3 text-base"
-              placeholder="Ex: Poulet, légumes, compote..."
+              placeholder="Ex: Poulet, légumes..."
               placeholderTextColor={colors.textLight}
+              className="rounded-xl px-4 py-3 text-base"
               style={{
                 backgroundColor: "#F8F8F8",
                 color: colors.textDark,
@@ -181,9 +273,9 @@ export default function ReportsScreen() {
               Sieste 💤
             </Text>
             <TextInput
-              className="rounded-xl px-4 py-3 text-base"
               placeholder="Ex: 13h00 à 14h30"
               placeholderTextColor={colors.textLight}
+              className="rounded-xl px-4 py-3 text-base"
               style={{
                 backgroundColor: "#F8F8F8",
                 color: colors.textDark,
@@ -200,9 +292,9 @@ export default function ReportsScreen() {
               Activités 🎨
             </Text>
             <TextInput
-              className="rounded-xl px-4 py-3 text-base"
-              placeholder="Ex: Peinture, jeu libre, lecture..."
+              placeholder="Ex: Peinture, jeu libre..."
               placeholderTextColor={colors.textLight}
+              className="rounded-xl px-4 py-3 text-base"
               style={{
                 backgroundColor: "#F8F8F8",
                 color: colors.textDark,
@@ -214,7 +306,7 @@ export default function ReportsScreen() {
             />
           </View>
 
-          {/* Behavior options */}
+          {/* Behavior */}
           <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
               Comportement / Santé 💬
@@ -243,16 +335,17 @@ export default function ReportsScreen() {
             </View>
           </View>
 
+          {/* Notes */}
           <View className="rounded-2xl p-5 mb-8" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
-              Notes ou Leçons 📝
+              Notes 📝
             </Text>
             <TextInput
               multiline
               numberOfLines={4}
-              className="rounded-xl px-4 py-3 text-base"
               placeholder="Message pour les parents..."
               placeholderTextColor={colors.textLight}
+              className="rounded-xl px-4 py-3 text-base"
               style={{
                 backgroundColor: "#F8F8F8",
                 color: colors.textDark,
@@ -264,8 +357,26 @@ export default function ReportsScreen() {
               onChangeText={setNotes}
             />
           </View>
-        </>
-      )}
+
+          {/* Save button */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={{
+              backgroundColor: colors.accent,
+              borderRadius: 14,
+              paddingVertical: 12,
+              marginBottom: 30,
+              alignItems: "center",
+            }}
+            onPress={handleSubmit}
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="save-outline" size={20} color="#fff" />
+              <Text className="text-white text-base ml-2 font-medium">Enregistrer</Text>
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+      </Modal>
     </ScrollView>
   );
 }

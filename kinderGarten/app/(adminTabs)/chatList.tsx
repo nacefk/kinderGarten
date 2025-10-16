@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import colors from "@/config/colors";
+import { ChevronLeft } from "lucide-react-native";
 
 type ParentPreview = {
   id: string;
@@ -49,7 +50,7 @@ export default function ChatListScreen() {
           },
         })
       }
-      className="flex-row items-center mb-4 p-3 rounded-2xl"
+      className="flex-row items-center mb-4 p-3 rounded-2xl mx-5"
       style={{
         backgroundColor: colors.cardBackground,
         shadowColor: "#000",
@@ -83,8 +84,20 @@ export default function ChatListScreen() {
   );
 
   return (
-    <View className="flex-1 px-5 pt-4" style={{ backgroundColor: colors.background }}>
-      <Text className="text-2xl font-bold mb-6" style={{ color: colors.textDark }}>
+    <View className="flex-1px-5 pt-4" style={{ backgroundColor: colors.background }}>
+      {/* Header */}
+      <View
+        className="flex-row items-center justify-between px-5 pt-12 pb-6"
+        style={{ backgroundColor: colors.accentLight }}
+      >
+        <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <ChevronLeft color={colors.textDark} size={28} />
+        </TouchableOpacity>
+        <Text className="text-xl text-center font-semibold" style={{ color: colors.textDark }}>
+          Messagerie
+        </Text>
+      </View>
+      <Text className="text-2xl font-bold mb-6 mx-5 mt-4" style={{ color: colors.textDark }}>
         Messages
       </Text>
 
