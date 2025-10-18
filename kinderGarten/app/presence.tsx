@@ -1,23 +1,23 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Image, FlatList } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Image, FlatList, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 import HeaderBar from "@/components/Header";
 
 type PresenceStatus = "present" | "absent";
 
 export default function PresenceScreen() {
   const router = useRouter();
-  const classes = useAppStore((state) => state.data.classes || []);
-  const children = useAppStore((state) => state.data.childrenList || []);
+  const { data, setData } = useAppStore();
+  const classes = data.classes || [];
+  const children = data.childrenList || [];
 
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [presenceMap, setPresenceMap] = useState<Record<string, PresenceStatus>>({});
 
-  // Default all present
+  // ✅ Initialize presence (default all present)
   useEffect(() => {
     const initial = children.reduce((acc: Record<string, PresenceStatus>, c: any) => {
       acc[c.id] = "present";
@@ -26,22 +26,43 @@ export default function PresenceScreen() {
     setPresenceMap(initial);
   }, [children]);
 
+  // ✅ Toggle individual presence
   const togglePresence = (id: string) =>
     setPresenceMap((prev) => ({
       ...prev,
       [id]: prev[id] === "present" ? "absent" : "present",
     }));
 
+  // ✅ Mark all as present
   const markAllPresent = () => {
     const updated = Object.keys(presenceMap).reduce((acc, id) => ({ ...acc, [id]: "present" }), {});
     setPresenceMap(updated);
   };
 
+  // ✅ Save presence modifications
+  const handleSave = () => {
+    const attendanceToday = children.map((child: any) => ({
+      childId: child.id,
+      name: child.name,
+      className: child.className,
+      status: presenceMap[child.id] || "present",
+      time:
+        presenceMap[child.id] === "present"
+          ? new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+          : null,
+    }));
+
+    setData("attendanceToday", attendanceToday);
+    Alert.alert("Succès ✅", "Les présences ont été mises à jour avec succès.");
+  };
+
+  // ✅ Filtered children
   const filteredChildren = useMemo(() => {
     if (selectedClass === "all") return children;
     return children.filter((c: any) => c.className === selectedClass);
   }, [children, selectedClass]);
 
+  // ✅ Render child card
   const renderChild = ({ item }: { item: any }) => {
     const status = presenceMap[item.id] || "present";
     const isPresent = status === "present";
@@ -75,7 +96,12 @@ export default function PresenceScreen() {
             size={22}
             color={isPresent ? "#4CAF50" : "#E53935"}
           />
-          <Text className="ml-2 font-medium" style={{ color: isPresent ? "#4CAF50" : "#E53935" }}>
+          <Text
+            className="ml-2 font-medium"
+            style={{
+              color: isPresent ? "#4CAF50" : "#E53935",
+            }}
+          >
             {isPresent ? "Présent" : "Absent"}
           </Text>
         </View>
@@ -92,9 +118,9 @@ export default function PresenceScreen() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingHorizontal: 20, // small horizontal padding
+          paddingHorizontal: 20,
           paddingTop: 16,
-          paddingBottom: 40, // extra bottom space
+          paddingBottom: 120, // space for Save button
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -177,6 +203,26 @@ export default function PresenceScreen() {
           </Text>
         )}
       </ScrollView>
+
+      {/* ✅ Save Button (fixed bottom) */}
+      <View
+        className="absolute bottom-0 left-0 right-0 p-5"
+        style={{
+          backgroundColor: colors.background,
+          borderTopWidth: 1,
+          borderColor: "#EEE",
+        }}
+      >
+        <TouchableOpacity
+          onPress={handleSave}
+          className="py-4 rounded-2xl"
+          style={{ backgroundColor: colors.accent }}
+        >
+          <Text className="text-center text-white text-lg font-semibold">
+            Sauvegarder les modifications
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

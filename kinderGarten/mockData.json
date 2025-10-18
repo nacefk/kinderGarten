@@ -34,6 +34,46 @@
             "ageRange": "2–3 ans",
             "room": "Salle 3",
             "photo": "https://i.pravatar.cc/150?img=22"
+          },
+          {
+            "id": "class_004",
+            "name": "Crèche 1",
+            "teacher": "Mme Mariem Ayari",
+            "assistant": "Mlle Salma Chebbi",
+            "studentsCount": 15,
+            "ageRange": "1–2 ans",
+            "room": "Salle 4",
+            "photo": "https://i.pravatar.cc/150?img=18"
+          },
+          {
+            "id": "class_005",
+            "name": "Grande Section",
+            "teacher": "Mme Rania Saidi",
+            "assistant": "Mlle Rahma Mejri",
+            "studentsCount": 18,
+            "ageRange": "5–6 ans",
+            "room": "Salle 5",
+            "photo": "https://i.pravatar.cc/150?img=35"
+          },
+          {
+            "id": "class_006",
+            "name": "Maternelle Mixte",
+            "teacher": "Mme Leila Fakhfakh",
+            "assistant": "M. Anis Bouzid",
+            "studentsCount": 20,
+            "ageRange": "3–6 ans",
+            "room": "Salle 6",
+            "photo": "https://i.pravatar.cc/150?img=40"
+          },
+          {
+            "id": "class_007",
+            "name": "Section Anglophone",
+            "teacher": "Mme Sarah Abdallah",
+            "assistant": "Mlle Lina Gharbi",
+            "studentsCount": 14,
+            "ageRange": "4–6 ans",
+            "room": "Salle 7",
+            "photo": "https://i.pravatar.cc/150?img=45"
           }
         ]
       },
