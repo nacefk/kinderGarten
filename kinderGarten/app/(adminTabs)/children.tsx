@@ -9,17 +9,18 @@ import {
   Alert,
   ScrollView,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
+import { getChildren } from "@/api/children";
 
 export default function ChildrenScreen() {
   const router = useRouter();
   const classes = useAppStore((state) => state.data.classes || []);
-  const children = useAppStore((state) => state.data.childrenList || []);
   const { setData } = useAppStore();
 
   const [selectedClass, setSelectedClass] = useState<string>("all");
@@ -31,12 +32,25 @@ export default function ChildrenScreen() {
   const [childAge, setChildAge] = useState("");
   const [childParent, setChildParent] = useState("");
   const [childClass, setChildClass] = useState<string>("");
-
+  const [children, setChildren] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (classes.length && !childClass) {
       setChildClass(classes[0]?.name || "");
     }
   }, [classes]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getChildren();
+        setChildren(data);
+      } catch (e) {
+        console.error("❌ Error fetching children:", e.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   // ✅ Payment status helper (random)
   const getPaymentStatus = () => {
@@ -177,7 +191,12 @@ export default function ChildrenScreen() {
       </TouchableOpacity>
     );
   };
-
+  if (loading)
+    return (
+      <View className="flex-1 justify-center items-center">
+        <ActivityIndicator color={colors.accent} size="large" />
+      </View>
+    );
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <HeaderBar title="Gestion des Enfants" showBack={true} />

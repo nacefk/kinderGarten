@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
@@ -12,39 +11,90 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import colors from "@/config/colors";
+import { setAuthToken } from "@/api/api";
 
 export default function Login() {
   const router = useRouter();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("1234");
+
+  // 👤 Local state
+  const [tenant, setTenant] = useState("arc-en-ciel"); // ✅ will be needed for multi-tenant login
+  const [username, setUsername] = useState("admin_arc");
+  const [password, setPassword] = useState("admin123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const API_URL = "http://192.168.0.37:8000/api/accounts/login/";
+
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert("Missing Fields", "Please enter both username and password.");
+    if (!username || !password || !tenant) {
+      Alert.alert("Missing Fields", "Please enter tenant, username, and password.");
       return;
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
 
-      if (username === "admin" && password === "1234") {
+    // 👀 Log the request
+    console.log("📤 Sending login request to:", API_URL);
+    console.log("➡️ Payload:", {
+      tenant,
+      username: username.trim(),
+      password: "[HIDDEN]",
+    });
+
+    try {
+      const res = await axios.post(API_URL, {
+        tenant,
+        username: username.trim(),
+        password: password.trim(),
+      });
+
+      // ✅ Log response
+      console.log("✅ Login response:");
+      console.log("   Status:", res.status);
+      console.log("   Headers:", res.headers);
+      console.log("   Data:", res.data);
+
+      const { access, refresh, role } = res.data;
+
+      // ✅ Save tokens
+      await AsyncStorage.setItem("access_token", access);
+      await AsyncStorage.setItem("refresh_token", refresh);
+      await AsyncStorage.setItem("tenant_slug", tenant);
+
+      // ✅ Set auth token for axios
+      setAuthToken(access);
+
+      // ✅ Redirect based on role
+      if (role === "admin") {
         router.replace("/(adminTabs)/dashboard");
-      } else if (username === "parent" && password === "1234") {
-        router.replace("/(tabs)/home");
       } else {
-        Alert.alert("Login Failed", "Invalid username or password");
+        router.replace("/(tabs)/home");
       }
-    }, 1000);
+    } catch (error: any) {
+      console.error("❌ Login error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
+
+      Alert.alert(
+        "Login Failed",
+        error.response?.data?.detail ||
+          error.response?.data?.non_field_errors?.[0] ||
+          "Invalid username, password, or tenant."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View className="flex-1 justify-center px-6" style={{ backgroundColor: colors.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        {/* Card */}
         <View
           className="rounded-3xl p-8"
           style={{
@@ -55,13 +105,29 @@ export default function Login() {
             elevation: 4,
           }}
         >
-          {/* Title */}
+          {/* --- Title --- */}
           <Text className="text-2xl font-bold text-center mb-1" style={{ color: colors.textDark }}>
             Welcome 👋
           </Text>
           <Text className="text-base text-center mb-8" style={{ color: colors.text }}>
             Please sign in with your administrator or parent credentials.
           </Text>
+
+          {/* Tenant Input */}
+          <TextInput
+            className="w-full rounded-2xl px-5 py-4 text-base mb-4"
+            placeholder="Crèche slug (e.g. arc-en-ciel)"
+            placeholderTextColor={colors.textLight}
+            style={{
+              backgroundColor: "#F8F8F8",
+              color: colors.textDark,
+              borderWidth: 1,
+              borderColor: "#E5E7EB",
+            }}
+            value={tenant}
+            onChangeText={setTenant}
+            autoCapitalize="none"
+          />
 
           {/* Username Input */}
           <TextInput
@@ -143,8 +209,8 @@ export default function Login() {
               className="mr-2"
             />
             <Text style={{ color: colors.text }}>
-              <Text className="font-semibold">Note:</Text> If you forgot your credentials, please
-              contact the administrator.
+              <Text className="font-semibold">Note:</Text> Enter your kindergarten’s slug, username,
+              and password to sign in.
             </Text>
           </View>
         </View>
