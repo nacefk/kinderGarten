@@ -1,23 +1,29 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Image, FlatList, StatusBar } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Image, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LogOut } from "lucide-react-native";
 import colors from "@/config/colors";
 import { useRouter } from "expo-router";
 import { useAppStore } from "@/store/useAppStore";
-import { ChevronLeft, LogOut } from "lucide-react-native";
 
 type PresenceStatus = "present" | "absent";
+type ExtraHourStatus = "pending" | "approved" | "rejected";
 
 export default function DashboardScreen() {
   const router = useRouter();
-
   const classes = useAppStore((state) => state.data.classes || []);
   const children = useAppStore((state) => state.data.childrenList || []);
 
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [presenceMap, setPresenceMap] = useState<Record<string, PresenceStatus>>({});
+  const [extraHourRequests, setExtraHourRequests] = useState<
+    { id: string; name: string; hours: string; status: ExtraHourStatus }[]
+  >([
+    { id: "1", name: "Sophie Dupont", hours: "17h00 → 18h30", status: "pending" },
+    { id: "2", name: "Alex Martin", hours: "16h30 → 17h30", status: "pending" },
+  ]);
 
-  // ✅ Default presence: all present
+  // ✅ Initialize presence
   useEffect(() => {
     const initial = children.reduce((acc: Record<string, PresenceStatus>, c: any) => {
       acc[c.id] = "present";
@@ -26,7 +32,7 @@ export default function DashboardScreen() {
     setPresenceMap(initial);
   }, [children]);
 
-  // ✅ Toggle individual presence
+  // ✅ Toggle presence
   const togglePresence = (id: string) => {
     setPresenceMap((prev) => ({
       ...prev,
@@ -34,76 +40,21 @@ export default function DashboardScreen() {
     }));
   };
 
-  // ✅ Mark all present
-  const markAllPresent = () => {
-    const updated = Object.keys(presenceMap).reduce((acc, id) => ({ ...acc, [id]: "present" }), {});
-    setPresenceMap(updated);
+  // ✅ Approve or reject extra hour request
+  const handleApprove = (id: string) => {
+    setExtraHourRequests((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: "approved" } : r))
+    );
   };
 
-  // ✅ Filtered children by class
-  const filteredChildren = useMemo(() => {
-    if (selectedClass === "all") return children;
-    return children.filter((c: any) => c.className === selectedClass);
-  }, [children, selectedClass]);
-
-  // ✅ Extra hours
-  const extraHourRequests = [
-    { id: "1", name: "Sophie Dupont", hours: "17h00 → 18h30" },
-    { id: "2", name: "Alex Martin", hours: "16h30 → 17h30" },
-  ];
-
-  const renderChild = ({ item }: { item: any }) => {
-    const status = presenceMap[item.id] || "present";
-    const isPresent = status === "present";
-
-    return (
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={() => togglePresence(item.id)}
-        className="flex-row items-center mb-3 p-3 rounded-2xl"
-        style={{
-          backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowRadius: 3,
-          elevation: 2,
-        }}
-      >
-        <Image source={{ uri: item.avatar }} className="w-12 h-12 rounded-full mr-3" />
-        <View className="flex-1">
-          <Text className="text-base font-medium" style={{ color: colors.textDark }}>
-            {item.name}
-          </Text>
-          <Text className="text-xs" style={{ color: colors.textLight }}>
-            {item.className} · {item.age} ans
-          </Text>
-        </View>
-
-        <View className="flex-row items-center">
-          <Ionicons
-            name={isPresent ? "checkmark-circle" : "close-circle"}
-            size={22}
-            color={isPresent ? "#4CAF50" : "#E53935"}
-          />
-          <Text
-            className="ml-2 font-medium"
-            style={{
-              color: isPresent ? "#4CAF50" : "#E53935",
-            }}
-          >
-            {isPresent ? "Présent" : "Absent"}
-          </Text>
-        </View>
-      </TouchableOpacity>
+  const handleReject = (id: string) => {
+    setExtraHourRequests((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: "rejected" } : r))
     );
   };
 
   return (
-    <ScrollView
-      className="flex-1 "
-      style={{ backgroundColor: colors.background }}
-      showsVerticalScrollIndicator={false}
-    >
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
       {/* En-tête */}
@@ -111,16 +62,11 @@ export default function DashboardScreen() {
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
       >
-        <View className="flex-row items-center"></View>
-        {/* add logout button  */}
+        <View className="flex-row items-center" />
         <View className="flex-1" />
-        <TouchableOpacity
-          onPress={() => router.replace("/login")} // 👈 Navigate to login
-          className="p-1"
-        >
+        <TouchableOpacity onPress={() => router.replace("/login")} className="p-1">
           <LogOut color={colors.textDark} size={28} />
         </TouchableOpacity>
-        <View></View>
       </View>
 
       {/* --- Presence Summary Bloc --- */}
@@ -163,7 +109,7 @@ export default function DashboardScreen() {
         </View>
       </TouchableOpacity>
 
-      {/* Extra Hours Section */}
+      {/* 🕒 Heures Supplémentaires */}
       <View
         className="rounded-2xl p-5 mb-10 mx-5"
         style={{
@@ -195,22 +141,38 @@ export default function DashboardScreen() {
                 {req.hours}
               </Text>
             </View>
-            <View className="flex-row">
-              <TouchableOpacity
-                className="mr-2 px-3 py-1 rounded-lg"
-                style={{ backgroundColor: "#4CAF50" }}
-              >
-                <Text className="text-white text-sm">✔</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="px-3 py-1 rounded-lg"
-                style={{ backgroundColor: "#E53935" }}
-              >
-                <Text className="text-white text-sm">✖</Text>
-              </TouchableOpacity>
-            </View>
+
+            {/* Status or actions */}
+            {req.status === "pending" ? (
+              <View className="flex-row">
+                <TouchableOpacity
+                  onPress={() => handleApprove(req.id)}
+                  className="mr-2 px-3 py-1 rounded-lg"
+                  style={{ backgroundColor: "#4CAF50" }}
+                >
+                  <Text className="text-white text-sm">✔</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleReject(req.id)}
+                  className="px-3 py-1 rounded-lg"
+                  style={{ backgroundColor: "#E53935" }}
+                >
+                  <Text className="text-white text-sm">✖</Text>
+                </TouchableOpacity>
+              </View>
+            ) : req.status === "approved" ? (
+              <Text style={{ color: "#4CAF50", fontWeight: "600" }}>Approuvé ✅</Text>
+            ) : (
+              <Text style={{ color: "#E53935", fontWeight: "600" }}>Refusé ❌</Text>
+            )}
           </View>
         ))}
+
+        {extraHourRequests.length === 0 && (
+          <Text style={{ color: colors.textLight, textAlign: "center", marginTop: 10 }}>
+            Aucune demande pour le moment.
+          </Text>
+        )}
       </View>
     </ScrollView>
   );

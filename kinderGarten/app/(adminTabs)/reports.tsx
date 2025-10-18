@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
+import HeaderBar from "@/components/Header";
 
 export default function ReportsScreen() {
   const childrenList = useAppStore((state) => state.data.childrenList || []);
@@ -85,22 +86,12 @@ export default function ReportsScreen() {
 
   return (
     <ScrollView
-      className="flex-1 pt-4"
+      className="flex-1 "
       style={{ backgroundColor: colors.background }}
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
-      <View
-        className="flex-row items-center justify-between px-5 pt-12 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
-      >
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <ChevronLeft color={colors.textDark} size={28} />
-        </TouchableOpacity>
-        <Text className="text-xl text-center font-semibold" style={{ color: colors.textDark }}>
-          Rapport par Enfant
-        </Text>
-      </View>
+      <HeaderBar title="Rapport par Enfant" showBack={true} />
 
       {/* Step 1: Class selection */}
       <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>

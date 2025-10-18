@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import { ChevronLeft } from "lucide-react-native";
+import HeaderBar from "@/components/Header";
 
 export default function ChildrenScreen() {
   const router = useRouter();
@@ -145,19 +146,9 @@ export default function ChildrenScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View className="flex-1 " style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View
-        className="flex-row items-center justify-between px-5 pt-12 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
-      >
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <ChevronLeft color={colors.textDark} size={28} />
-        </TouchableOpacity>
-        <Text className="text-xl text-center font-semibold" style={{ color: colors.textDark }}>
-          Gestion des Enfants
-        </Text>
-      </View>
+      <HeaderBar title="Gestion des Enfants" showBack={true} />
 
       {/* Main content */}
       <View className="flex-1 px-5 pt-4">

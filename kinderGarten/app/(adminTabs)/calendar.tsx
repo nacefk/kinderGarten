@@ -15,6 +15,7 @@ import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
+import HeaderBar from "@/components/Header";
 
 interface EventItem {
   id: string;
@@ -299,19 +300,10 @@ export default function CalendarScreen() {
 
   // ---------- UI ----------
   return (
-    <View className="flex-1 pt-4" style={{ backgroundColor: colors.background }}>
+    <View className="flex-1 " style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View
-        className="flex-row items-center justify-between px-5 pt-12 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
-      >
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
-          <ChevronLeft color={colors.textDark} size={28} />
-        </TouchableOpacity>
-        <Text className="text-xl text-center font-semibold" style={{ color: colors.textDark }}>
-          Calendrier
-        </Text>
-      </View>
+      <HeaderBar title="Calendrier" showBack={true} />
+
       {/* Tabs */}
       <View className="flex-row mb-6 bg-white rounded-2xl p-1 shadow-sm mx-5 mt-4">
         {["events", "plan"].map((tab) => (

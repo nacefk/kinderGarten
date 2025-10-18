@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "expo-router";
+import { ChevronLeft } from "lucide-react-native";
+import HeaderBar from "@/components/Header";
 
 type PresenceStatus = "present" | "absent";
 
@@ -82,48 +84,9 @@ export default function PresenceScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* ✅ Custom Header */}
-      <View
-        className="flex-row items-center justify-between px-5 py-4"
-        style={{
-          backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
-          shadowOpacity: 0.08,
-          shadowRadius: 4,
-          elevation: 3,
-        }}
-      >
-        {/* Back button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 4,
-          }}
-        >
-          <Ionicons name="arrow-back" size={22} color={colors.textDark} />
-          <Text
-            style={{
-              marginLeft: 6,
-              color: colors.textDark,
-              fontWeight: "500",
-              fontSize: 15,
-            }}
-          >
-            Retour
-          </Text>
-        </TouchableOpacity>
-
-        {/* Title */}
-        <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-          Présence du jour
-        </Text>
-
-        {/* Spacer to balance layout */}
-        <View style={{ width: 50 }} />
-      </View>
+      <HeaderBar title="Gestion de la Présence" showBack={true} />
 
       {/* ✅ Content */}
       <ScrollView
