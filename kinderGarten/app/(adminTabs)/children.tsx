@@ -17,11 +17,10 @@ import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
 import { getChildren } from "@/api/children";
-
+import { createClass, getClasses } from "@/api/class";
+import { createChild } from "@/api/children";
 export default function ChildrenScreen() {
   const router = useRouter();
-  const classes = useAppStore((state) => state.data.classes || []);
-  const { setData } = useAppStore();
 
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,6 +33,54 @@ export default function ChildrenScreen() {
   const [childClass, setChildClass] = useState<string>("");
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [classes, setClasses] = useState<any[]>([]);
+  const handleAddClass = async () => {
+    if (!newClassName.trim()) {
+      Alert.alert("Nom manquant", "Veuillez entrer un nom de classe.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const created = await createClass(newClassName.trim());
+      const updated = [...classes, created];
+      setClasses(updated);
+      setNewClassName("");
+      setShowAddClass(false);
+      Alert.alert("Succès", "Classe ajoutée !");
+    } catch (e: any) {
+      console.error("❌ Error creating class:", e.message);
+      Alert.alert("Erreur", "Impossible d’ajouter la classe.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleAddChild = async () => {
+    if (!childName.trim() || !childAge.trim() || !childParent.trim()) {
+      Alert.alert("Champs manquants", "Veuillez remplir tous les champs.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const classObj = classes.find((c: any) => c.name === childClass);
+      const created = await createChild({
+        name: childName.trim(),
+        age: parseInt(childAge),
+        parent_name: childParent.trim(),
+        classroom: classObj?.id,
+      });
+      const updated = [...children, created];
+      setChildren(updated);
+      setShowAddChild(false);
+      Alert.alert("Succès", "Enfant ajouté !");
+    } catch (e: any) {
+      console.error("❌ Error creating child:", e.message);
+      Alert.alert("Erreur", "Impossible d’ajouter l’enfant.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (classes.length && !childClass) {
       setChildClass(classes[0]?.name || "");
@@ -41,11 +88,30 @@ export default function ChildrenScreen() {
   }, [classes]);
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
-        const data = await getChildren();
+        const classObj = classes.find((c: any) => c.name === selectedClass);
+        const data = await getChildren(classObj ? classObj.id : undefined);
         setChildren(data);
+        console.log("children", data);
       } catch (e) {
         console.error("❌ Error fetching children:", e.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [selectedClass]);
+  // Fetch classes and children when we open the screen
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const classData = await getClasses();
+        setClasses(classData);
+        const childData = await getChildren();
+        setChildren(childData);
+      } catch (e) {
+        console.error("❌ Error fetching data:", e.message);
       } finally {
         setLoading(false);
       }
@@ -73,59 +139,6 @@ export default function ChildrenScreen() {
     );
   }, [children, searchQuery, selectedClass]);
 
-  // ✅ Add class
-  const handleAddClass = () => {
-    if (!newClassName.trim()) {
-      Alert.alert("Nom manquant", "Veuillez entrer un nom de classe.");
-      return;
-    }
-    const trimmed = newClassName.trim();
-    if (classes.find((cls: any) => cls.name === trimmed)) {
-      Alert.alert("Doublon", "Cette classe existe déjà.");
-      return;
-    }
-    const updated = [
-      ...classes,
-      {
-        id: Date.now().toString(),
-        name: trimmed,
-        teacher: "",
-        assistant: "",
-        studentsCount: 0,
-        ageRange: "",
-        room: "",
-      },
-    ];
-    setData("classes", updated);
-    setNewClassName("");
-    setShowAddClass(false);
-    Alert.alert("Succès", "Classe ajoutée avec succès !");
-  };
-
-  // ✅ Add child
-  const handleAddChild = () => {
-    if (!childName.trim() || !childAge.trim() || !childParent.trim()) {
-      Alert.alert("Champs manquants", "Veuillez remplir tous les champs.");
-      return;
-    }
-    const newChild = {
-      id: Date.now().toString(),
-      name: childName.trim(),
-      age: parseInt(childAge),
-      className: childClass,
-      parents: childParent.trim(),
-      avatar: `https://i.pravatar.cc/150?u=${Date.now()}`,
-      attendanceStatus: "present",
-    };
-    const updated = [...children, newChild];
-    setData("childrenList", updated);
-    setChildName("");
-    setChildAge("");
-    setChildParent("");
-    setShowAddChild(false);
-    Alert.alert("Succès", "Enfant ajouté avec succès !");
-  };
-
   // ✅ Delete child
   const handleDeleteChild = (id: string) => {
     Alert.alert("Supprimer l'enfant", "Voulez-vous vraiment supprimer cet enfant ?", [
@@ -135,7 +148,7 @@ export default function ChildrenScreen() {
         style: "destructive",
         onPress: () => {
           const updated = children.filter((c: any) => c.id !== id);
-          setData("childrenList", updated);
+          setChildren(updated);
         },
       },
     ]);
@@ -150,11 +163,11 @@ export default function ChildrenScreen() {
         style: "destructive",
         onPress: () => {
           const updatedClasses = classes.filter((c: any) => c.name !== clsName);
-          setData("classes", updatedClasses);
+          setClasses(updatedClasses);
 
           // Also remove children in that class
           const updatedChildren = children.filter((c: any) => c.className !== clsName);
-          setData("childrenList", updatedChildren);
+          setChildren(updatedChildren);
         },
       },
     ]);

@@ -20,9 +20,9 @@ export default function Login() {
   const router = useRouter();
 
   // 👤 Local state
-  const [tenant, setTenant] = useState("arc-en-ciel"); // ✅ will be needed for multi-tenant login
-  const [username, setUsername] = useState("admin_arc");
-  const [password, setPassword] = useState("admin123");
+  const [tenant, setTenant] = useState("test"); // ✅ will be needed for multi-tenant login
+  const [username, setUsername] = useState("test");
+  const [password, setPassword] = useState("test123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
