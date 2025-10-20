@@ -14,11 +14,13 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import colors from "@/config/colors";
-import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
-import { getChildren } from "@/api/children";
+import { deleteChild, getChildren, uploadAvatar } from "@/api/children";
 import { createClass, getClasses } from "@/api/class";
 import { createChild } from "@/api/children";
+import * as ImagePicker from "expo-image-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
 export default function ChildrenScreen() {
   const router = useRouter();
 
@@ -34,6 +36,9 @@ export default function ChildrenScreen() {
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<any[]>([]);
+  const [childBirthdate, setChildBirthdate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [childImage, setChildImage] = useState<string | null>(null);
   const handleAddClass = async () => {
     if (!newClassName.trim()) {
       Alert.alert("Nom manquant", "Veuillez entrer un nom de classe.");
@@ -54,8 +59,75 @@ export default function ChildrenScreen() {
       setLoading(false);
     }
   };
+  // 📅 Pick birthdate
+  const handlePickDate = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setChildBirthdate(selectedDate);
+    }
+  };
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission refusée", "Veuillez autoriser l’accès à la caméra.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setChildImage(result.assets[0].uri);
+    }
+  };
+
+  // 🖼️ Pick or take image
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission refusée", "Veuillez autoriser l’accès à la galerie.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images", // ✅ replaces MediaTypeOptions.Images
+      allowsEditing: true, // enables cropping
+      aspect: [1, 1],
+      quality: 0.9,
+      selectionLimit: 1, // new field
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setChildImage(result.assets[0].uri);
+    }
+  };
+  const handleDeleteChild = (id: string) => {
+    Alert.alert("Supprimer l'enfant", "Voulez-vous vraiment supprimer cet enfant ?", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteChild(Number(id));
+            const updated = children.filter((c: any) => c.id !== id);
+            setChildren(updated);
+            Alert.alert("Succès", "L'enfant a été supprimé !");
+          } catch (e: any) {
+            console.error("❌ Error deleting child:", e.response?.data || e.message);
+            Alert.alert("Erreur", "Impossible de supprimer cet enfant.");
+          }
+        },
+      },
+    ]);
+  };
+
   const handleAddChild = async () => {
-    if (!childName.trim() || !childAge.trim() || !childParent.trim()) {
+    if (!childName.trim() || !childBirthdate || !childParent.trim()) {
       Alert.alert("Champs manquants", "Veuillez remplir tous les champs.");
       return;
     }
@@ -63,19 +135,35 @@ export default function ChildrenScreen() {
     setLoading(true);
     try {
       const classObj = classes.find((c: any) => c.name === childClass);
+
+      // ✅ Upload image first (if it's a local file)
+      let avatarUrl = "https://cdn-icons-png.flaticon.com/512/1946/1946429.png";
+      if (childImage && !childImage.startsWith("http")) {
+        avatarUrl = await uploadAvatar(childImage);
+      } else if (childImage) {
+        avatarUrl = childImage;
+      }
+
+      // ✅ Then create the child with remote image URL
       const created = await createChild({
         name: childName.trim(),
-        age: parseInt(childAge),
+        birthdate: childBirthdate.toISOString().split("T")[0],
         parent_name: childParent.trim(),
         classroom: classObj?.id,
+        avatar: avatarUrl,
       });
-      const updated = [...children, created];
-      setChildren(updated);
+
+      setChildren([...children, created]);
       setShowAddChild(false);
       Alert.alert("Succès", "Enfant ajouté !");
     } catch (e: any) {
-      console.error("❌ Error creating child:", e.message);
-      Alert.alert("Erreur", "Impossible d’ajouter l’enfant.");
+      console.error("❌ Error creating child:", e.response?.data || e.message);
+      console.log(
+        "Erreur",
+        e.response?.data
+          ? JSON.stringify(e.response.data, null, 2)
+          : "Impossible d’ajouter l’enfant."
+      );
     } finally {
       setLoading(false);
     }
@@ -138,21 +226,6 @@ export default function ChildrenScreen() {
       child.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [children, searchQuery, selectedClass]);
-
-  // ✅ Delete child
-  const handleDeleteChild = (id: string) => {
-    Alert.alert("Supprimer l'enfant", "Voulez-vous vraiment supprimer cet enfant ?", [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: () => {
-          const updated = children.filter((c: any) => c.id !== id);
-          setChildren(updated);
-        },
-      },
-    ]);
-  };
 
   // ✅ Delete class
   const handleDeleteClass = (clsName: string) => {
@@ -426,20 +499,98 @@ export default function ChildrenScreen() {
               }}
             />
 
-            <TextInput
-              placeholder="Âge"
-              keyboardType="numeric"
-              placeholderTextColor={colors.textLight}
-              value={childAge}
-              onChangeText={setChildAge}
-              className="rounded-xl px-4 py-3 text-base mb-3"
+            {/* 📅 Birthdate picker */}
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              className="rounded-xl px-4 py-3 mb-3"
               style={{
                 backgroundColor: "#F8F8F8",
-                color: colors.textDark,
                 borderWidth: 1,
                 borderColor: "#E5E7EB",
               }}
-            />
+            >
+              <Text style={{ color: colors.textDark }}>
+                {childBirthdate ? childBirthdate.toLocaleDateString() : "Date de naissance"}
+              </Text>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={childBirthdate || new Date()}
+                mode="date"
+                display="spinner"
+                onChange={handlePickDate}
+                maximumDate={new Date()}
+              />
+            )}
+
+            {/* 🖼️ Image picker */}
+            <View className="items-center mb-6">
+              <TouchableOpacity
+                onPress={() =>
+                  Alert.alert("Photo de l'enfant", "Choisissez une option :", [
+                    { text: "📷 Prendre une photo", onPress: takePhoto },
+                    { text: "🖼️ Galerie", onPress: pickImage },
+                    { text: "Annuler", style: "cancel" },
+                  ])
+                }
+                activeOpacity={0.9}
+                style={{
+                  shadowColor: "#000",
+                  shadowOpacity: 0.08,
+                  shadowRadius: 4,
+                  elevation: 2,
+                  borderRadius: 80,
+                }}
+              >
+                <View
+                  style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 60,
+                    backgroundColor: "#F9FAFB",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Image
+                    source={{
+                      uri: childImage || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
+                    }}
+                    style={{
+                      width: 120,
+                      height: 120,
+                      borderRadius: 60,
+                    }}
+                  />
+
+                  {/* Overlay icon */}
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: 8,
+                      right: 8,
+                      backgroundColor: "rgba(255,255,255,0.9)",
+                      borderRadius: 20,
+                      padding: 6,
+                    }}
+                  >
+                    <Ionicons name="camera-outline" size={20} color="#6B7280" />
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              <Text
+                style={{
+                  marginTop: 8,
+                  color: "#6B7280",
+                  fontSize: 14,
+                  fontWeight: "500",
+                }}
+              >
+                {childImage ? "Modifier la photo" : "Ajouter une photo"}
+              </Text>
+            </View>
 
             <TextInput
               placeholder="Nom du parent"

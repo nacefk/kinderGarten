@@ -14,20 +14,49 @@ export async function getChildren(classroomId?: string) {
 
 export async function createChild({
   name,
-  age,
+  birthdate,
   parent_name,
   classroom,
+  avatar,
 }: {
+  birthdate: string;
   name: string;
-  age: number;
   parent_name: string;
   classroom?: number;
+  avatar?: string;
 }) {
   const token = await AsyncStorage.getItem("access_token");
   const res = await axios.post(
     API_URL,
-    { name, age, parent_name, classroom },
+    { name, birthdate, parent_name, classroom, avatar },
     { headers: { Authorization: `Bearer ${token}` } }
   );
+  return res.data;
+}
+export async function uploadAvatar(uri: string): Promise<string> {
+  const token = await AsyncStorage.getItem("access_token");
+
+  // Prepare multipart form data for Django
+  const formData = new FormData();
+  formData.append("file", {
+    uri,
+    name: `avatar_${Date.now()}.jpg`,
+    type: "image/jpeg",
+  } as any);
+
+  const res = await axios.post(`${API_URL}upload-avatar/`, formData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return res.data.url; // ✅ Django returns { "url": "https://..." }
+}
+export async function deleteChild(id: number) {
+  const token = await AsyncStorage.getItem("access_token");
+  const res = await axios.delete(`${API_URL}${id}/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return res.data;
 }
