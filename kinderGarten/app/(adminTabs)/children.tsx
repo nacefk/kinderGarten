@@ -39,6 +39,8 @@ export default function ChildrenScreen() {
   const [childBirthdate, setChildBirthdate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [childImage, setChildImage] = useState<string | null>(null);
+  const [hasMobileApp, setHasMobileApp] = useState(false);
+
   const handleAddClass = async () => {
     if (!newClassName.trim()) {
       Alert.alert("Nom manquant", "Veuillez entrer un nom de classe.");
@@ -61,11 +63,23 @@ export default function ChildrenScreen() {
   };
   // 📅 Pick birthdate
   const handlePickDate = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
+    if (event.type === "set" && selectedDate) {
       setChildBirthdate(selectedDate);
     }
+    if (event.type === "dismissed") {
+      setShowDatePicker(false);
+    }
   };
+  const resetChildForm = () => {
+    setChildName("");
+    setChildBirthdate(null);
+    setChildParent("");
+    setChildImage(null);
+    setHasMobileApp(false);
+    setShowDatePicker(false);
+    if (classes.length) setChildClass(classes[0]?.name || "");
+  };
+
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
@@ -151,11 +165,21 @@ export default function ChildrenScreen() {
         parent_name: childParent.trim(),
         classroom: classObj?.id,
         avatar: avatarUrl,
+        hasMobileApp: hasMobileApp,
       });
+      setChildren([...children, created]);
+      setShowAddChild(false);
+
+      let message = "L’enfant a été ajouté avec succès !";
+
+      console.log("response", created);
 
       setChildren([...children, created]);
       setShowAddChild(false);
-      Alert.alert("Succès", "Enfant ajouté !");
+      if (hasMobileApp) {
+        message += `\n\nIdentifiants de connexion :\n👤 ${created.username}\n🔑 ${created.password}`;
+      }
+      Alert.alert("Succès 🎉", message);
     } catch (e: any) {
       console.error("❌ Error creating child:", e.response?.data || e.message);
       console.log(
@@ -168,6 +192,32 @@ export default function ChildrenScreen() {
       setLoading(false);
     }
   };
+  <View
+    className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
+    style={{
+      backgroundColor: "#F8F8F8",
+      borderWidth: 1,
+      borderColor: "#E5E7EB",
+    }}
+  >
+    <TouchableOpacity
+      style={{ flex: 1 }}
+      onPress={() => setShowDatePicker(true)}
+      activeOpacity={0.8}
+    >
+      <Text style={{ color: colors.textDark }}>
+        {childBirthdate ? childBirthdate.toLocaleDateString() : "Date de naissance"}
+      </Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => setShowDatePicker(!showDatePicker)} activeOpacity={0.8}>
+      <Ionicons
+        name={showDatePicker ? "close" : "calendar-outline"}
+        size={20}
+        color={colors.textLight}
+      />
+    </TouchableOpacity>
+  </View>;
 
   useEffect(() => {
     if (classes.length && !childClass) {
@@ -398,7 +448,10 @@ export default function ChildrenScreen() {
       <View className="absolute bottom-8 right-8">
         {/* Add Child */}
         <TouchableOpacity
-          onPress={() => setShowAddChild(true)}
+          onPress={() => {
+            setShowAddChild(true);
+            resetChildForm();
+          }} // ✅ clear fields
           className="w-14 h-14 rounded-full items-center justify-center mb-3"
           style={{
             backgroundColor: colors.accent,
@@ -500,19 +553,35 @@ export default function ChildrenScreen() {
             />
 
             {/* 📅 Birthdate picker */}
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              className="rounded-xl px-4 py-3 mb-3"
+            <View
+              className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
               style={{
                 backgroundColor: "#F8F8F8",
                 borderWidth: 1,
                 borderColor: "#E5E7EB",
               }}
             >
-              <Text style={{ color: colors.textDark }}>
-                {childBirthdate ? childBirthdate.toLocaleDateString() : "Date de naissance"}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1 }}
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: colors.textDark }}>
+                  {childBirthdate ? childBirthdate.toLocaleDateString() : "Date de naissance"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(!showDatePicker)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={showDatePicker ? "chevron-up-outline" : "calendar-outline"}
+                  size={20}
+                  color={colors.textLight}
+                />
+              </TouchableOpacity>
+            </View>
 
             {showDatePicker && (
               <DateTimePicker
@@ -635,6 +704,52 @@ export default function ChildrenScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+            {/* ✅ Option : Accès à l’application mobile */}
+            <View
+              className="flex-row justify-between items-center mb-5 px-4 py-2.5 rounded-xl"
+              style={{
+                backgroundColor: "#F8F8F8",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.textDark,
+                  fontWeight: "500",
+                  fontSize: 14.5, // ⬅️ Smaller, balanced with inputs
+                }}
+              >
+                Accès à l’application mobile
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setHasMobileApp(!hasMobileApp)}
+                style={{
+                  width: 46,
+                  height: 26,
+                  borderRadius: 13,
+                  backgroundColor: hasMobileApp ? colors.accent : "#D1D5DB",
+                  justifyContent: "center",
+                  paddingHorizontal: 3,
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: "#FFF",
+                    transform: [{ translateX: hasMobileApp ? 20 : 0 }],
+                    shadowColor: "#000",
+                    shadowOpacity: 0.15,
+                    shadowRadius: 2,
+                    elevation: 3,
+                  }}
+                />
+              </TouchableOpacity>
+            </View>
 
             <View className="flex-row justify-end">
               <TouchableOpacity

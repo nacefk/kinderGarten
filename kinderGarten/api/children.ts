@@ -18,17 +18,19 @@ export async function createChild({
   parent_name,
   classroom,
   avatar,
+  hasMobileApp,
 }: {
   birthdate: string;
   name: string;
   parent_name: string;
   classroom?: number;
   avatar?: string;
+  hasMobileApp?: boolean;
 }) {
   const token = await AsyncStorage.getItem("access_token");
   const res = await axios.post(
     API_URL,
-    { name, birthdate, parent_name, classroom, avatar },
+    { name, birthdate, parent_name, classroom, avatar, hasMobileApp  },
     { headers: { Authorization: `Bearer ${token}` } }
   );
   return res.data;
