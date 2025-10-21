@@ -13,30 +13,29 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useAppStore } from "../store/useAppStore";
 import colors from "../config/colors";
 import Card from "../components/Card";
 import Row from "../components/Row";
+import { getChildById } from "@/api/children";
 
 export default function Profile() {
   const { id } = useLocalSearchParams();
   const childId = Array.isArray(id) ? id[0] : id;
-  console.log("🧒 Child ID from route:", childId);
 
-  const { data, setData } = useAppStore();
-  const { childrenList, classes } = data || {};
+  const [profile, setProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
-  const [localProfile, setLocalProfile] = useState<any>(null);
 
   /** 🧮 Calcul de l’âge */
   const getAge = (birthdate?: string) => {
-    if (!birthdate) return "";
+    if (!birthdate) return "N/D";
     const parsed = new Date(birthdate);
-    if (isNaN(parsed.getTime())) return "";
+    if (isNaN(parsed.getTime())) return "N/D";
     const today = new Date();
     let years = today.getFullYear() - parsed.getFullYear();
     let months = today.getMonth() - parsed.getMonth();
@@ -48,72 +47,55 @@ export default function Profile() {
     return `${years} an${years > 1 ? "s" : ""}${months > 0 ? ` ${months} mois` : ""}`;
   };
 
-  /** 📆 Statut du paiement */
-  const getPaymentStatus = (dateString: string) => {
-    if (!dateString) return { label: "Non défini", color: colors.textLight };
-
-    const today = new Date();
-    const dueDate = new Date(dateString);
-    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-      return { label: "En retard", color: "#DC2626" }; // 🔴 rouge
-    } else if (diffDays <= 3) {
-      return { label: "Paiement proche", color: "#F59E0B" }; // 🟠 orange
-    } else {
-      return { label: "Régulier", color: "#16A34A" }; // 🟢 vert
-    }
-  };
-
-  /** 📦 Construction du profil enfant */
+  /** 📦 Chargement du profil depuis le backend */
   useEffect(() => {
-    if (!childrenList || !classes) return;
-    const child = childrenList.find((c: any) => c.id === childId);
-    if (!child) return;
+    if (!childId) return;
 
-    const classInfo = classes.find((cl: any) => cl.name === child.className);
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await getChildById(childId);
 
-    const fullProfile = {
-      id: child.id,
-      name: child.name,
-      avatar: child.avatar,
-      group: child.className || "Classe inconnue",
-      birthdate: child.birthdate || "2020-01-01",
-      age: child.age || getAge(child.birthdate || "2020-01-01"),
-      weight: child.weight || "N/D",
-      height: child.height || "N/D",
-      gender: child.gender || "Fille",
-      allergies: child.allergies || "Aucune",
-      conditions: child.medicalNote || "Aucune",
-      medication: "N/D",
-      doctor: classInfo ? `${classInfo.teacher} — ${classInfo.room}` : "N/D",
-      emergencyContact: child.emergencyContact || {
-        name: "N/D",
-        relation: "N/D",
-        phone: "N/D",
-      },
-      authorizedPickups: child.authorizedPickups || [],
-      nextPaymentDate: child.nextPaymentDate || "2025-10-25", // 💰 default
-      classInfo: {
-        teacherName: classInfo?.teacher || "Inconnu",
-        teacherPhone: "",
-        classroomName: classInfo?.room || "N/D",
-        responsibleName: classInfo?.assistant || "N/D",
-        responsiblePhone: "",
-      },
-    };
+        const filled = {
+          id: data?.id ?? "N/D",
+          name: data?.name ?? "N/D",
+          avatar: data?.avatar ?? "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
+          birthdate: data?.birthdate ?? "N/D",
+          gender: data?.gender ?? "N/D",
+          className: data?.classroom_name ?? "N/D",
+          parent_name: data?.parent_name ?? "N/D",
+          allergies: data?.allergies ?? "N/D",
+          conditions: data?.conditions ?? "N/D",
+          medication: data?.medication ?? "N/D",
+          doctor: data?.doctor ?? "N/D",
+          weight: data?.weight ?? "N/D",
+          height: data?.height ?? "N/D",
+          nextPaymentDate: data?.nextPaymentDate ?? "Non définie",
+          emergencyContact: {
+            name: data?.emergencyContact?.name ?? "N/D",
+            relation: data?.emergencyContact?.relation ?? "N/D",
+            phone: data?.emergencyContact?.phone ?? "N/D",
+          },
+          classInfo: {
+            teacherName: data?.classInfo?.teacherName ?? "N/D",
+            classroomName: data?.classroom_name ?? "N/D",
+            responsibleName: data?.classInfo?.responsibleName ?? "N/D",
+            responsiblePhone: data?.classInfo?.responsiblePhone ?? "N/D",
+          },
+        };
 
-    setLocalProfile(fullProfile);
-    setData("profile", fullProfile);
-  }, [childId, childrenList, classes]);
+        setProfile(filled);
+      } catch (e: any) {
+        console.error("❌ Error fetching child:", e.response?.data || e.message);
+        Alert.alert("Erreur", "Impossible de charger les informations de l'enfant.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [childId]);
 
   const updateField = (key: string, value: any) => {
-    setLocalProfile((prev: any) => ({ ...prev, [key]: value }));
-  };
-
-  const saveProfile = () => {
-    setData("profile", localProfile);
-    setIsEditing(false);
+    setProfile((prev: any) => ({ ...prev, [key]: value }));
   };
 
   const handlePhoneCall = (phone: string) => {
@@ -128,18 +110,53 @@ export default function Profile() {
       .catch(() => Alert.alert("Erreur", "Une erreur est survenue lors de l’appel."));
   };
 
-  if (!localProfile) {
+  const saveProfile = () => {
+    setIsEditing(false);
+    Alert.alert("Succès", "Profil mis à jour localement (non sauvegardé sur le serveur).");
+  };
+
+  if (loading) {
     return (
       <View
         className="flex-1 items-center justify-center"
         style={{ backgroundColor: colors.background }}
       >
-        <Text style={{ color: colors.textLight }}>Chargement du profil...</Text>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={{ color: colors.textLight, marginTop: 8 }}>Chargement du profil...</Text>
       </View>
     );
   }
 
-  const paymentStatus = getPaymentStatus(localProfile.nextPaymentDate);
+  if (!profile) {
+    return (
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <Text style={{ color: colors.textLight }}>Aucune donnée trouvée.</Text>
+      </View>
+    );
+  }
+
+  /** 📆 Statut du paiement */
+  const getPaymentStatus = (dateString: string) => {
+    if (!dateString || dateString === "Non définie")
+      return { label: "Non défini", color: colors.textLight };
+
+    const today = new Date();
+    const dueDate = new Date(dateString);
+    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return { label: "En retard", color: "#DC2626" };
+    } else if (diffDays <= 3) {
+      return { label: "Paiement proche", color: "#F59E0B" };
+    } else {
+      return { label: "Régulier", color: "#16A34A" };
+    }
+  };
+
+  const paymentStatus = getPaymentStatus(profile.nextPaymentDate);
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
@@ -150,11 +167,9 @@ export default function Profile() {
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
       >
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <ChevronLeft color={colors.textDark} size={28} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <ChevronLeft color={colors.textDark} size={28} />
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => {
@@ -174,7 +189,6 @@ export default function Profile() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView
           className="flex-1 px-5"
@@ -185,21 +199,18 @@ export default function Profile() {
           {/* 👶 Informations sur l’enfant */}
           <Card title="Informations de l’enfant">
             <View className="items-center">
-              <Image
-                source={{ uri: localProfile?.avatar }}
-                className="w-28 h-28 rounded-full mb-3"
-              />
+              <Image source={{ uri: profile?.avatar }} className="w-28 h-28 rounded-full mb-3" />
               {isEditing ? (
                 <>
                   <TextInput
-                    value={localProfile?.name}
+                    value={profile?.name}
                     onChangeText={(t) => updateField("name", t)}
                     className="text-center text-xl font-semibold border-b border-gray-300 w-48 mb-1"
                     style={{ color: colors.textDark }}
                   />
                   <TextInput
-                    value={localProfile?.group}
-                    onChangeText={(t) => updateField("group", t)}
+                    value={profile?.className}
+                    onChangeText={(t) => updateField("className", t)}
                     className="text-center border-b border-gray-300 w-48"
                     style={{ color: colors.text }}
                   />
@@ -207,10 +218,10 @@ export default function Profile() {
               ) : (
                 <>
                   <Text className="text-xl font-semibold" style={{ color: colors.textDark }}>
-                    {localProfile?.name}
+                    {profile?.name}
                   </Text>
                   <Text style={{ color: colors.text, marginTop: 4 }}>
-                    {getAge(localProfile?.birthdate)} • {localProfile?.group}
+                    {getAge(profile?.birthdate)} • {profile?.className}
                   </Text>
                 </>
               )}
@@ -230,13 +241,17 @@ export default function Profile() {
                       className="text-right font-medium py-1"
                       style={{ color: colors.textDark }}
                     >
-                      {localProfile?.birthdate || "Sélectionner une date"}
+                      {profile?.birthdate || "Sélectionner une date"}
                     </Text>
                   </TouchableOpacity>
 
                   {showDatePicker && (
                     <DateTimePicker
-                      value={new Date(localProfile?.birthdate || "2020-01-01")}
+                      value={
+                        profile?.birthdate && profile.birthdate !== "N/D"
+                          ? new Date(profile.birthdate)
+                          : new Date()
+                      }
                       mode="date"
                       display="default"
                       maximumDate={new Date()}
@@ -245,7 +260,6 @@ export default function Profile() {
                         if (selectedDate) {
                           const formatted = selectedDate.toISOString().split("T")[0];
                           updateField("birthdate", formatted);
-                          updateField("age", getAge(formatted));
                         }
                       }}
                     />
@@ -253,15 +267,15 @@ export default function Profile() {
                 </>
               ) : (
                 <Text className="font-medium text-right" style={{ color: colors.textDark }}>
-                  {localProfile?.birthdate}
+                  {profile?.birthdate}
                 </Text>
               )}
             </Row>
 
-            {renderRow("⚖️ Poids", "weight", localProfile?.weight, isEditing, (v) =>
+            {renderRow("⚖️ Poids", "weight", profile?.weight, isEditing, (v) =>
               updateField("weight", v)
             )}
-            {renderRow("📏 Taille", "height", localProfile?.height, isEditing, (v) =>
+            {renderRow("📏 Taille", "height", profile?.height, isEditing, (v) =>
               updateField("height", v)
             )}
             <Row label="👧 Sexe">
@@ -271,13 +285,13 @@ export default function Profile() {
                   className="flex-row justify-between items-center border-b border-gray-300 w-40"
                 >
                   <Text className="text-right font-medium py-1" style={{ color: colors.textDark }}>
-                    {localProfile?.gender || "Sélectionner le sexe"}
+                    {profile?.gender || "Sélectionner le sexe"}
                   </Text>
                   <ChevronDown color={colors.textDark} size={18} />
                 </TouchableOpacity>
               ) : (
                 <Text className="font-medium text-right" style={{ color: colors.textDark }}>
-                  {localProfile?.gender}
+                  {profile?.gender}
                 </Text>
               )}
             </Row>
@@ -294,15 +308,13 @@ export default function Profile() {
                       updateField("gender", option);
                       setShowGenderDropdown(false);
                     }}
-                    className={`py-2 rounded-xl ${
-                      localProfile?.gender === option ? "bg-gray-100" : ""
-                    }`}
+                    className={`py-2 rounded-xl ${profile?.gender === option ? "bg-gray-100" : ""}`}
                   >
                     <Text
                       className="text-right"
                       style={{
-                        color: localProfile?.gender === option ? colors.accent : colors.textDark,
-                        fontWeight: localProfile?.gender === option ? "600" : "400",
+                        color: profile?.gender === option ? colors.accent : colors.textDark,
+                        fontWeight: profile?.gender === option ? "600" : "400",
                       }}
                     >
                       {option}
@@ -318,7 +330,7 @@ export default function Profile() {
             <View className="flex-row justify-between mb-2">
               <Text style={{ color: colors.text }}>Date limite</Text>
               <Text style={{ color: colors.textDark }}>
-                {localProfile.nextPaymentDate || "Non définie"}
+                {profile.nextPaymentDate || "Non définie"}
               </Text>
             </View>
             <View className="flex-row justify-between items-center">
@@ -331,16 +343,16 @@ export default function Profile() {
 
           {/* 🚑 Santé & Allergies */}
           <Card title="Santé & allergies">
-            {renderRow("🤧 Allergies", "allergies", localProfile?.allergies, isEditing, (v) =>
+            {renderRow("🤧 Allergies", "allergies", profile?.allergies, isEditing, (v) =>
               updateField("allergies", v)
             )}
-            {renderRow("❤️ Conditions", "conditions", localProfile?.conditions, isEditing, (v) =>
+            {renderRow("❤️ Conditions", "conditions", profile?.conditions, isEditing, (v) =>
               updateField("conditions", v)
             )}
-            {renderRow("💊 Médication", "medication", localProfile?.medication, isEditing, (v) =>
+            {renderRow("💊 Médication", "medication", profile?.medication, isEditing, (v) =>
               updateField("medication", v)
             )}
-            {renderRow("👨‍⚕️ Médecin", "doctor", localProfile?.doctor, isEditing, (v) =>
+            {renderRow("👨‍⚕️ Médecin", "doctor", profile?.doctor, isEditing, (v) =>
               updateField("doctor", v)
             )}
           </Card>
@@ -350,25 +362,23 @@ export default function Profile() {
             {renderRow(
               "👤 Nom",
               "emergencyContact.name",
-              localProfile?.emergencyContact?.name,
+              profile?.emergencyContact?.name,
               isEditing,
-              (v) => updateField("emergencyContact", { ...localProfile?.emergencyContact, name: v })
+              (v) => updateField("emergencyContact", { ...profile?.emergencyContact, name: v })
             )}
             {renderRow(
               "👥 Relation",
               "emergencyContact.relation",
-              localProfile?.emergencyContact?.relation,
+              profile?.emergencyContact?.relation,
               isEditing,
-              (v) =>
-                updateField("emergencyContact", { ...localProfile?.emergencyContact, relation: v })
+              (v) => updateField("emergencyContact", { ...profile?.emergencyContact, relation: v })
             )}
             {renderRow(
               "📞 Téléphone",
               "emergencyContact.phone",
-              localProfile?.emergencyContact?.phone,
+              profile?.emergencyContact?.phone,
               isEditing,
-              (v) =>
-                updateField("emergencyContact", { ...localProfile?.emergencyContact, phone: v }),
+              (v) => updateField("emergencyContact", { ...profile?.emergencyContact, phone: v }),
               handlePhoneCall
             )}
           </Card>
@@ -378,30 +388,30 @@ export default function Profile() {
             {renderRow(
               "👩‍🏫 Enseignant(e)",
               "classInfo.teacherName",
-              localProfile?.classInfo?.teacherName,
+              profile?.classInfo?.teacherName,
               isEditing,
-              (v) => updateField("classInfo", { ...localProfile?.classInfo, teacherName: v })
+              (v) => updateField("classInfo", { ...profile?.classInfo, teacherName: v })
             )}
             {renderRow(
               "🚪 Salle",
               "classInfo.classroomName",
-              localProfile?.classInfo?.classroomName,
+              profile?.classInfo?.classroomName,
               isEditing,
-              (v) => updateField("classInfo", { ...localProfile?.classInfo, classroomName: v })
+              (v) => updateField("classInfo", { ...profile?.classInfo, classroomName: v })
             )}
             {renderRow(
               "🧑 Responsable",
               "classInfo.responsibleName",
-              localProfile?.classInfo?.responsibleName,
+              profile?.classInfo?.responsibleName,
               isEditing,
-              (v) => updateField("classInfo", { ...localProfile?.classInfo, responsibleName: v })
+              (v) => updateField("classInfo", { ...profile?.classInfo, responsibleName: v })
             )}
             {renderRow(
               "📞 Téléphone",
               "classInfo.responsiblePhone",
-              localProfile?.classInfo?.responsiblePhone,
+              profile?.classInfo?.responsiblePhone,
               isEditing,
-              (v) => updateField("classInfo", { ...localProfile?.classInfo, responsiblePhone: v }),
+              (v) => updateField("classInfo", { ...profile?.classInfo, responsiblePhone: v }),
               handlePhoneCall
             )}
           </Card>
@@ -420,6 +430,7 @@ function renderRow(
   onChange: (v: string) => void,
   onPressPhone?: (v: string) => void
 ) {
+  const safeValue = value ?? "N/D";
   const isPhoneField = label.toLowerCase().includes("téléphone");
 
   return (
@@ -433,29 +444,26 @@ function renderRow(
       <View style={{ flexShrink: 1, flexBasis: "58%", alignItems: "flex-end" }}>
         {editable ? (
           <TextInput
-            value={value}
+            value={safeValue}
             onChangeText={onChange}
             keyboardType={isPhoneField ? "phone-pad" : "default"}
             className="border-b border-gray-300 text-right"
             style={{ color: colors.textDark, minWidth: 100 }}
           />
-        ) : isPhoneField && value && value !== "N/D" ? (
-          <TouchableOpacity onPress={() => onPressPhone && onPressPhone(value)}>
+        ) : isPhoneField && safeValue && safeValue !== "N/D" ? (
+          <TouchableOpacity onPress={() => onPressPhone && onPressPhone(safeValue)}>
             <Text
               style={{
                 color: colors.accent,
                 textAlign: "right",
                 textDecorationLine: "underline",
-                flexWrap: "wrap",
               }}
             >
-              {value}
+              {safeValue}
             </Text>
           </TouchableOpacity>
         ) : (
-          <Text style={{ color: colors.textDark, textAlign: "right", flexWrap: "wrap" }}>
-            {value}
-          </Text>
+          <Text style={{ color: colors.textDark, textAlign: "right" }}>{safeValue}</Text>
         )}
       </View>
     </View>

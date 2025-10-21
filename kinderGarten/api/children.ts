@@ -3,15 +3,28 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_URL = "http://192.168.0.37:8000/api/children/";
 
-export async function getChildren(classroomId?: string) {
+/**
+ * Fetch all children or filter by classroom ID.
+ */
+export async function getChildren(classroomId?: number | string) {
   const token = await AsyncStorage.getItem("access_token");
-  const res = await axios.get(API_URL, {
-    headers: { Authorization: `Bearer ${token}` },
-    params: classroomId ? { classroom_id: classroomId } : {},
-  });
-  return res.data;
+
+  try {
+    const res = await axios.get(API_URL, {
+      headers: { Authorization: `Bearer ${token}` },
+      // ✅ your Django view supports both `classroom` and `classroom_id`
+      params: classroomId ? { classroom: classroomId } : {},
+    });
+    return res.data;
+  } catch (e: any) {
+    console.error("❌ Error fetching children:", e.response?.data || e.message);
+    throw e;
+  }
 }
 
+/**
+ * Create a new child
+ */
 export async function createChild({
   name,
   birthdate,
@@ -20,25 +33,30 @@ export async function createChild({
   avatar,
   hasMobileApp,
 }: {
-  birthdate: string;
   name: string;
+  birthdate: string;
   parent_name: string;
   classroom?: number;
   avatar?: string;
   hasMobileApp?: boolean;
 }) {
   const token = await AsyncStorage.getItem("access_token");
+
   const res = await axios.post(
     API_URL,
-    { name, birthdate, parent_name, classroom, avatar, hasMobileApp  },
+    { name, birthdate, parent_name, classroom, avatar, hasMobileApp },
     { headers: { Authorization: `Bearer ${token}` } }
   );
+
   return res.data;
 }
+
+/**
+ * Upload child avatar to Django (multipart/form-data)
+ */
 export async function uploadAvatar(uri: string): Promise<string> {
   const token = await AsyncStorage.getItem("access_token");
 
-  // Prepare multipart form data for Django
   const formData = new FormData();
   formData.append("file", {
     uri,
@@ -53,11 +71,24 @@ export async function uploadAvatar(uri: string): Promise<string> {
     },
   });
 
-  return res.data.url; // ✅ Django returns { "url": "https://..." }
+  return res.data.url; // Django should return { "url": "..." }
 }
+
+/**
+ * Delete a child by ID
+ */
 export async function deleteChild(id: number) {
   const token = await AsyncStorage.getItem("access_token");
+
   const res = await axios.delete(`${API_URL}${id}/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return res.data;
+}
+export async function getChildById(id: number | string) {
+  const token = await AsyncStorage.getItem("access_token");
+  const res = await axios.get(`http://192.168.0.37:8000/api/children/${id}/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;

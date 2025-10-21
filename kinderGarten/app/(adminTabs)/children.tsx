@@ -10,6 +10,7 @@ import {
   ScrollView,
   Modal,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -46,25 +47,34 @@ export default function ChildrenScreen() {
       Alert.alert("Nom manquant", "Veuillez entrer un nom de classe.");
       return;
     }
+
     setLoading(true);
     try {
-      const created = await createClass(newClassName.trim());
-      const updated = [...classes, created];
-      setClasses(updated);
+      // 🔹 Create the new class
+      await createClass(newClassName.trim());
+
+      // 🔹 Refresh the list of classes from the backend
+      const refreshedClasses = await getClasses();
+      setClasses(refreshedClasses);
+
+      // 🔹 Reset UI
       setNewClassName("");
       setShowAddClass(false);
+
       Alert.alert("Succès", "Classe ajoutée !");
     } catch (e: any) {
-      console.error("❌ Error creating class:", e.message);
+      console.error("❌ Error creating class:", e.response?.data || e.message);
       Alert.alert("Erreur", "Impossible d’ajouter la classe.");
     } finally {
       setLoading(false);
     }
   };
+
   // 📅 Pick birthdate
   const handlePickDate = (event: any, selectedDate?: Date) => {
     if (event.type === "set" && selectedDate) {
       setChildBirthdate(selectedDate);
+      Platform.OS === "android" && setShowDatePicker(false);
     }
     if (event.type === "dismissed") {
       setShowDatePicker(false);
@@ -268,14 +278,34 @@ export default function ChildrenScreen() {
 
   // ✅ Filtered children (by class + search)
   const filteredChildren = useMemo(() => {
-    const byClass =
-      selectedClass === "all"
-        ? children
-        : children.filter((c: any) => c.className === selectedClass);
-    return byClass.filter((child: any) =>
+    return children.filter((child: any) =>
       child.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [children, searchQuery, selectedClass]);
+  }, [children, searchQuery]);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        if (selectedClass === "all") {
+          // 🔹 fetch all children (no class filter)
+          const all = await getChildren();
+          setChildren(all);
+        } else {
+          // 🔹 fetch by class ID
+          const classObj = classes.find((c: any) => c.name === selectedClass);
+          if (classObj) {
+            const filtered = await getChildren(classObj.id);
+            setChildren(filtered);
+          }
+        }
+      } catch (e: any) {
+        console.error("❌ Error fetching children:", e.message);
+        Alert.alert("Erreur", "Impossible de charger la liste des enfants.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [selectedClass]);
 
   // ✅ Delete class
   const handleDeleteClass = (clsName: string) => {
@@ -587,7 +617,7 @@ export default function ChildrenScreen() {
               <DateTimePicker
                 value={childBirthdate || new Date()}
                 mode="date"
-                display="spinner"
+                display={Platform.OS === "ios" ? "spinner" : "calendar"}
                 onChange={handlePickDate}
                 maximumDate={new Date()}
               />
