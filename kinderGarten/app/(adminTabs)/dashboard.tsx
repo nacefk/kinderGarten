@@ -11,7 +11,7 @@ type ExtraHourStatus = "pending" | "approved" | "rejected";
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const classes = useAppStore((state) => state.data.classes || []);
+  const classes = useAppStore((state) => state.data.classList || []);
   const children = useAppStore((state) => state.data.childrenList || []);
 
   const [selectedClass, setSelectedClass] = useState<string>("all");

@@ -21,6 +21,7 @@ import { createClass, getClasses } from "@/api/class";
 import { createChild } from "@/api/children";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useAppStore } from "@/store/useAppStore";
 
 export default function ChildrenScreen() {
   const router = useRouter();
@@ -41,6 +42,16 @@ export default function ChildrenScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [childImage, setChildImage] = useState<string | null>(null);
   const [hasMobileApp, setHasMobileApp] = useState(false);
+
+  const { data, actions } = useAppStore();
+  const { childrenList, classList } = data;
+  const { fetchChildren, fetchClasses } = actions;
+
+  useEffect(() => {
+    (async () => {
+      await Promise.all([fetchChildren(), fetchClasses()]);
+    })();
+  }, []);
 
   const handleAddClass = async () => {
     if (!newClassName.trim()) {

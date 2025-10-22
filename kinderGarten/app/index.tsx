@@ -1,4 +1,3 @@
-import { loadMockData } from "@/utils/loadMockData";
 import { Redirect } from "expo-router";
 import LottieView from "lottie-react-native";
 import { useEffect, useRef, useState } from "react";
@@ -16,10 +15,7 @@ export default function Index() {
     }, 3500);
     return () => clearTimeout(timer);
   }, []);
-  useEffect(() => {
-    loadMockData(); // load data into Zustand at app start
-    console.log("Mock data loaded into Zustand store");
-  }, []);
+
   if (isLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
