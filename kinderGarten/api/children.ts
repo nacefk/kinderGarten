@@ -4,15 +4,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const API_URL = "http://192.168.0.37:8000/api/children/";
 
 /**
+ * Helper to get auth headers
+ */
+async function getAuthHeaders() {
+  const token = await AsyncStorage.getItem("access_token");
+  return { Authorization: `Bearer ${token}` };
+}
+
+/**
  * Fetch all children or filter by classroom ID.
  */
 export async function getChildren(classroomId?: number | string) {
-  const token = await AsyncStorage.getItem("access_token");
+  const headers = await getAuthHeaders();
 
   try {
     const res = await axios.get(API_URL, {
-      headers: { Authorization: `Bearer ${token}` },
-      // ✅ your Django view supports both `classroom` and `classroom_id`
+      headers,
       params: classroomId ? { classroom: classroomId } : {},
     });
     return res.data;
@@ -20,6 +27,15 @@ export async function getChildren(classroomId?: number | string) {
     console.error("❌ Error fetching children:", e.response?.data || e.message);
     throw e;
   }
+}
+
+/**
+ * Fetch a single child by ID
+ */
+export async function getChildById(id: number | string) {
+  const headers = await getAuthHeaders();
+  const res = await axios.get(`${API_URL}${id}/`, { headers });
+  return res.data;
 }
 
 /**
@@ -40,22 +56,51 @@ export async function createChild({
   avatar?: string;
   hasMobileApp?: boolean;
 }) {
-  const token = await AsyncStorage.getItem("access_token");
+  const headers = await getAuthHeaders();
 
   const res = await axios.post(
     API_URL,
     { name, birthdate, parent_name, classroom, avatar, hasMobileApp },
-    { headers: { Authorization: `Bearer ${token}` } }
+    { headers }
   );
 
   return res.data;
 }
 
 /**
- * Upload child avatar to Django (multipart/form-data)
+ * Update an existing child (PATCH = partial update)
+ */
+export async function updateChild(
+  id: number | string,
+  payload: Record<string, any>
+) {
+  const headers = await getAuthHeaders();
+
+  try {
+    const res = await axios.patch(`${API_URL}${id}/`, payload, { headers });
+    return res.data;
+  } catch (e: any) {
+    console.error("❌ Error updating child:", e.response?.data || e.message);
+    throw e;
+  }
+}
+/**
+ * Fetch all classrooms (for dropdown)
+ */
+export async function getClassrooms() {
+  const token = await AsyncStorage.getItem("access_token");
+
+  const res = await axios.get("http://192.168.0.37:8000/api/children/classes/", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return res.data; // [{id: 1, name: "Petite Section"}, ...]
+}
+/**
+ * Upload child avatar (multipart/form-data)
  */
 export async function uploadAvatar(uri: string): Promise<string> {
-  const token = await AsyncStorage.getItem("access_token");
+  const headers = await getAuthHeaders();
 
   const formData = new FormData();
   formData.append("file", {
@@ -66,7 +111,7 @@ export async function uploadAvatar(uri: string): Promise<string> {
 
   const res = await axios.post(`${API_URL}upload-avatar/`, formData, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...headers,
       "Content-Type": "multipart/form-data",
     },
   });
@@ -78,18 +123,7 @@ export async function uploadAvatar(uri: string): Promise<string> {
  * Delete a child by ID
  */
 export async function deleteChild(id: number) {
-  const token = await AsyncStorage.getItem("access_token");
-
-  const res = await axios.delete(`${API_URL}${id}/`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  return res.data;
-}
-export async function getChildById(id: number | string) {
-  const token = await AsyncStorage.getItem("access_token");
-  const res = await axios.get(`http://192.168.0.37:8000/api/children/${id}/`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const headers = await getAuthHeaders();
+  const res = await axios.delete(`${API_URL}${id}/`, { headers });
   return res.data;
 }
