@@ -37,7 +37,7 @@ export default function Login() {
     setLoading(true);
 
     // 👀 Log the request
-    console.log("📤 Sending login request to:", API_URL);
+    // console.log("📤 Sending login request to:", API_URL);
     console.log("➡️ Payload:", {
       tenant,
       username: username.trim(),
@@ -52,10 +52,10 @@ export default function Login() {
       });
 
       // ✅ Log response
-      console.log("✅ Login response:");
-      console.log("   Status:", res.status);
-      console.log("   Headers:", res.headers);
-      console.log("   Data:", res.data);
+      // console.log("✅ Login response:");
+      // console.log("   Status:", res.status);
+      // console.log("   Headers:", res.headers);
+      // console.log("   Data:", res.data);
 
       const { access, refresh, role } = res.data;
 

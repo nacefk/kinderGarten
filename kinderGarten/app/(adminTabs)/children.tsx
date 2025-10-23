@@ -252,7 +252,7 @@ export default function ChildrenScreen() {
         const classObj = classes.find((c: any) => c.name === selectedClass);
         const data = await getChildren(classObj ? classObj.id : undefined);
         setChildren(data);
-        console.log("children", data);
+        // console.log("children", data);
       } catch (e) {
         console.error("❌ Error fetching children:", e.message);
       } finally {
