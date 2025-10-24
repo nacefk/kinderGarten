@@ -18,8 +18,12 @@ import { createDailyReport, getReportById, getReports } from "@/api/report";
 import * as ImagePicker from "expo-image-picker";
 
 export default function ReportsScreen() {
-  const { classList: classes, childrenList: children } = useAppStore((state) => state.data);
-  const { fetchClasses, fetchChildren } = useAppStore((state) => state.actions);
+  const {
+    classList: classes,
+    childrenList: children,
+    clubList: clubs,
+  } = useAppStore((state) => state.data);
+  const { fetchClasses, fetchChildren, fetchClubs } = useAppStore((state) => state.actions);
 
   const [selectedClass, setSelectedClass] = useState<any | null>(null);
   const [selectedChildren, setSelectedChildren] = useState<any[]>([]);
@@ -34,6 +38,7 @@ export default function ReportsScreen() {
   const [behavior, setBehavior] = useState("");
   const [notes, setNotes] = useState("");
   const [mediaList, setMediaList] = useState<any[]>([]);
+  const [selectedClub, setSelectedClub] = useState<any | null>(null);
 
   const behaviorOptions = [
     "Calme",
@@ -52,6 +57,7 @@ export default function ReportsScreen() {
   // ------------------------------------------------------------------------
   useEffect(() => {
     if (classes.length === 0) fetchClasses();
+    if (clubs?.length === 0) fetchClubs();
   }, []);
 
   useEffect(() => {
@@ -117,9 +123,17 @@ export default function ReportsScreen() {
   };
 
   const filteredChildren = useMemo(() => {
-    if (!selectedClass) return [];
-    return children.filter((c) => c.classroom === selectedClass.id);
-  }, [selectedClass, children]);
+    return children.filter((c) => {
+      const matchClass = selectedClass ? c.classroom === selectedClass.id : true;
+
+      // ✅ handle many-to-many clubs array
+      const matchClub = selectedClub
+        ? Array.isArray(c.clubs) && c.clubs.includes(selectedClub.id)
+        : true;
+
+      return matchClass && matchClub;
+    });
+  }, [selectedClass, selectedClub, children]);
 
   const resetForm = () => {
     setMeal("");
@@ -258,7 +272,43 @@ export default function ReportsScreen() {
           ))
         )}
       </View>
+      {/* Step 0: Club selection */}
 
+      <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
+        <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
+          Sélection du Club 🎨
+        </Text>
+
+        {clubs?.length === 0 ? (
+          <ActivityIndicator color={colors.accent} size="small" />
+        ) : (
+          clubs?.map((club) => (
+            <TouchableOpacity
+              key={club.id}
+              activeOpacity={0.8}
+              onPress={() => setSelectedClub(club)}
+              style={{
+                backgroundColor: selectedClub?.id === club.id ? colors.accent : "#F8F8F8",
+                borderWidth: 1,
+                borderColor: colors.accent,
+                borderRadius: 10,
+                paddingVertical: 10,
+                marginBottom: 8,
+              }}
+            >
+              <Text
+                style={{
+                  color: selectedClub?.id === club.id ? "#fff" : colors.textDark,
+                  fontWeight: "500",
+                  textAlign: "center",
+                }}
+              >
+                {club.name}
+              </Text>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
       {/* Step 2: Children list */}
       {loading ? (
         <ActivityIndicator color={colors.accent} size="large" />

@@ -1,14 +1,16 @@
-import { getChildren } from "@/api/children";
-import { getClasses } from "@/api/class";
 import { create } from "zustand";
+import { getChildren, getClubs } from "@/api/children";
+import { getClasses } from "@/api/class";
 
 export const useAppStore = create((set, get) => ({
   data: {
     childrenList: [],
     classList: [],
+    clubList: [],
   },
   loading: false,
   error: null,
+
   actions: {
     setData: (key, value) => {
       set((state) => ({
@@ -16,9 +18,11 @@ export const useAppStore = create((set, get) => ({
       }));
     },
 
-    fetchChildren: async () => {
+    // 🧒 Generic children fetcher — can filter by class or club
+    fetchChildren: async (filters = {}) => {
       try {
-        const data = await getChildren();
+        // filters can be { classroom: id } or { club: id }
+        const data = await getChildren(filters);
         set((state) => ({
           data: { ...state.data, childrenList: data },
         }));
@@ -27,17 +31,7 @@ export const useAppStore = create((set, get) => ({
       }
     },
 
-    fetchChildrenByClass: async (classroomId) => {
-      try {
-        const data = await getChildren(classroomId);
-        set((state) => ({
-          data: { ...state.data, childrenList: data },
-        }));
-      } catch (err) {
-        console.error("❌ fetchChildrenByClass:", err);
-      }
-    },
-
+    // 🏫 Fetch all classes
     fetchClasses: async () => {
       try {
         const data = await getClasses();
@@ -46,6 +40,18 @@ export const useAppStore = create((set, get) => ({
         }));
       } catch (err) {
         console.error("❌ fetchClasses:", err);
+      }
+    },
+
+    // 🎨 Fetch all clubs
+    fetchClubs: async () => {
+      try {
+        const data = await getClubs();
+        set((state) => ({
+          data: { ...state.data, clubList: data },
+        }));
+      } catch (err) {
+        console.error("❌ fetchClubs:", err);
       }
     },
   },

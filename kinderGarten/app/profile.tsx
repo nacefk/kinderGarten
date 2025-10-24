@@ -19,7 +19,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import colors from "../config/colors";
 import Card from "../components/Card";
 import Row from "../components/Row";
-import { getChildById, getClassrooms, updateChild } from "@/api/children";
+import { getChildById, getClassrooms, getClubs, updateChild } from "@/api/children";
 
 export default function Profile() {
   const { id } = useLocalSearchParams();
@@ -32,6 +32,21 @@ export default function Profile() {
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const [classrooms, setClassrooms] = useState<any[]>([]);
+  const [clubs, setClubs] = useState<any[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getClassrooms();
+        setClassrooms(data);
+
+        const clubsData = await getClubs();
+        setClubs(clubsData);
+      } catch (error) {
+        console.error("❌ Error fetching class/clubs:", error);
+      }
+    })();
+  }, []);
 
   const saveProfile = async () => {
     if (!childId || !profile) return;
@@ -52,6 +67,7 @@ export default function Profile() {
         height: profile.height,
         emergencyContact: profile.emergencyContact,
         classInfo: profile.classInfo,
+        clubs: profile.clubs || [],
       };
 
       const updated = await updateChild(childId, payload);
@@ -115,6 +131,7 @@ export default function Profile() {
           weight: data?.weight || "",
           height: data?.height || "",
           nextPaymentDate: data?.nextPaymentDate || "",
+          clubs: data?.clubs || [],
           emergencyContact: {
             name: data?.emergencyContact?.name || "",
             relation: data?.emergencyContact?.relation || "",
@@ -247,62 +264,6 @@ export default function Profile() {
                     className="text-center text-xl font-semibold border-b border-gray-300 w-48 mb-1"
                     style={{ color: colors.textDark }}
                   />
-                  {/* 🏫 Classe */}
-                  {isEditing ? (
-                    <View style={{ width: "100%", alignItems: "center", marginTop: 8 }}>
-                      <Text style={{ color: colors.text, marginBottom: 4 }}>🏫 Classe</Text>
-                      <TouchableOpacity
-                        onPress={() => setShowClassDropdown(!showClassDropdown)}
-                        className="flex-row justify-between items-center border-b border-gray-300 w-48 py-1"
-                      >
-                        <Text
-                          className="text-right font-medium"
-                          style={{
-                            color: profile?.className ? colors.textDark : colors.textLight,
-                          }}
-                        >
-                          {profile?.className || "Sélectionner une classe"}
-                        </Text>
-                        <ChevronDown color={colors.textDark} size={18} />
-                      </TouchableOpacity>
-
-                      {showClassDropdown && (
-                        <View
-                          className="rounded-xl shadow-sm p-3 mt-1 w-48"
-                          style={{ backgroundColor: colors.cardBackground }}
-                        >
-                          {classrooms.map((c) => (
-                            <TouchableOpacity
-                              key={c.id}
-                              onPress={() => {
-                                updateField("className", c.name);
-                                updateField("classroom_id", c.id);
-                                setShowClassDropdown(false);
-                              }}
-                              className={`py-2 rounded-xl ${
-                                profile?.className === c.name ? "bg-gray-100" : ""
-                              }`}
-                            >
-                              <Text
-                                style={{
-                                  color:
-                                    profile?.className === c.name ? colors.accent : colors.textDark,
-                                  fontWeight: profile?.className === c.name ? "600" : "400",
-                                  textAlign: "left",
-                                }}
-                              >
-                                {c.name}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      )}
-                    </View>
-                  ) : (
-                    <Text style={{ color: colors.text, marginTop: 4 }}>
-                      {profile?.className || "—"}
-                    </Text>
-                  )}
                 </>
               ) : (
                 <>
@@ -310,9 +271,144 @@ export default function Profile() {
                     {profile?.name}
                   </Text>
                   <Text style={{ color: colors.text, marginTop: 4 }}>
-                    {getAge(profile?.birthdate)} • {profile?.className}
+                    {getAge(profile?.birthdate)}
                   </Text>
                 </>
+              )}
+            </View>
+          </Card>
+          {/* 🧩 Activités & Groupe */}
+          <Card title="Activités & Groupe">
+            {/* 🏫 Classe */}
+            <View className="mb-5">
+              {isEditing ? (
+                <View style={{ width: "100%" }}>
+                  <Text style={{ color: colors.text, marginBottom: 4 }}>🏫 Classe</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowClassDropdown(!showClassDropdown)}
+                    className="flex-row justify-between items-center border-b border-gray-300 py-1"
+                  >
+                    <Text
+                      style={{
+                        color: profile?.className ? colors.textDark : colors.textLight,
+                      }}
+                    >
+                      {profile?.className || "Sélectionner une classe"}
+                    </Text>
+                    <ChevronDown color={colors.textDark} size={18} />
+                  </TouchableOpacity>
+
+                  {showClassDropdown && (
+                    <View
+                      className="rounded-xl shadow-sm p-3 mt-1"
+                      style={{ backgroundColor: colors.cardBackground }}
+                    >
+                      {classrooms.map((c) => (
+                        <TouchableOpacity
+                          key={c.id}
+                          onPress={() => {
+                            updateField("className", c.name);
+                            updateField("classroom_id", c.id);
+                            setShowClassDropdown(false);
+                          }}
+                          className={`py-2 rounded-xl ${
+                            profile?.className === c.name ? "bg-gray-100" : ""
+                          }`}
+                        >
+                          <Text
+                            style={{
+                              color:
+                                profile?.className === c.name ? colors.accent : colors.textDark,
+                              fontWeight: profile?.className === c.name ? "600" : "400",
+                            }}
+                          >
+                            {c.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View className="flex-row justify-between items-center">
+                  <Text style={{ color: colors.text }}>🏫 Classe</Text>
+                  <Text style={{ color: colors.textDark }}>{profile?.className || "—"}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* 🎵 Clubs */}
+            <View>
+              <Text style={{ color: colors.text, marginBottom: 4 }}>🎵 Clubs</Text>
+              {isEditing ? (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginTop: 6,
+                  }}
+                >
+                  {profile?.availableClubs?.length ? (
+                    profile.availableClubs.map((club: any) => {
+                      const isSelected = profile.clubs?.includes(club.id);
+                      return (
+                        <TouchableOpacity
+                          key={club.id}
+                          onPress={() => {
+                            const newClubs = isSelected
+                              ? profile.clubs.filter((id: number) => id !== club.id)
+                              : [...(profile.clubs || []), club.id];
+                            updateField("clubs", newClubs);
+                          }}
+                          style={{
+                            backgroundColor: isSelected ? colors.accent : colors.cardBackground,
+                            borderWidth: 1,
+                            borderColor: colors.accent,
+                            borderRadius: 12,
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: isSelected ? "#fff" : colors.textDark,
+                              fontWeight: "500",
+                            }}
+                          >
+                            {club.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })
+                  ) : (
+                    <Text style={{ color: colors.textLight }}>Aucun club disponible</Text>
+                  )}
+                </View>
+              ) : (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                  {profile?.club_details?.length ? (
+                    profile.club_details.map((club: any) => (
+                      <View
+                        key={club.id}
+                        style={{
+                          backgroundColor: colors.cardBackground,
+                          borderRadius: 10,
+                          paddingHorizontal: 10,
+                          paddingVertical: 4,
+                          borderWidth: 1,
+                          borderColor: colors.accent,
+                        }}
+                      >
+                        <Text style={{ color: colors.textDark, fontWeight: "500" }}>
+                          {club.name}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={{ color: colors.textLight }}>Aucun club assigné</Text>
+                  )}
+                </View>
               )}
             </View>
           </Card>

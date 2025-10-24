@@ -12,15 +12,15 @@ async function getAuthHeaders() {
 }
 
 /**
- * Fetch all children or filter by classroom ID.
+ * Fetch all children or filter by classroom or club
  */
-export async function getChildren(classroomId?: number | string) {
+export async function getChildren(filters?: { classroom?: number; club?: number }) {
   const headers = await getAuthHeaders();
 
   try {
     const res = await axios.get(API_URL, {
       headers,
-      params: classroomId ? { classroom: classroomId } : {},
+      params: filters || {}, // ✅ handles both classroom or club
     });
     return res.data;
   } catch (e: any) {
@@ -28,6 +28,7 @@ export async function getChildren(classroomId?: number | string) {
     throw e;
   }
 }
+
 
 /**
  * Fetch a single child by ID
@@ -48,6 +49,7 @@ export async function createChild({
   classroom,
   avatar,
   hasMobileApp,
+  clubs = [], // ✅ add this
 }: {
   name: string;
   birthdate: string;
@@ -55,17 +57,19 @@ export async function createChild({
   classroom?: number;
   avatar?: string;
   hasMobileApp?: boolean;
+  clubs?: number[]; // ✅ optional array of club IDs
 }) {
   const headers = await getAuthHeaders();
 
   const res = await axios.post(
     API_URL,
-    { name, birthdate, parent_name, classroom, avatar, hasMobileApp },
+    { name, birthdate, parent_name, classroom, avatar, hasMobileApp, clubs },
     { headers }
   );
 
   return res.data;
 }
+
 
 /**
  * Update an existing child (PATCH = partial update)
@@ -125,5 +129,33 @@ export async function uploadAvatar(uri: string): Promise<string> {
 export async function deleteChild(id: number) {
   const headers = await getAuthHeaders();
   const res = await axios.delete(`${API_URL}${id}/`, { headers });
+  return res.data;
+}
+/**
+ * Fetch all clubs (for dropdown)
+ */
+export async function getClubs() {
+  const headers = await getAuthHeaders();
+
+  try {
+    const res = await axios.get("http://192.168.0.37:8000/api/children/clubs/", {
+      headers,
+    });
+    return res.data; // [{ id, name, description, instructor_name, ... }]
+  } catch (e: any) {
+    console.error("❌ Error fetching clubs:", e.response?.data || e.message);
+    throw e;
+  }
+}
+/**
+ * Create a new club
+ */
+export async function createClub(name: string) {
+  const headers = await getAuthHeaders();
+  const res = await axios.post(
+    "http://192.168.0.37:8000/api/children/clubs/",
+    { name },
+    { headers }
+  );
   return res.data;
 }
