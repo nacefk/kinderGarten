@@ -20,6 +20,8 @@ import colors from "../config/colors";
 import Card from "../components/Card";
 import Row from "../components/Row";
 import { getChildById, getClassrooms, getClubs, updateChild } from "@/api/children";
+import * as ImagePicker from "expo-image-picker";
+import { uploadAvatar } from "@/api/children";
 
 export default function Profile() {
   const { id } = useLocalSearchParams();
@@ -37,20 +39,75 @@ export default function Profile() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await getClassrooms();
-        setClassrooms(data);
-
-        const clubsData = await getClubs();
-        setClubs(clubsData);
+        const [classData, clubData] = await Promise.all([getClassrooms(), getClubs()]);
+        setClassrooms(classData);
+        setClubs(clubData);
       } catch (error) {
         console.error("❌ Error fetching class/clubs:", error);
       }
     })();
   }, []);
 
+  /** 🖼️ Pick or take photo */
+  const handleChangeAvatar = async () => {
+    try {
+      const result = await Alert.alert("Photo de profil", "Choisissez une option :", [
+        { text: "📷 Prendre une photo", onPress: async () => await pickImage(true) },
+        { text: "🖼️ Choisir depuis la galerie", onPress: async () => await pickImage(false) },
+        { text: "Annuler", style: "cancel" },
+      ]);
+    } catch (error) {
+      console.error("❌ Error changing avatar:", error);
+    }
+  };
+
+  /** 📸 Internal picker */
+  const pickImage = async (useCamera = false) => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission refusée", "Veuillez autoriser l’accès à la caméra.");
+      return;
+    }
+
+    const result = useCamera
+      ? await ImagePicker.launchCameraAsync({
+          mediaTypes: "images",
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        })
+      : await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: "images",
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+
+    if (!result.canceled && result.assets?.length > 0) {
+      const uri = result.assets[0].uri;
+      await handleUploadAvatar(uri);
+    }
+  };
+
+  /** ☁️ Upload and update profile */
+  const handleUploadAvatar = async (uri: string) => {
+    try {
+      setLoading(true);
+      const uploadedUrl = await uploadAvatar(uri); // your API returns { url }
+      updateField("avatar", uploadedUrl);
+      await updateChild(childId, { avatar: uploadedUrl });
+      Alert.alert("✅ Succès", "Photo de profil mise à jour !");
+    } catch (e: any) {
+      console.error("❌ Error uploading avatar:", e.response?.data || e.message);
+      Alert.alert("Erreur", "Impossible de mettre à jour la photo de profil.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** 💾 Save profile */
   const saveProfile = async () => {
     if (!childId || !profile) return;
-
     try {
       setLoading(true);
 
@@ -58,20 +115,31 @@ export default function Profile() {
         name: profile.name,
         birthdate: profile.birthdate,
         gender: profile.gender,
-        className: profile.className,
+        classroom: profile.classroom_id,
         allergies: profile.allergies,
         conditions: profile.conditions,
         medication: profile.medication,
         doctor: profile.doctor,
         weight: profile.weight,
         height: profile.height,
-        emergencyContact: profile.emergencyContact,
-        classInfo: profile.classInfo,
+        emergency_contact_name: profile.emergencyContact?.name,
+        emergency_contact_relation: profile.emergencyContact?.relation,
+        emergency_contact_phone: profile.emergencyContact?.phone,
         clubs: profile.clubs || [],
       };
 
-      const updated = await updateChild(childId, payload);
-      setProfile(updated);
+      await updateChild(childId, payload);
+
+      // ✅ Re-fetch the complete child with classroom_name + club_details
+      const refreshed = await getChildById(childId);
+
+      setProfile({
+        ...refreshed,
+        className: refreshed.classroom_name || "",
+        club_details: refreshed.club_details || [],
+        clubs: refreshed.clubs || [],
+      });
+
       setIsEditing(false);
       Alert.alert("✅ Succès", "Profil mis à jour sur le serveur.");
     } catch (error: any) {
@@ -81,6 +149,7 @@ export default function Profile() {
       setLoading(false);
     }
   };
+
   /** 🧮 Calcul de l’âge */
   const getAge = (birthdate?: string) => {
     if (!birthdate) return "";
@@ -106,16 +175,19 @@ export default function Profile() {
       }
     })();
   }, []);
+  useEffect(() => {
+    if (profile && clubs.length > 0 && !profile.availableClubs) {
+      setProfile((p: any) => ({ ...p, availableClubs: clubs }));
+    }
+  }, [clubs, profile]);
 
   /** 📦 Chargement du profil depuis le backend */
   useEffect(() => {
     if (!childId) return;
-
     (async () => {
       setLoading(true);
       try {
         const data = await getChildById(childId);
-
         const filled = {
           id: data?.id || "",
           name: data?.name || "",
@@ -132,6 +204,7 @@ export default function Profile() {
           height: data?.height || "",
           nextPaymentDate: data?.nextPaymentDate || "",
           clubs: data?.clubs || [],
+          club_details: data?.club_details || [],
           emergencyContact: {
             name: data?.emergencyContact?.name || "",
             relation: data?.emergencyContact?.relation || "",
@@ -144,7 +217,6 @@ export default function Profile() {
             responsiblePhone: data?.classInfo?.responsiblePhone || "",
           },
         };
-
         setProfile(filled);
       } catch (e: any) {
         console.error("❌ Error fetching child:", e.response?.data || e.message);
@@ -160,7 +232,7 @@ export default function Profile() {
   };
 
   const handlePhoneCall = (phone: string) => {
-    if (!phone || phone === "") return;
+    if (!phone) return;
     const sanitized = phone.replace(/[^+\d]/g, "");
     const url = `tel:${sanitized}`;
     Linking.canOpenURL(url)
@@ -218,7 +290,7 @@ export default function Profile() {
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
-      {/* En-tête */}
+      {/* Header */}
       <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
@@ -226,13 +298,7 @@ export default function Profile() {
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
           <ChevronLeft color={colors.textDark} size={28} />
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => {
-            if (isEditing) saveProfile();
-            else setIsEditing(true);
-          }}
-        >
+        <TouchableOpacity onPress={() => (isEditing ? saveProfile() : setIsEditing(true))}>
           {isEditing ? (
             <Check color={colors.textDark} size={26} />
           ) : (
@@ -241,7 +307,7 @@ export default function Profile() {
         </TouchableOpacity>
       </View>
 
-      {/* 🧱 Scroll content */}
+      {/* Scroll */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -252,34 +318,60 @@ export default function Profile() {
           contentContainerStyle={{ paddingBottom: 120 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 👶 Informations sur l’enfant */}
+          {/* 👶 Child info */}
           <Card title="Informations de l’enfant">
             <View className="items-center">
-              <Image source={{ uri: profile?.avatar }} className="w-28 h-28 rounded-full mb-3" />
-              {isEditing ? (
-                <>
-                  <TextInput
-                    value={profile?.name}
-                    onChangeText={(t) => updateField("name", t)}
-                    className="text-center text-xl font-semibold border-b border-gray-300 w-48 mb-1"
-                    style={{ color: colors.textDark }}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                disabled={!isEditing}
+                onPress={isEditing ? handleChangeAvatar : undefined}
+              >
+                <View>
+                  <Image
+                    source={{ uri: profile.avatar }}
+                    className="w-28 h-28 rounded-full mb-3"
+                    style={{
+                      borderWidth: isEditing ? 2 : 0,
+                      borderColor: colors.accent,
+                    }}
                   />
-                </>
+                  {isEditing && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        bottom: 4,
+                        right: 4,
+                        backgroundColor: colors.accent,
+                        borderRadius: 16,
+                        padding: 5,
+                      }}
+                    >
+                      <Pencil size={14} color="#FFF" />
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {isEditing ? (
+                <TextInput
+                  value={profile.name}
+                  onChangeText={(t) => updateField("name", t)}
+                  className="text-center text-xl font-semibold border-b border-gray-300 w-48 mb-1"
+                  style={{ color: colors.textDark }}
+                />
               ) : (
                 <>
                   <Text className="text-xl font-semibold" style={{ color: colors.textDark }}>
-                    {profile?.name}
-                  </Text>
-                  <Text style={{ color: colors.text, marginTop: 4 }}>
-                    {getAge(profile?.birthdate)}
+                    {profile.name}
                   </Text>
                 </>
               )}
             </View>
           </Card>
-          {/* 🧩 Activités & Groupe */}
+
+          {/* 🧩 Class & Clubs */}
           <Card title="Activités & Groupe">
-            {/* 🏫 Classe */}
+            {/* 🏫 Class */}
             <View className="mb-5">
               {isEditing ? (
                 <View style={{ width: "100%" }}>
@@ -288,16 +380,11 @@ export default function Profile() {
                     onPress={() => setShowClassDropdown(!showClassDropdown)}
                     className="flex-row justify-between items-center border-b border-gray-300 py-1"
                   >
-                    <Text
-                      style={{
-                        color: profile?.className ? colors.textDark : colors.textLight,
-                      }}
-                    >
-                      {profile?.className || "Sélectionner une classe"}
+                    <Text style={{ color: profile.className ? colors.textDark : colors.textLight }}>
+                      {profile.className || "Sélectionner une classe"}
                     </Text>
                     <ChevronDown color={colors.textDark} size={18} />
                   </TouchableOpacity>
-
                   {showClassDropdown && (
                     <View
                       className="rounded-xl shadow-sm p-3 mt-1"
@@ -311,15 +398,11 @@ export default function Profile() {
                             updateField("classroom_id", c.id);
                             setShowClassDropdown(false);
                           }}
-                          className={`py-2 rounded-xl ${
-                            profile?.className === c.name ? "bg-gray-100" : ""
-                          }`}
+                          className={`py-2 rounded-xl ${profile.className === c.name ? "bg-gray-100" : ""}`}
                         >
                           <Text
                             style={{
-                              color:
-                                profile?.className === c.name ? colors.accent : colors.textDark,
-                              fontWeight: profile?.className === c.name ? "600" : "400",
+                              color: profile.className === c.name ? colors.accent : colors.textDark,
                             }}
                           >
                             {c.name}
@@ -332,7 +415,7 @@ export default function Profile() {
               ) : (
                 <View className="flex-row justify-between items-center">
                   <Text style={{ color: colors.text }}>🏫 Classe</Text>
-                  <Text style={{ color: colors.textDark }}>{profile?.className || "—"}</Text>
+                  <Text style={{ color: colors.textDark }}>{profile.className || "—"}</Text>
                 </View>
               )}
             </View>
@@ -340,6 +423,7 @@ export default function Profile() {
             {/* 🎵 Clubs */}
             <View>
               <Text style={{ color: colors.text, marginBottom: 4 }}>🎵 Clubs</Text>
+
               {isEditing ? (
                 <View
                   style={{
@@ -349,8 +433,8 @@ export default function Profile() {
                     marginTop: 6,
                   }}
                 >
-                  {profile?.availableClubs?.length ? (
-                    profile.availableClubs.map((club: any) => {
+                  {clubs.length > 0 ? (
+                    clubs.map((club) => {
                       const isSelected = profile.clubs?.includes(club.id);
                       return (
                         <TouchableOpacity
@@ -386,8 +470,15 @@ export default function Profile() {
                   )}
                 </View>
               ) : (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
-                  {profile?.club_details?.length ? (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginTop: 6,
+                  }}
+                >
+                  {profile.club_details?.length ? (
                     profile.club_details.map((club: any) => (
                       <View
                         key={club.id}

@@ -16,7 +16,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import HeaderBar from "@/components/Header";
-import { createClub, deleteChild, getChildren, uploadAvatar } from "@/api/children";
+import {
+  createClub,
+  deleteChild,
+  deleteClass,
+  deleteClub,
+  getChildren,
+  uploadAvatar,
+} from "@/api/children";
 import { createClass, getClasses } from "@/api/class";
 import { createChild } from "@/api/children";
 import * as ImagePicker from "expo-image-picker";
@@ -26,6 +33,7 @@ import { useAppStore } from "@/store/useAppStore";
 export default function ChildrenScreen() {
   const router = useRouter();
 
+  // ------------------- STATE -------------------
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddClass, setShowAddClass] = useState(false);
   const [showAddClub, setShowAddClub] = useState(false);
@@ -43,11 +51,13 @@ export default function ChildrenScreen() {
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [selectedClub, setSelectedClub] = useState<string | null>(null);
   const [children, setChildren] = useState<any[]>([]);
+  const [filterType, setFilterType] = useState<"class" | "club" | "none">("none");
 
   const { data, actions } = useAppStore();
-  const { clubList: clubs, classList: classes, childrenList } = data;
+  const { clubList: clubs, classList: classes } = data;
   const { fetchChildren, fetchClasses, fetchClubs } = actions;
 
+  // ------------------- INIT -------------------
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -61,93 +71,14 @@ export default function ChildrenScreen() {
     })();
   }, []);
 
-  // 📅 Pick birthdate
-  const handlePickDate = (event: any, selectedDate?: Date) => {
-    if (event.type === "set" && selectedDate) {
-      setChildBirthdate(selectedDate);
-      Platform.OS === "android" && setShowDatePicker(false);
-    }
-    if (event.type === "dismissed") {
-      setShowDatePicker(false);
-    }
-  };
-
-  const resetChildForm = () => {
-    setChildName("");
-    setChildParent("");
-    setChildBirthdate(null);
-    setChildImage(null);
-    setHasMobileApp(false);
-    if (classes.length) setChildClass(classes[0]?.name || "");
-  };
-
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission refusée", "Veuillez autoriser l’accès à la caméra.");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.9,
-    });
-
-    if (!result.canceled && result.assets?.length > 0) {
-      setChildImage(result.assets[0].uri);
-    }
-  };
-
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission refusée", "Veuillez autoriser l’accès à la galerie.");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.9,
-      selectionLimit: 1,
-    });
-
-    if (!result.canceled && result.assets?.length > 0) {
-      setChildImage(result.assets[0].uri);
-    }
-  };
-
-  const handleDeleteChild = (id: string) => {
-    Alert.alert("Supprimer l'enfant", "Voulez-vous vraiment supprimer cet enfant ?", [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteChild(Number(id));
-            setChildren((prev) => prev.filter((c: any) => c.id !== id));
-            Alert.alert("Succès", "L'enfant a été supprimé !");
-          } catch (e: any) {
-            console.error("❌ Error deleting child:", e.response?.data || e.message);
-            Alert.alert("Erreur", "Impossible de supprimer cet enfant.");
-          }
-        },
-      },
-    ]);
-  };
-
+  // ------------------- ADD CLASS -------------------
   const handleAddClass = async () => {
     if (!newClassName.trim())
       return Alert.alert("Nom manquant", "Veuillez entrer un nom de classe.");
     setLoading(true);
     try {
       await createClass(newClassName.trim());
-      const refreshedClasses = await getClasses();
-      setClasses(refreshedClasses);
+      await fetchClasses();
       setNewClassName("");
       setShowAddClass(false);
       Alert.alert("Succès", "Classe ajoutée !");
@@ -158,13 +89,55 @@ export default function ChildrenScreen() {
       setLoading(false);
     }
   };
+  // 🧹 Delete class
+  const handleDeleteClass = (cls: any) => {
+    Alert.alert("Supprimer la classe", `Voulez-vous vraiment supprimer la classe "${cls.name}" ?`, [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteClass(cls.id);
+            await fetchClasses(); // refresh
+            Alert.alert("Supprimée ✅", "La classe a été supprimée.");
+          } catch (e: any) {
+            console.error("❌ Error deleting class:", e.message);
+            Alert.alert("Erreur", "Impossible de supprimer la classe.");
+          }
+        },
+      },
+    ]);
+  };
 
+  // 🧹 Delete club
+  const handleDeleteClub = (club: any) => {
+    Alert.alert("Supprimer le club", `Voulez-vous vraiment supprimer "${club.name}" ?`, [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteClub(club.id);
+            await fetchClubs();
+            Alert.alert("Supprimé ✅", "Le club a été supprimé.");
+          } catch (e: any) {
+            console.error("❌ Error deleting club:", e.message);
+            Alert.alert("Erreur", "Impossible de supprimer le club.");
+          }
+        },
+      },
+    ]);
+  };
+
+  // ------------------- ADD CLUB -------------------
   const handleAddClub = async () => {
     if (!newClubName.trim()) return Alert.alert("Nom manquant", "Veuillez entrer un nom de club.");
     setLoading(true);
     try {
       const created = await createClub(newClubName.trim());
-      setClubs((prev) => [...prev, created]);
+      await fetchClubs();
       setNewClubName("");
       setShowAddClub(false);
       Alert.alert("Succès 🎉", "Club ajouté !");
@@ -176,6 +149,7 @@ export default function ChildrenScreen() {
     }
   };
 
+  // ------------------- ADD CHILD -------------------
   const handleAddChild = async () => {
     if (!childName.trim() || !childBirthdate || !childParent.trim())
       return Alert.alert("Champs manquants", "Veuillez remplir tous les champs.");
@@ -210,21 +184,48 @@ export default function ChildrenScreen() {
     }
   };
 
-  // 🔍 Filter logic
+  // ------------------- IMAGE PICKER -------------------
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted")
+      return Alert.alert("Permission refusée", "Veuillez autoriser la caméra.");
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (!result.canceled && result.assets?.length > 0) setChildImage(result.assets[0].uri);
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted")
+      return Alert.alert("Permission refusée", "Veuillez autoriser l’accès à la galerie.");
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (!result.canceled && result.assets?.length > 0) setChildImage(result.assets[0].uri);
+  };
+
+  // ------------------- FILTERS -------------------
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const params: any = {};
-        if (selectedClass) {
+        let params: any = {};
+        if (selectedClass && !selectedClub) {
           const cls = classes.find((c) => c.name === selectedClass);
           if (cls) params.classroom = cls.id;
-        }
-        if (selectedClub) {
+        } else if (selectedClub && !selectedClass) {
           const club = clubs.find((c) => c.name === selectedClub);
           if (club) params.club = club.id;
         }
-
         const data = await getChildren(Object.keys(params).length ? params : undefined);
         setChildren(data);
       } catch (e: any) {
@@ -235,11 +236,11 @@ export default function ChildrenScreen() {
     })();
   }, [selectedClass, selectedClub]);
 
-  const filteredChildren = useMemo(() => {
-    return children.filter((child: any) =>
-      child.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [children, searchQuery]);
+  const filteredChildren = useMemo(
+    () =>
+      children.filter((child: any) => child.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    [children, searchQuery]
+  );
 
   if (loading)
     return (
@@ -248,6 +249,24 @@ export default function ChildrenScreen() {
       </View>
     );
 
+  const handlePickDate = (event: any, selectedDate?: Date) => {
+    if (event.type === "set" && selectedDate) {
+      setChildBirthdate(selectedDate);
+      Platform.OS === "android" && setShowDatePicker(false);
+    }
+    if (event.type === "dismissed") setShowDatePicker(false);
+  };
+
+  const resetChildForm = () => {
+    setChildName("");
+    setChildParent("");
+    setChildBirthdate(null);
+    setChildImage(null);
+    setHasMobileApp(false);
+    if (classes.length) setChildClass(classes[0]?.name || "");
+  };
+
+  // ------------------- RENDER -------------------
   const renderChild = ({ item }: { item: any }) => (
     <TouchableOpacity
       activeOpacity={0.8}
@@ -275,12 +294,14 @@ export default function ChildrenScreen() {
     </TouchableOpacity>
   );
 
+  // ------------------- UI -------------------
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <HeaderBar title="Gestion des Enfants" showBack={true} />
 
-      {/* 🔍 Search bar */}
+      {/* Search & Filters */}
       <View className="px-5 mt-3">
+        {/* Search Bar */}
         <View
           className="flex-row items-center rounded-2xl px-3 mb-4"
           style={{
@@ -301,93 +322,119 @@ export default function ChildrenScreen() {
           />
         </View>
 
-        {/* Filter by Class */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-          <TouchableOpacity
-            onPress={() => {
-              setSelectedClass(null);
-              setSelectedClub(null);
-            }}
-            activeOpacity={0.8}
-            style={{
-              backgroundColor:
-                !selectedClass && !selectedClub ? colors.accent : colors.cardBackground,
-              borderRadius: 12,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderWidth: 1,
-              borderColor: colors.accent,
-              marginRight: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: !selectedClass && !selectedClub ? "#fff" : colors.textDark,
-                fontWeight: "500",
-              }}
-            >
-              Tous les enfants
-            </Text>
-          </TouchableOpacity>
-
-          {classes.map((cls: any) => (
-            <TouchableOpacity
-              key={cls.id}
-              onPress={() => setSelectedClass((prev) => (prev === cls.name ? null : cls.name))}
-              activeOpacity={0.8}
-              style={{
-                backgroundColor: selectedClass === cls.name ? colors.accent : colors.cardBackground,
-                borderRadius: 12,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderWidth: 1,
-                borderColor: colors.accent,
-                marginRight: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: selectedClass === cls.name ? "#fff" : colors.textDark,
-                  fontWeight: "500",
-                }}
-              >
-                {cls.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Filter by Club */}
-        {clubs.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-            {clubs.map((club: any) => (
+        {/* 🔍 Filter Controls */}
+        <View className=" mb-3">
+          {/* 🔘 Filter Type Toggle */}
+          <View className="flex-row justify-center mb-4">
+            {[
+              { key: "none", label: "Tous", icon: "people-outline" },
+              { key: "class", label: "Classe", icon: "school-outline" },
+              { key: "club", label: "Club", icon: "musical-notes-outline" },
+            ].map((btn) => (
               <TouchableOpacity
-                key={club.id}
-                onPress={() => setSelectedClub((prev) => (prev === club.name ? null : club.name))}
+                key={btn.key}
+                onPress={() => {
+                  setFilterType(btn.key as any);
+                  setSelectedClass(null);
+                  setSelectedClub(null);
+                }}
                 activeOpacity={0.8}
                 style={{
-                  backgroundColor:
-                    selectedClub === club.name ? colors.accent : colors.cardBackground,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: filterType === btn.key ? colors.accent : colors.cardBackground,
                   borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  marginHorizontal: 4,
                   borderWidth: 1,
                   borderColor: colors.accent,
-                  marginRight: 8,
                 }}
               >
+                <Ionicons
+                  name={btn.icon as any}
+                  size={18}
+                  color={filterType === btn.key ? "#fff" : colors.textDark}
+                  style={{ marginRight: 6 }}
+                />
                 <Text
                   style={{
-                    color: selectedClub === club.name ? "#fff" : colors.textDark,
+                    color: filterType === btn.key ? "#fff" : colors.textDark,
                     fontWeight: "500",
                   }}
                 >
-                  {club.name}
+                  {btn.label}
                 </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
-        )}
+          </View>
+
+          {/* 🏫 Class Chips */}
+          {filterType === "class" && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {classes.map((cls: any) => (
+                <TouchableOpacity
+                  key={cls.id}
+                  onPress={() => setSelectedClass((prev) => (prev === cls.name ? null : cls.name))}
+                  onLongPress={() => handleDeleteClass(cls)}
+                  activeOpacity={0.8}
+                  style={{
+                    backgroundColor:
+                      selectedClass === cls.name ? colors.accent : colors.cardBackground,
+                    borderRadius: 12,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderWidth: 1,
+                    borderColor: colors.accent,
+                    marginRight: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: selectedClass === cls.name ? "#fff" : colors.textDark,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {cls.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* 🎵 Club Chips */}
+          {filterType === "club" && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {clubs.map((club: any) => (
+                <TouchableOpacity
+                  key={club.id}
+                  onPress={() => setSelectedClub((prev) => (prev === club.name ? null : club.name))}
+                  onLongPress={() => handleDeleteClub(club)}
+                  activeOpacity={0.8}
+                  style={{
+                    backgroundColor:
+                      selectedClub === club.name ? colors.accent : colors.cardBackground,
+                    borderRadius: 12,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderWidth: 1,
+                    borderColor: colors.accent,
+                    marginRight: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: selectedClub === club.name ? "#fff" : colors.textDark,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {club.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
       </View>
 
       {/* Child List */}
@@ -450,7 +497,53 @@ export default function ChildrenScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Add Club Modal */}
+      {/* ✅ Add Class Modal */}
+      <Modal visible={showAddClass} animationType="slide" transparent>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <View
+            className="w-full rounded-2xl p-6"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
+            <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
+              Nouvelle Classe
+            </Text>
+            <TextInput
+              placeholder="Nom de la classe"
+              placeholderTextColor={colors.textLight}
+              value={newClassName}
+              onChangeText={setNewClassName}
+              className="rounded-xl px-4 py-3 text-base mb-5"
+              style={{
+                backgroundColor: "#F8F8F8",
+                color: colors.textDark,
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              }}
+            />
+            <View className="flex-row justify-end">
+              <TouchableOpacity
+                onPress={() => setShowAddClass(false)}
+                className="px-5 py-3 mr-2 rounded-xl"
+                style={{ backgroundColor: "#E5E7EB" }}
+              >
+                <Text style={{ color: colors.textDark }}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAddClass}
+                className="px-5 py-3 rounded-xl"
+                style={{ backgroundColor: colors.accent }}
+              >
+                <Text className="text-white font-semibold">Ajouter</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ✅ Add Club Modal */}
       <Modal visible={showAddClub} animationType="slide" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
@@ -486,6 +579,231 @@ export default function ChildrenScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleAddClub}
+                className="px-5 py-3 rounded-xl"
+                style={{ backgroundColor: colors.accent }}
+              >
+                <Text className="text-white font-semibold">Ajouter</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ✅ Add Child Modal (restored) */}
+      <Modal visible={showAddChild} animationType="slide" transparent>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <View
+            className="w-full rounded-2xl p-6"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
+            <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
+              Nouvel Enfant
+            </Text>
+
+            {/* Name */}
+            <TextInput
+              placeholder="Nom de l'enfant"
+              placeholderTextColor={colors.textLight}
+              value={childName}
+              onChangeText={setChildName}
+              className="rounded-xl px-4 py-3 text-base mb-3"
+              style={{
+                backgroundColor: "#F8F8F8",
+                color: colors.textDark,
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              }}
+            />
+
+            {/* Birthdate Picker */}
+            <View
+              className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
+              style={{
+                backgroundColor: "#F8F8F8",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              }}
+            >
+              <TouchableOpacity
+                style={{ flex: 1 }}
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: colors.textDark }}>
+                  {childBirthdate ? childBirthdate.toLocaleDateString() : "Date de naissance"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(!showDatePicker)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={showDatePicker ? "close" : "calendar-outline"}
+                  size={20}
+                  color={colors.textLight}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={childBirthdate || new Date()}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "calendar"}
+                onChange={handlePickDate}
+                maximumDate={new Date()}
+              />
+            )}
+
+            {/* Image Picker */}
+            <View className="items-center mb-6">
+              <TouchableOpacity
+                onPress={() =>
+                  Alert.alert("Photo de l'enfant", "Choisissez une option :", [
+                    { text: "📷 Prendre une photo", onPress: takePhoto },
+                    { text: "🖼️ Galerie", onPress: pickImage },
+                    { text: "Annuler", style: "cancel" },
+                  ])
+                }
+                activeOpacity={0.9}
+              >
+                <View
+                  style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: 60,
+                    backgroundColor: "#F9FAFB",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Image
+                    source={{
+                      uri: childImage || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
+                    }}
+                    style={{
+                      width: 120,
+                      height: 120,
+                      borderRadius: 60,
+                    }}
+                  />
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: 8,
+                      right: 8,
+                      backgroundColor: "rgba(255,255,255,0.9)",
+                      borderRadius: 20,
+                      padding: 6,
+                    }}
+                  >
+                    <Ionicons name="camera-outline" size={20} color="#6B7280" />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Parent */}
+            <TextInput
+              placeholder="Nom du parent"
+              placeholderTextColor={colors.textLight}
+              value={childParent}
+              onChangeText={setChildParent}
+              className="rounded-xl px-4 py-3 text-base mb-5"
+              style={{
+                backgroundColor: "#F8F8F8",
+                color: colors.textDark,
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              }}
+            />
+
+            {/* Class Selector */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5">
+              {classes.map((cls: any) => (
+                <TouchableOpacity
+                  key={cls.id}
+                  onPress={() => setChildClass(cls.name)}
+                  activeOpacity={0.8}
+                  style={{
+                    backgroundColor:
+                      childClass === cls.name ? colors.accent : colors.cardBackground,
+                    borderRadius: 12,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderWidth: 1,
+                    borderColor: colors.accent,
+                    marginRight: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: childClass === cls.name ? "#fff" : colors.textDark,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {cls.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Mobile App Access */}
+            <View
+              className="flex-row justify-between items-center mb-5 px-4 py-2.5 rounded-xl"
+              style={{
+                backgroundColor: "#F8F8F8",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              }}
+            >
+              <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 14.5 }}>
+                Accès à l’application mobile
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setHasMobileApp(!hasMobileApp)}
+                style={{
+                  width: 46,
+                  height: 26,
+                  borderRadius: 13,
+                  backgroundColor: hasMobileApp ? colors.accent : "#D1D5DB",
+                  justifyContent: "center",
+                  paddingHorizontal: 3,
+                }}
+              >
+                <View
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: "#FFF",
+                    transform: [{ translateX: hasMobileApp ? 20 : 0 }],
+                    shadowColor: "#000",
+                    shadowOpacity: 0.15,
+                    shadowRadius: 2,
+                    elevation: 3,
+                  }}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Buttons */}
+            <View className="flex-row justify-end">
+              <TouchableOpacity
+                onPress={() => setShowAddChild(false)}
+                className="px-5 py-3 mr-2 rounded-xl"
+                style={{ backgroundColor: "#E5E7EB" }}
+              >
+                <Text style={{ color: colors.textDark }}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAddChild}
                 className="px-5 py-3 rounded-xl"
                 style={{ backgroundColor: colors.accent }}
               >

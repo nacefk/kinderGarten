@@ -14,19 +14,18 @@ async function getAuthHeaders() {
 /**
  * Fetch all children or filter by classroom or club
  */
-export async function getChildren(filters?: { classroom?: number; club?: number }) {
-  const headers = await getAuthHeaders();
+export async function getChildren(filter: { classroom?: number; club?: number } = {}) {
+  const token = await AsyncStorage.getItem("access_token");
+  const params: any = {};
 
-  try {
-    const res = await axios.get(API_URL, {
-      headers,
-      params: filters || {}, // ✅ handles both classroom or club
-    });
-    return res.data;
-  } catch (e: any) {
-    console.error("❌ Error fetching children:", e.response?.data || e.message);
-    throw e;
-  }
+  if (filter.classroom) params.classroom = filter.classroom;
+  else if (filter.club) params.club = filter.club; // ✅ only one at a time
+
+  const res = await axios.get(API_URL, {
+    headers: { Authorization: `Bearer ${token}` },
+    params,
+  });
+  return res.data;
 }
 
 
@@ -158,4 +157,37 @@ export async function createClub(name: string) {
     { headers }
   );
   return res.data;
+}
+/**
+ * Delete a classroom by ID
+ */
+export async function deleteClass(id: number) {
+  const headers = await getAuthHeaders();
+  try {
+    const res = await axios.delete(
+      `http://192.168.0.37:8000/api/children/classes/${id}/`,
+      { headers }
+    );
+    return res.data;
+  } catch (e: any) {
+    console.error("❌ Error deleting class:", e.response?.data || e.message);
+    throw e;
+  }
+}
+
+/**
+ * Delete a club by ID
+ */
+export async function deleteClub(id: number) {
+  const headers = await getAuthHeaders();
+  try {
+    const res = await axios.delete(
+      `http://192.168.0.37:8000/api/children/clubs/${id}/`,
+      { headers }
+    );
+    return res.data;
+  } catch (e: any) {
+    console.error("❌ Error deleting club:", e.response?.data || e.message);
+    throw e;
+  }
 }
