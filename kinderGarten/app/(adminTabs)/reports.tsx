@@ -16,6 +16,7 @@ import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
 import { createDailyReport, getReportById, getReports } from "@/api/report";
 import * as ImagePicker from "expo-image-picker";
+import { getChildren } from "@/api/children";
 
 export default function ReportsScreen() {
   const {
@@ -25,7 +26,9 @@ export default function ReportsScreen() {
   } = useAppStore((state) => state.data);
   const { fetchClasses, fetchChildren, fetchClubs } = useAppStore((state) => state.actions);
 
-  const [selectedClass, setSelectedClass] = useState<any | null>(null);
+  const [selectedClass, setSelectedClass] = useState<any | null>(
+    classes.length > 0 ? classes[0] : null
+  );
   const [selectedChildren, setSelectedChildren] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [groupMode, setGroupMode] = useState(false);
@@ -39,6 +42,42 @@ export default function ReportsScreen() {
   const [notes, setNotes] = useState("");
   const [mediaList, setMediaList] = useState<any[]>([]);
   const [selectedClub, setSelectedClub] = useState<any | null>(null);
+  const [filterType, setFilterType] = useState<"class" | "club">("class");
+  const [showClassDropdown, setShowClassDropdown] = useState(false);
+  const [showClubDropdown, setShowClubDropdown] = useState(false);
+  const [childrenList, setChildrenList] = useState<any[]>([]);
+
+  const handleSelectClass = async (cls: any) => {
+    setSelectedClass(cls);
+    setSelectedClub(null);
+    setSelectedChildren([]);
+    setGroupMode(false);
+    setLoading(true);
+    try {
+      const data = await getChildren({ classroom: cls.id });
+      setChildrenList(data);
+    } catch (err: any) {
+      console.error("❌ Error loading class children:", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectClub = async (club: any) => {
+    setSelectedClub(club);
+    setSelectedClass(null);
+    setSelectedChildren([]);
+    setGroupMode(false);
+    setLoading(true);
+    try {
+      const data = await getChildren({ club: club.id });
+      setChildrenList(data);
+    } catch (err: any) {
+      console.error("❌ Error loading club children:", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const behaviorOptions = [
     "Calme",
@@ -56,17 +95,51 @@ export default function ReportsScreen() {
 
   // ------------------------------------------------------------------------
   useEffect(() => {
-    if (classes.length === 0) fetchClasses();
-    if (clubs?.length === 0) fetchClubs();
+    (async () => {
+      try {
+        if (classes.length === 0) await fetchClasses();
+        if (clubs.length === 0) await fetchClubs();
+      } catch (e) {
+        console.error("❌ Error loading classes/clubs:", e.message);
+      }
+    })();
   }, []);
-
+  // ✅ Auto-fetch first class children on first mount
+  // ✅ Initial setup: fetch data and select first class by default
   useEffect(() => {
-    if (classes.length > 0 && !selectedClass) {
-      const firstClass = classes[0];
-      setSelectedClass(firstClass);
-      fetchChildren(firstClass.id);
-    }
-  }, [classes]);
+    (async () => {
+      try {
+        setLoading(true);
+
+        // 1️⃣ Always ensure data is loaded first
+        if (classes.length === 0) await fetchClasses();
+        if (clubs.length === 0) await fetchClubs();
+
+        // 2️⃣ Get the updated class list from store AFTER fetching
+        const updatedClasses = useAppStore.getState().data.classList;
+        const firstClass = updatedClasses.length > 0 ? updatedClasses[0] : null;
+
+        // 3️⃣ If we have a class, set it as selected and fetch its children
+        if (firstClass) {
+          setSelectedClass(firstClass);
+          setFilterType("class");
+          setShowClassDropdown(false);
+
+          const data = await getChildren({ classroom: firstClass.id });
+          setChildrenList(data);
+
+          console.log("✅ Default selected class:", firstClass.name);
+          console.log("✅ Loaded children:", data.length);
+        } else {
+          console.log("⚠️ No classes available yet.");
+        }
+      } catch (err: any) {
+        console.error("❌ Error loading initial data:", err.message || err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (selectedClass) loadReportsForClass(selectedClass.id);
@@ -110,30 +183,17 @@ export default function ReportsScreen() {
     }
   };
 
-  const handleSelectClass = async (cls: any) => {
-    setSelectedClass(cls);
-    setSelectedChildren([]);
-    setGroupMode(false);
-    setLoading(true);
-    try {
-      await fetchChildren(cls.id);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const filteredChildren = useMemo(() => {
-    return children.filter((c) => {
+    return childrenList.filter((c) => {
       const matchClass = selectedClass ? c.classroom === selectedClass.id : true;
+      const matchClub =
+        selectedClub && Array.isArray(c.clubs) ? c.clubs.includes(selectedClub.id) : true;
 
-      // ✅ handle many-to-many clubs array
-      const matchClub = selectedClub
-        ? Array.isArray(c.clubs) && c.clubs.includes(selectedClub.id)
-        : true;
-
-      return matchClass && matchClub;
+      if (filterType === "class") return matchClass;
+      if (filterType === "club") return matchClub;
+      return true;
     });
-  }, [selectedClass, selectedClub, children]);
+  }, [selectedClass, selectedClub, childrenList, filterType]);
 
   const resetForm = () => {
     setMeal("");
@@ -237,82 +297,215 @@ export default function ReportsScreen() {
       <HeaderBar title="Rapport par Enfant" showBack={true} />
 
       {/* Step 1: Class selection */}
+      {/* 🧩 Filter by Class OR Club */}
       <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
         <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
-          Sélection de la Classe 🏫
+          Filtrer par 🧠
         </Text>
-
-        {classes.length === 0 ? (
-          <ActivityIndicator color={colors.accent} size="small" />
-        ) : (
-          classes.map((cls) => (
+        {/* Filter Type Selector */}
+        <View className="flex-row justify-center mb-5">
+          {[
+            { key: "class", label: "Classe 🏫", icon: "school-outline" },
+            { key: "club", label: "Club 🎨", icon: "musical-notes-outline" },
+          ].map((btn) => (
             <TouchableOpacity
-              key={cls.id}
+              key={btn.key}
               activeOpacity={0.8}
-              onPress={() => handleSelectClass(cls)}
+              onPress={async () => {
+                // Reset both selections first
+                setSelectedClass(null);
+                setSelectedClub(null);
+                setSelectedChildren([]);
+                setGroupMode(false);
+                setFilterType(btn.key as "class" | "club");
+                setChildrenList([]); // clear old children
+
+                // Fetch default list based on selection
+                try {
+                  setLoading(true);
+                  if (btn.key === "class" && classes.length > 0) {
+                    const firstClass = classes[0];
+                    setSelectedClass(firstClass);
+                    const data = await getChildren({ classroom: firstClass.id });
+                    setChildrenList(data);
+                  } else if (btn.key === "club" && clubs.length > 0) {
+                    const firstClub = clubs[0];
+                    setSelectedClub(firstClub);
+                    const data = await getChildren({ club: firstClub.id });
+                    setChildrenList(data);
+                  }
+                } catch (e: any) {
+                  console.error("❌ Error fetching children by filter:", e.message);
+                } finally {
+                  setLoading(false);
+                }
+              }}
               style={{
-                backgroundColor: selectedClass?.id === cls.id ? colors.accent : "#F8F8F8",
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: filterType === btn.key ? colors.accent : colors.cardBackground,
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                marginHorizontal: 6,
                 borderWidth: 1,
                 borderColor: colors.accent,
-                borderRadius: 10,
-                paddingVertical: 10,
-                marginBottom: 8,
               }}
+            >
+              <Ionicons
+                name={btn.icon as any}
+                size={18}
+                color={filterType === btn.key ? "#fff" : colors.textDark}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={{
+                  color: filterType === btn.key ? "#fff" : colors.textDark,
+                  fontWeight: "500",
+                }}
+              >
+                {btn.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* 🏫 CLASS DROPDOWN */}
+        {filterType === "class" && (
+          <View
+            style={{
+              backgroundColor: "#F8F8F8",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.accent,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              marginBottom: 10,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => setShowClassDropdown((prev) => !prev)}
+              className="flex-row justify-between items-center"
+              activeOpacity={0.8}
             >
               <Text
                 style={{
-                  color: selectedClass?.id === cls.id ? "#fff" : colors.textDark,
+                  color: selectedClass ? colors.textDark : colors.textLight,
                   fontWeight: "500",
-                  textAlign: "center",
                 }}
               >
-                {cls.name}
+                {selectedClass ? selectedClass.name : "Sélectionner une classe"}
               </Text>
+              <Ionicons
+                name={showClassDropdown ? "chevron-up-outline" : "chevron-down-outline"}
+                size={18}
+                color={colors.textDark}
+              />
             </TouchableOpacity>
-          ))
+
+            {showClassDropdown && (
+              <ScrollView style={{ marginTop: 6, maxHeight: 160 }}>
+                {classes.map((cls: any) => (
+                  <TouchableOpacity
+                    key={cls.id}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      handleSelectClass(cls);
+                      setShowClassDropdown(false);
+                    }}
+                    style={{
+                      paddingVertical: 8,
+                      borderBottomWidth: 0.5,
+                      borderColor: "#E5E7EB",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: selectedClass?.id === cls.id ? colors.accent : colors.textDark,
+                        fontWeight: selectedClass?.id === cls.id ? "600" : "400",
+                      }}
+                    >
+                      {cls.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
         )}
-      </View>
-      {/* Step 0: Club selection */}
 
-      <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
-        <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
-          Sélection du Club 🎨
-        </Text>
-
-        {clubs?.length === 0 ? (
-          <ActivityIndicator color={colors.accent} size="small" />
-        ) : (
-          clubs?.map((club) => (
+        {/* 🎨 CLUB DROPDOWN */}
+        {filterType === "club" && (
+          <View
+            style={{
+              backgroundColor: "#F8F8F8",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.accent,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+            }}
+          >
             <TouchableOpacity
-              key={club.id}
+              onPress={() => setShowClubDropdown((prev) => !prev)}
+              className="flex-row justify-between items-center"
               activeOpacity={0.8}
-              onPress={() => setSelectedClub(club)}
-              style={{
-                backgroundColor: selectedClub?.id === club.id ? colors.accent : "#F8F8F8",
-                borderWidth: 1,
-                borderColor: colors.accent,
-                borderRadius: 10,
-                paddingVertical: 10,
-                marginBottom: 8,
-              }}
             >
               <Text
                 style={{
-                  color: selectedClub?.id === club.id ? "#fff" : colors.textDark,
+                  color: selectedClub ? colors.textDark : colors.textLight,
                   fontWeight: "500",
-                  textAlign: "center",
                 }}
               >
-                {club.name}
+                {selectedClub ? selectedClub.name : "Sélectionner un club"}
               </Text>
+              <Ionicons
+                name={showClubDropdown ? "chevron-up-outline" : "chevron-down-outline"}
+                size={18}
+                color={colors.textDark}
+              />
             </TouchableOpacity>
-          ))
+
+            {showClubDropdown && (
+              <ScrollView
+                style={{ marginTop: 6, maxHeight: 160 }}
+                keyboardShouldPersistTaps="handled" // ✅ let taps pass through
+                nestedScrollEnabled={true}
+              >
+                {clubs.map((club: any) => (
+                  <TouchableOpacity
+                    key={club.id}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      handleSelectClub(club);
+                      setShowClubDropdown(false);
+                    }}
+                    style={{
+                      paddingVertical: 8,
+                      borderBottomWidth: 0.5,
+                      borderColor: "#E5E7EB",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: selectedClub?.id === club.id ? colors.accent : colors.textDark,
+                        fontWeight: selectedClub?.id === club.id ? "600" : "400",
+                      }}
+                    >
+                      {club.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
         )}
       </View>
+
       {/* Step 2: Children list */}
       {loading ? (
         <ActivityIndicator color={colors.accent} size="large" />
-      ) : selectedClass ? (
+      ) : selectedClass || selectedClub ? (
         <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
           {filteredChildren.length === 0 ? (
             <Text style={{ color: colors.textLight }}>Aucun enfant trouvé pour cette classe.</Text>

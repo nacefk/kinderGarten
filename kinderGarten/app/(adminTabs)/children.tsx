@@ -256,6 +256,28 @@ export default function ChildrenScreen() {
     }
     if (event.type === "dismissed") setShowDatePicker(false);
   };
+  const handleDeleteChild = (id: number) => {
+    Alert.alert("Supprimer l’enfant", "Voulez-vous vraiment supprimer cet enfant ?", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          setLoading(true);
+          try {
+            await deleteChild(id);
+            setChildren((prev) => prev.filter((child) => child.id !== id));
+            Alert.alert("Succès", "L’enfant a été supprimé avec succès.");
+          } catch (e: any) {
+            console.error("❌ Error deleting child:", e.response?.data || e.message);
+            Alert.alert("Erreur", "Impossible de supprimer l’enfant.");
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+    ]);
+  };
 
   const resetChildForm = () => {
     setChildName("");
