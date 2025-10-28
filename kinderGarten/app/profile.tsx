@@ -125,12 +125,16 @@ export default function Profile() {
         emergency_contact_name: profile.emergencyContact?.name,
         emergency_contact_relation: profile.emergencyContact?.relation,
         emergency_contact_phone: profile.emergencyContact?.phone,
+        responsible_name: profile.classInfo?.responsibleName,
+        responsible_phone: profile.classInfo?.responsiblePhone,
+        teacher_name: profile.classInfo?.teacherName,
         clubs: profile.clubs || [],
+        has_mobile_app: profile.hasMobileApp,
       };
-
+      console.log("payload:", payload);
       await updateChild(childId, payload);
 
-      // ✅ Re-fetch the complete child with classroom_name + club_details
+      // Re-fetch updated data from the backend
       const refreshed = await getChildById(childId);
 
       setProfile({
@@ -138,6 +142,17 @@ export default function Profile() {
         className: refreshed.classroom_name || "",
         club_details: refreshed.club_details || [],
         clubs: refreshed.clubs || [],
+        emergencyContact: {
+          name: refreshed.emergency_contact_name,
+          relation: refreshed.emergency_contact_relation,
+          phone: refreshed.emergency_contact_phone,
+        },
+        classInfo: {
+          teacherName: refreshed.classroom_teacher_name || "",
+          classroomName: refreshed.classroom_name || "",
+          responsibleName: refreshed.classroom_assistant_name || "",
+          responsiblePhone: refreshed.classroom_phone || "",
+        },
       });
 
       setIsEditing(false);
@@ -188,10 +203,12 @@ export default function Profile() {
       setLoading(true);
       try {
         const data = await getChildById(childId);
+        console.log("data", data);
         const filled = {
           id: data?.id || "",
           name: data?.name || "",
           avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
+          hasMobileApp: data?.has_mobile_app || false,
           birthdate: data?.birthdate || "",
           gender: data?.gender || "",
           className: data?.classroom_name || "",
@@ -202,19 +219,19 @@ export default function Profile() {
           doctor: data?.doctor || "",
           weight: data?.weight || "",
           height: data?.height || "",
-          nextPaymentDate: data?.nextPaymentDate || "",
+          nextPaymentDate: data?.next_payment_date || "", // 🧠 use correct field name
           clubs: data?.clubs || [],
           club_details: data?.club_details || [],
           emergencyContact: {
-            name: data?.emergencyContact?.name || "",
-            relation: data?.emergencyContact?.relation || "",
-            phone: data?.emergencyContact?.phone || "",
+            name: data?.emergency_contact_name || "",
+            relation: data?.emergency_contact_relation || "",
+            phone: data?.emergency_contact_phone || "",
           },
           classInfo: {
-            teacherName: data?.classInfo?.teacherName || "",
+            teacherName: data?.teacher_name || "",
             classroomName: data?.classroom_name || "",
-            responsibleName: data?.classInfo?.responsibleName || "",
-            responsiblePhone: data?.classInfo?.responsiblePhone || "",
+            responsibleName: data?.responsible_name || "",
+            responsiblePhone: data?.responsible_phone || "",
           },
         };
         setProfile(filled);
@@ -417,6 +434,88 @@ export default function Profile() {
                   <Text style={{ color: colors.text }}>🏫 Classe</Text>
                   <Text style={{ color: colors.textDark }}>{profile.className || "—"}</Text>
                 </View>
+              )}
+            </View>
+            {/* 📱 Mobile App Access */}
+            <View
+              className="flex-row justify-between items-center mb-5 px-4 py-2.5 rounded-xl"
+              style={{
+                backgroundColor: "#F8F8F8",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              }}
+            >
+              <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 14.5 }}>
+                Accès à l’application mobile
+              </Text>
+
+              {isEditing ? (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={async () => {
+                    const newValue = !profile.hasMobileApp;
+                    updateField("hasMobileApp", newValue);
+
+                    if (!profile.hasMobileApp && newValue) {
+                      try {
+                        const res = await fetch(
+                          `http://YOUR_API_URL/api/children/${childId}/generate_credentials/`,
+                          {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                          }
+                        );
+                        const data = await res.json();
+
+                        if (res.ok) {
+                          Alert.alert(
+                            "✅ Accès activé",
+                            `Identifiants générés :\n👤 ${data.username}\n🔑 ${data.password}`
+                          );
+                        } else {
+                          Alert.alert(
+                            "Erreur",
+                            data.detail || "Impossible de générer les identifiants."
+                          );
+                        }
+                      } catch (err: any) {
+                        console.error("❌ Error generating credentials:", err.message);
+                        Alert.alert("Erreur", "Impossible de générer les identifiants.");
+                      }
+                    }
+                  }}
+                  style={{
+                    width: 46,
+                    height: 26,
+                    borderRadius: 13,
+                    backgroundColor: profile.hasMobileApp ? colors.accent : "#D1D5DB",
+                    justifyContent: "center",
+                    paddingHorizontal: 3,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#FFF",
+                      transform: [{ translateX: profile.hasMobileApp ? 20 : 0 }],
+                      shadowColor: "#000",
+                      shadowOpacity: 0.15,
+                      shadowRadius: 2,
+                      elevation: 3,
+                    }}
+                  />
+                </TouchableOpacity>
+              ) : (
+                <Text
+                  style={{
+                    color: profile.hasMobileApp ? colors.accent : colors.textLight,
+                    fontWeight: "500",
+                  }}
+                >
+                  {profile.hasMobileApp ? "Oui" : "Non"}
+                </Text>
               )}
             </View>
 
