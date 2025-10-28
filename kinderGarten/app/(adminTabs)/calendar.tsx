@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,38 +12,96 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import colors from "@/config/colors";
-import { useAppStore } from "@/store/useAppStore";
-import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 import HeaderBar from "@/components/Header";
+import {
+  getEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  getPlans,
+  createPlan,
+  updatePlan,
+  deletePlan,
+} from "@/api/planning";
+import { getClassrooms } from "@/api/children";
+
+// ---------- TYPES ----------
+interface ClassItem {
+  id: number;
+  name: string;
+}
 
 interface EventItem {
   id: string;
   title: string;
   date: string;
   description?: string;
-  className?: string;
+  class_name: { id: number; name: string };
 }
 
 interface PlanActivity {
+  id?: string;
   time: string;
   title: string;
+  day: string;
+  class_name: { id: number; name: string };
 }
 
+// ---------- COMPONENT ----------
 export default function CalendarScreen() {
-  const { setData } = useAppStore();
-  const calendarEvents = useAppStore((state) => state.data.calendarEvents || []);
-  const weeklyPlans = useAppStore((state) => state.data.weeklyPlans || {});
-  const classes = useAppStore((state) => state.data.classes || []);
-
   const [activeTab, setActiveTab] = useState<"events" | "plan">("events");
-  const [selectedClass, setSelectedClass] = useState(
-    classes.length ? classes[0].name : "Petite Section"
-  );
-
+  const [calendarEvents, setCalendarEvents] = useState<EventItem[]>([]);
+  const [weeklyPlans, setWeeklyPlans] = useState<Record<string, any>>({});
+  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
 
-  // ---------- EVENTS ----------
+  // ---------- INITIAL LOAD ----------
+  useEffect(() => {
+    (async () => {
+      try {
+        const classList = await getClassrooms();
+        setClasses(classList);
+        if (classList.length) {
+          setSelectedClass(classList[0]);
+          await fetchData(classList[0].id);
+        }
+      } catch (e) {
+        console.error(e);
+        Alert.alert("Erreur", "Impossible de charger les classes.");
+      }
+    })();
+  }, []);
+  // ---------- FETCH DATA ----------
+
+  const fetchData = async (classId?: number) => {
+    try {
+      const [eventsData, plansData] = await Promise.all([
+        getEvents(classId ? { class_name: classId } : undefined),
+        getPlans(classId ? { class_name: classId } : undefined),
+      ]);
+      setCalendarEvents(eventsData);
+
+      const groupedPlans = plansData.reduce((acc: any, plan: any) => {
+        // use class_name_detail for display grouping
+        const className = plan.class_name_detail?.name || plan.class_name?.name || "Inconnu";
+        const { day, time, title, id } = plan;
+
+        if (!acc[className]) acc[className] = {};
+        if (!acc[className][day]) acc[className][day] = [];
+
+        acc[className][day].push({ id, time, title, day, class_name: className });
+        return acc;
+      }, {});
+
+      setWeeklyPlans(groupedPlans);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erreur", "Impossible de charger les données du planning.");
+    }
+  };
+
+  // ---------- EVENT MODAL STATE ----------
   const [showEventModal, setShowEventModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [newTitle, setNewTitle] = useState("");
@@ -59,51 +117,164 @@ export default function CalendarScreen() {
     setShowEventModal(true);
   };
 
-  const handleSaveEvent = () => {
+  const handleSaveEvent = async () => {
     if (!newTitle.trim()) {
       Alert.alert("Titre manquant", "Veuillez saisir un titre pour l'événement.");
       return;
     }
+    if (!selectedClass) {
+      Alert.alert("Classe manquante", "Veuillez sélectionner une classe.");
+      return;
+    }
 
-    const updatedEvent: EventItem = {
-      id: editingEvent ? editingEvent.id : Date.now().toString(),
+    const payload = {
       title: newTitle.trim(),
       date: newDate.toISOString(),
       description: newDescription.trim(),
-      className: selectedClass,
+      class_name: selectedClass.id,
     };
 
-    const updatedEvents = editingEvent
-      ? calendarEvents.map((e) => (e.id === editingEvent.id ? updatedEvent : e))
-      : [...calendarEvents, updatedEvent];
+    try {
+      if (editingEvent) await updateEvent(editingEvent.id, payload);
+      else await createEvent(payload);
 
-    setData("calendarEvents", updatedEvents);
-    setShowEventModal(false);
-    setEditingEvent(null);
-    setNewTitle("");
-    setNewDescription("");
-    setNewDate(new Date());
-    Alert.alert("Succès ✅", "L'événement a été enregistré.");
+      Alert.alert("Succès ✅", "L'événement a été enregistré.");
+      setShowEventModal(false);
+      setEditingEvent(null);
+      setNewTitle("");
+      setNewDescription("");
+      setNewDate(new Date());
+      await fetchData(selectedClass.id);
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Erreur", "Impossible d'enregistrer l'événement.");
+    }
   };
 
-  const handleDeleteEvent = () => {
+  const handleDeleteEvent = async () => {
     if (!editingEvent) return;
     Alert.alert("Supprimer l'événement", "Voulez-vous vraiment supprimer cet événement ?", [
       { text: "Annuler", style: "cancel" },
       {
         text: "Supprimer",
         style: "destructive",
-        onPress: () => {
-          const updated = calendarEvents.filter((e) => e.id !== editingEvent.id);
-          setData("calendarEvents", updated);
-          setShowEventModal(false);
-          setEditingEvent(null);
-          Alert.alert("Supprimé ✅", "L'événement a été supprimé.");
+        onPress: async () => {
+          try {
+            await deleteEvent(editingEvent.id);
+            setShowEventModal(false);
+            setEditingEvent(null);
+            await fetchData(selectedClass?.id);
+            Alert.alert("Supprimé ✅", "L'événement a été supprimé.");
+          } catch {
+            Alert.alert("Erreur", "Impossible de supprimer l'événement.");
+          }
         },
       },
     ]);
   };
 
+  // ---------- PLAN MODAL ----------
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<PlanActivity | null>(null);
+  const [newPlanDay, setNewPlanDay] = useState("Lundi");
+  const [newPlanTime, setNewPlanTime] = useState("08:00");
+  const [newPlanTitle, setNewPlanTitle] = useState("");
+
+  const openEditPlan = (plan: PlanActivity) => {
+    setEditingPlan(plan);
+    setNewPlanDay(plan.day);
+    setNewPlanTime(plan.time);
+    setNewPlanTitle(plan.title);
+    setShowPlanModal(true);
+  };
+
+  const handleSavePlan = async () => {
+    if (!newPlanTitle.trim()) {
+      Alert.alert("Titre manquant", "Veuillez saisir le titre de l'activité.");
+      return;
+    }
+    if (!selectedClass) {
+      Alert.alert("Classe manquante", "Veuillez sélectionner une classe.");
+      return;
+    }
+
+    const payload = {
+      time: newPlanTime,
+      title: newPlanTitle.trim(),
+      day: newPlanDay,
+      class_name: selectedClass.id,
+    };
+
+    console.log("📦 Payload sent to backend:", payload);
+
+    try {
+      let newItem;
+      if (editingPlan?.id) {
+        newItem = await updatePlan(editingPlan.id, payload);
+      } else {
+        newItem = await createPlan(payload);
+      }
+
+      // ✅ Update UI instantly
+      setWeeklyPlans((prev: any) => {
+        const updated = { ...prev };
+        const className = selectedClass.name;
+        if (!updated[className]) updated[className] = {};
+        if (!updated[className][newPlanDay]) updated[className][newPlanDay] = [];
+
+        // if editing, replace existing
+        if (editingPlan?.id) {
+          updated[className][newPlanDay] = updated[className][newPlanDay].map((p: any) =>
+            p.id === editingPlan.id
+              ? { ...p, ...newItem, title: newPlanTitle.trim(), time: newPlanTime }
+              : p
+          );
+        } else {
+          updated[className][newPlanDay].push({
+            id: newItem.id,
+            title: newPlanTitle.trim(),
+            time: newPlanTime,
+            day: newPlanDay,
+          });
+        }
+
+        return updated;
+      });
+
+      Alert.alert("Succès ✅", "L'activité a été enregistrée.");
+      setShowPlanModal(false);
+      setEditingPlan(null);
+      setNewPlanTitle("");
+    } catch (e) {
+      console.error("❌ Error saving plan:", e);
+      Alert.alert("Erreur", "Impossible d'enregistrer l'activité.");
+    }
+  };
+
+  const handleDeletePlan = async () => {
+    if (!editingPlan?.id) return;
+
+    Alert.alert("Supprimer l'activité", "Voulez-vous vraiment supprimer cette activité ?", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deletePlan(editingPlan.id!);
+            setShowPlanModal(false);
+            setEditingPlan(null);
+            await fetchData();
+            Alert.alert("Supprimé ✅", "L'activité a été supprimée.");
+          } catch (e) {
+            Alert.alert("Erreur", "Impossible de supprimer l'activité.");
+          }
+        },
+      },
+    ]);
+  };
+
+  // ---------- RENDER ----------
   const renderEvent = ({ item }: { item: EventItem }) => {
     const eventDate = new Date(item.date);
     return (
@@ -149,105 +320,8 @@ export default function CalendarScreen() {
     );
   };
 
-  // ---------- PLANNING ----------
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<{
-    day: string;
-    index: number;
-    activity: PlanActivity;
-  } | null>(null);
-  const [newPlanDay, setNewPlanDay] = useState("Lundi");
-  const [newPlanTime, setNewPlanTime] = useState("08:00");
-  const [newPlanTitle, setNewPlanTitle] = useState("");
-
-  const openEditPlan = (day: string, index: number, activity: PlanActivity) => {
-    setEditingPlan({ day, index, activity });
-    setNewPlanDay(day);
-    setNewPlanTime(activity.time);
-    setNewPlanTitle(activity.title);
-    setShowPlanModal(true);
-  };
-
-  const handleSavePlan = () => {
-    if (!newPlanTitle.trim()) {
-      Alert.alert("Titre manquant", "Veuillez saisir le titre de l'activité.");
-      return;
-    }
-
-    const currentClassPlan = weeklyPlans[selectedClass] || {};
-    const currentDayPlan = currentClassPlan[newPlanDay] || [];
-
-    let updatedDayPlan;
-    if (editingPlan) {
-      updatedDayPlan = [...currentDayPlan];
-      updatedDayPlan[editingPlan.index] = {
-        time: newPlanTime,
-        title: newPlanTitle.trim(),
-      };
-    } else {
-      updatedDayPlan = [...currentDayPlan, { time: newPlanTime, title: newPlanTitle.trim() }].sort(
-        (a, b) => a.time.localeCompare(b.time)
-      );
-    }
-
-    const updatedClassPlan = {
-      ...currentClassPlan,
-      [newPlanDay]: updatedDayPlan,
-    };
-
-    const updatedPlans = {
-      ...weeklyPlans,
-      [selectedClass]: updatedClassPlan,
-    };
-
-    setData("weeklyPlans", updatedPlans);
-    setShowPlanModal(false);
-    setEditingPlan(null);
-    setNewPlanTitle("");
-    Alert.alert("Succès ✅", "L'activité a été enregistrée.");
-  };
-
-  const handleDeletePlan = () => {
-    if (!editingPlan) return;
-    const { day, index } = editingPlan;
-
-    Alert.alert(
-      "Supprimer l'activité",
-      "Voulez-vous vraiment supprimer cette activité du planning ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: () => {
-            const currentClassPlan = weeklyPlans[selectedClass] || {};
-            const currentDayPlan = currentClassPlan[day] || [];
-            const updatedDayPlan = currentDayPlan.filter((_, i) => i !== index);
-
-            const updatedClassPlan = {
-              ...currentClassPlan,
-              [day]: updatedDayPlan,
-            };
-            const updatedPlans = {
-              ...weeklyPlans,
-              [selectedClass]: updatedClassPlan,
-            };
-
-            setData("weeklyPlans", updatedPlans);
-            setShowPlanModal(false);
-            setEditingPlan(null);
-            Alert.alert("Supprimé ✅", "L'activité a été supprimée.");
-          },
-        },
-      ]
-    );
-  };
-
   const renderDayPlan = (day: string) => {
-    const dailyItems =
-      weeklyPlans[selectedClass]?.[day]?.sort((a: any, b: any) => a.time.localeCompare(b.time)) ||
-      [];
-
+    const dailyItems = weeklyPlans[selectedClass?.name]?.[day] || [];
     return (
       <View
         key={day}
@@ -274,7 +348,7 @@ export default function CalendarScreen() {
             <TouchableOpacity
               key={`${day}-${index}`}
               activeOpacity={0.8}
-              onPress={() => openEditPlan(day, index, item)}
+              onPress={() => openEditPlan(item)}
               className="flex-row items-center mb-2"
             >
               <Ionicons name="time-outline" size={16} color={colors.accent} />
@@ -300,8 +374,7 @@ export default function CalendarScreen() {
 
   // ---------- UI ----------
   return (
-    <View className="flex-1 " style={{ backgroundColor: colors.background }}>
-      {/* Header */}
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <HeaderBar title="Calendrier" showBack={true} />
 
       {/* Tabs */}
@@ -324,7 +397,6 @@ export default function CalendarScreen() {
         ))}
       </View>
 
-      {/* EVENTS LIST */}
       {activeTab === "events" ? (
         <>
           <View className="flex-row items-center justify-between mb-4 px-5">
@@ -353,7 +425,7 @@ export default function CalendarScreen() {
               (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
             )}
             renderItem={renderEvent}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
             showsVerticalScrollIndicator={false}
           />
         </>
@@ -361,15 +433,16 @@ export default function CalendarScreen() {
         <>
           <View className="flex-row justify-between items-center mb-4 flex-wrap px-5">
             <Text className="text-l font-semibold" style={{ color: colors.textDark }}>
-              Planning — {selectedClass}
+              Planning — {selectedClass?.name}
             </Text>
 
             {classes.length > 1 && (
               <TouchableOpacity
                 onPress={() => {
-                  const index = classes.findIndex((c: any) => c.name === selectedClass);
+                  const index = classes.findIndex((c) => c.id === selectedClass?.id);
                   const next = classes[(index + 1) % classes.length];
-                  setSelectedClass(next.name);
+                  setSelectedClass(next);
+                  fetchData(next.id);
                 }}
                 style={{
                   backgroundColor: colors.accent,
@@ -404,11 +477,11 @@ export default function CalendarScreen() {
             </Text>
 
             <TextInput
-              className="rounded-xl px-4 py-3 text-base mb-3"
               placeholder="Titre de l'événement"
-              placeholderTextColor={colors.textLight}
               value={newTitle}
               onChangeText={setNewTitle}
+              className="rounded-xl px-4 py-3 text-base mb-3"
+              placeholderTextColor={colors.textLight}
               style={{
                 backgroundColor: "#F8F8F8",
                 color: colors.textDark,
@@ -420,18 +493,11 @@ export default function CalendarScreen() {
             <TouchableOpacity
               onPress={() => setShowPicker(true)}
               className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
-              style={{
-                backgroundColor: "#F8F8F8",
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-              }}
+              style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
             >
               <Text style={{ color: colors.text }}>
                 {newDate.toLocaleDateString("fr-FR")} à{" "}
-                {newDate.toLocaleTimeString("fr-FR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {newDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
               </Text>
               <Ionicons name="time-outline" size={20} color={colors.textLight} />
             </TouchableOpacity>
@@ -442,18 +508,29 @@ export default function CalendarScreen() {
                 mode="datetime"
                 display="default"
                 onChange={(event, selectedDate) => {
-                  setShowPicker(false);
-                  if (selectedDate) setNewDate(selectedDate);
+                  try {
+                    if (!event || event.type === "dismissed") {
+                      setShowPicker(false);
+                      return;
+                    }
+                    if (selectedDate) {
+                      setNewDate(selectedDate);
+                    }
+                  } catch (err) {
+                    console.warn("⚠️ Date picker dismissed unexpectedly:", err);
+                  } finally {
+                    setShowPicker(false);
+                  }
                 }}
               />
             )}
 
             <TextInput
-              className="rounded-xl px-4 py-3 text-base mb-5"
               placeholder="Description (facultative)"
-              placeholderTextColor={colors.textLight}
               value={newDescription}
               onChangeText={setNewDescription}
+              className="rounded-xl px-4 py-3 text-base mb-5"
+              placeholderTextColor={colors.textLight}
               style={{
                 backgroundColor: "#F8F8F8",
                 color: colors.textDark,
@@ -512,11 +589,11 @@ export default function CalendarScreen() {
             </Text>
 
             <TextInput
-              className="rounded-xl px-4 py-3 text-base mb-3"
               placeholder="Heure (ex: 08:00)"
-              placeholderTextColor={colors.textLight}
               value={newPlanTime}
               onChangeText={setNewPlanTime}
+              className="rounded-xl px-4 py-3 text-base mb-3"
+              placeholderTextColor={colors.textLight}
               style={{
                 backgroundColor: "#F8F8F8",
                 color: colors.textDark,
@@ -526,11 +603,11 @@ export default function CalendarScreen() {
             />
 
             <TextInput
-              className="rounded-xl px-4 py-3 text-base mb-5"
               placeholder="Titre de l'activité"
-              placeholderTextColor={colors.textLight}
               value={newPlanTitle}
               onChangeText={setNewPlanTitle}
+              className="rounded-xl px-4 py-3 text-base mb-5"
+              placeholderTextColor={colors.textLight}
               style={{
                 backgroundColor: "#F8F8F8",
                 color: colors.textDark,
