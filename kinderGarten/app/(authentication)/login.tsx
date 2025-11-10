@@ -21,8 +21,10 @@ export default function Login() {
 
   // 👤 Local state
   const [tenant, setTenant] = useState("test"); // ✅ will be needed for multi-tenant login
-  const [username, setUsername] = useState("test");
-  const [password, setPassword] = useState("test123");
+  // const [username, setUsername] = useState("test");
+  // const [password, setPassword] = useState("test123");
+  const [username, setUsername] = useState("nacef-app");
+  const [password, setPassword] = useState("EDbkCbn5");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +60,8 @@ export default function Login() {
       // console.log("   Data:", res.data);
 
       const { access, refresh, role } = res.data;
-
+      console.log("🪪 Access token:", access ? access : "❌ missing");
+      console.log("🔁 Refresh token:", refresh ? refresh : "❌ missing");
       // ✅ Save tokens
       await AsyncStorage.setItem("access_token", access);
       await AsyncStorage.setItem("refresh_token", refresh);

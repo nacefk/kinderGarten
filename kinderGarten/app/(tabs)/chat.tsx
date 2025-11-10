@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
   FlatList,
+  KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { Send, ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
 import colors from "@/config/colors";
+import { getOrCreateConversation, getMessages, sendMessage } from "@/api/chat";
 
 type Message = {
   id: string;
@@ -20,27 +21,45 @@ type Message = {
 };
 
 export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Salut 👋",
-      sender: "other",
-      time: "09:00",
-    },
-    {
-      id: "2",
-      text: "Bienvenue sur l’écran de discussion !",
-      sender: "other",
-      time: "09:01",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  /** ✅ Load or create conversation on mount */
+  useEffect(() => {
+    (async () => {
+      try {
+        const convo = await getOrCreateConversation();
+        setConversationId(convo.id);
+
+        const msgs = convo.messages || (await getMessages(convo.id));
+        const formatted = msgs.map((m: any) => ({
+          id: m.id.toString(),
+          text: m.text,
+          sender: m.sender_name === "admin" ? "other" : "user",
+          time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        }));
+        setMessages(formatted);
+      } catch (err: any) {
+        console.error("❌ Error loading chat:", err.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  /** ✅ Send new message */
+  const handleSend = async () => {
+    if (!input.trim() || !conversationId) return;
+
+    const text = input.trim();
     const newMsg: Message = {
       id: Date.now().toString(),
-      text: input,
+      text,
       sender: "user",
       time: new Date().toLocaleTimeString("fr-FR", {
         hour: "2-digit",
@@ -49,20 +68,25 @@ export default function Chat() {
     };
     setMessages((prev) => [...prev, newMsg]);
     setInput("");
+
+    try {
+      await sendMessage(conversationId, text);
+    } catch (err: any) {
+      console.error("❌ Error sending message:", err.response?.data || err.message);
+    }
   };
 
   return (
     <View className="flex-1 bg-[#FAF8F5]">
-      {/* En-tête */}
+      {/* Header */}
       <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
       >
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <ChevronLeft color="#374151" size={28} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={() => router.back()}>
+          <ChevronLeft color="#374151" size={28} />
+        </TouchableOpacity>
+        <Text className="text-lg font-semibold text-gray-800">Discussion avec l’Admin</Text>
       </View>
 
       {/* Messages */}
@@ -101,7 +125,7 @@ export default function Chat() {
           contentContainerStyle={{ paddingVertical: 10 }}
         />
 
-        {/* Zone de saisie */}
+        {/* Input area */}
         <View className="flex-row items-center bg-white px-4 py-3 border-t border-gray-200">
           <TextInput
             value={input}
@@ -109,7 +133,7 @@ export default function Chat() {
             placeholder="Écrire un message..."
             className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-gray-800"
           />
-          <TouchableOpacity onPress={sendMessage} className="ml-3 bg-[#C6A57B] rounded-full p-2">
+          <TouchableOpacity onPress={handleSend} className="ml-3 bg-[#C6A57B] rounded-full p-2">
             <Send color="#fff" size={20} />
           </TouchableOpacity>
         </View>

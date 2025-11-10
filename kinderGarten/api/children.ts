@@ -191,3 +191,18 @@ export async function deleteClub(id: number) {
     throw e;
   }
 }
+/**
+ * 🔹 Fetch the current parent's linked child (via /api/children/me/)
+ */
+export async function getMyChild() {
+  const headers = await getAuthHeaders();
+
+  try {
+    const res = await axios.get(`${API_URL}me/`, { headers });
+    console.log("✅ /me/ response:", res.data);
+    return res.data;
+  } catch (err: any) {
+    console.error("❌ getMyChild error:", err.response?.data || err.message);
+    throw err;
+  }
+}

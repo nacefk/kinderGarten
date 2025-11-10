@@ -27,7 +27,7 @@
       "bundler": "metro"
     },
     "plugins": [
-       [
+      [
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you share them with the parents."
@@ -61,7 +61,8 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

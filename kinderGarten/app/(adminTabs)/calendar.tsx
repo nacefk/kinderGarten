@@ -463,6 +463,7 @@ export default function CalendarScreen() {
       )}
 
       {/* EVENT MODAL */}
+      {/* EVENT MODAL */}
       <Modal visible={showEventModal} animationType="slide" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
@@ -476,6 +477,7 @@ export default function CalendarScreen() {
               {editingEvent ? "Modifier l'Événement" : "Nouvel Événement"}
             </Text>
 
+            {/* 🏷️ Title */}
             <TextInput
               placeholder="Titre de l'événement"
               value={newTitle}
@@ -490,41 +492,43 @@ export default function CalendarScreen() {
               }}
             />
 
+            {/* 📅 DATE PICKER */}
             <TouchableOpacity
-              onPress={() => setShowPicker(true)}
+              onPress={() => setShowPicker("date")}
+              className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
+              style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+            >
+              <Text style={{ color: colors.text }}>{newDate.toLocaleDateString("fr-FR")}</Text>
+              <Ionicons name="calendar-outline" size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
+            {/* 🕒 TIME PICKER */}
+            <TouchableOpacity
+              onPress={() => setShowPicker("time")}
               className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
               style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
             >
               <Text style={{ color: colors.text }}>
-                {newDate.toLocaleDateString("fr-FR")} à{" "}
                 {newDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
               </Text>
               <Ionicons name="time-outline" size={20} color={colors.textLight} />
             </TouchableOpacity>
 
+            {/* 🧩 Conditional date/time picker */}
             {showPicker && (
               <DateTimePicker
                 value={newDate}
-                mode="datetime"
+                mode={showPicker}
                 display="default"
                 onChange={(event, selectedDate) => {
-                  try {
-                    if (!event || event.type === "dismissed") {
-                      setShowPicker(false);
-                      return;
-                    }
-                    if (selectedDate) {
-                      setNewDate(selectedDate);
-                    }
-                  } catch (err) {
-                    console.warn("⚠️ Date picker dismissed unexpectedly:", err);
-                  } finally {
-                    setShowPicker(false);
-                  }
+                  if (event.type === "dismissed") return setShowPicker(false);
+                  if (selectedDate) setNewDate(selectedDate);
+                  setShowPicker(false);
                 }}
               />
             )}
 
+            {/* 📝 Description */}
             <TextInput
               placeholder="Description (facultative)"
               value={newDescription}
@@ -539,6 +543,7 @@ export default function CalendarScreen() {
               }}
             />
 
+            {/* ⚙️ ACTION BUTTONS */}
             <View className="flex-row justify-between items-center">
               {editingEvent && (
                 <TouchableOpacity

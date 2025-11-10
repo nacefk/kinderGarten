@@ -1,113 +1,126 @@
 import { router } from "expo-router";
 import { Bell, ChevronDown, ChevronLeft } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Image, ScrollView, StatusBar, Text, TouchableOpacity, View } from "react-native";
-import { useAppStore } from "../../store/useAppStore";
+import {
+  Image,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+} from "react-native";
 import colors from "../../config/colors";
 import Card from "../../components/Card";
 import TimelineItem from "../../components/TimelineItem";
 import LiveView from "@/components/LiveView";
+import { getMyChild } from "@/api/children";
+import { getPlans, getEvents } from "@/api/planning";
+import { getReports } from "@/api/report";
 
 export default function Activity() {
-  const { todayTimeline, timelineByDay, galleryItems, upcomingActivities } = useAppStore();
-  const { data, setData } = useAppStore();
-  const { childrenList, weeklyPlans, calendarEvents } = data;
-
-  const childId = "child_014";
-
+  const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<"today" | "week" | "upcoming">("today");
   const [selectedDay, setSelectedDay] = useState<string>("Lundi");
   const [showDayDropdown, setShowDayDropdown] = useState<boolean>(false);
 
-  /** 🧩 Build activity data dynamically if missing */
-  useEffect(() => {
-    if (!childrenList || !weeklyPlans) return;
+  const [timelineByDay, setTimelineByDay] = useState<Record<string, any[]>>({});
+  const [galleryItems, setGalleryItems] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [weekDays, setWeekDays] = useState<string[]>(["Lundi"]);
 
-    const child = childrenList.find((c: any) => c.id === childId);
-    if (!child) return;
-
-    const classPlan = weeklyPlans?.[child.className] || {};
+  /** 📅 Get current day in French */
+  const getCurrentDay = () => {
     const today = new Date().toLocaleDateString("fr-FR", { weekday: "long" });
-    const capitalizedDay = today.charAt(0).toUpperCase() + today.slice(1);
+    return today.charAt(0).toUpperCase() + today.slice(1);
+  };
 
-    // ✅ AUJOURD’HUI timeline
-    const computedTodayTimeline = todayTimeline?.length
-      ? todayTimeline
-      : classPlan?.[capitalizedDay] || [
-          { time: "08:30", icon: "✅", title: "Arrivée", detail: "Début de la journée." },
-          { time: "09:00", icon: "🧩", title: "Jeu libre", detail: "Construction avec des blocs." },
-        ];
+  /** 📦 Load class plans, events, and reports */
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
 
-    // ✅ HEBDOMADAIRE
-    const computedTimelineByDay = Object.keys(timelineByDay || {}).length
-      ? timelineByDay
-      : classPlan || {
-          Lundi: [
-            { time: "09:00", icon: "🎨", title: "Dessin", detail: "Atelier artistique amusant !" },
-          ],
-        };
+        // 1️⃣ Fetch logged-in parent's child
+        const child = await getMyChild();
+        const className = child.classroom?.name;
+        const childId = child.id;
+        console.log("✅ Child:", child.name, "| Class:", className);
 
-    // ✅ GALERIE
-    const computedGallery = galleryItems?.length
-      ? galleryItems
-      : [
-          { id: "1", type: "image", uri: "https://i.pravatar.cc/300?img=30" },
-          { id: "2", type: "video", uri: "https://www.w3schools.com/html/mov_bbb.mp4" },
-          { id: "3", type: "image", uri: "https://i.pravatar.cc/300?img=45" },
-        ];
+        // 2️⃣ Fetch plans, events, and reports concurrently
+        const [plansData, eventsData, reportsData] = await Promise.all([
+          getPlans({ class_name: className }),
+          getEvents(),
+          getReports(childId),
+        ]);
+        console.log("📅 Events fetched:", eventsData?.length);
 
-    // ✅ ÉVÉNEMENTS À VENIR
-    let computedUpcoming = [];
-    const now = new Date();
+        // 3️⃣ Group class plans by day
+        const grouped: Record<string, any[]> = {};
+        plansData.forEach((plan: any) => {
+          const day = plan.day || "Lundi";
+          if (!grouped[day]) grouped[day] = [];
+          grouped[day].push({
+            time: plan.time,
+            title: plan.title,
+            detail: plan.description || "",
+            icon: "🧩",
+          });
+        });
+        setTimelineByDay(grouped);
+        setWeekDays(Object.keys(grouped).length ? Object.keys(grouped) : ["Lundi"]);
 
-    if (calendarEvents && calendarEvents.length > 0) {
-      computedUpcoming = calendarEvents
-        .filter((e: any) => {
-          const matchesClass =
-            e.className?.toLowerCase() === child.className?.toLowerCase() ||
-            e.className?.toLowerCase() === "toutes les classes";
+        // 4️⃣ Reports (real photos/videos)
+        console.log("🧾 Raw reportsData:", JSON.stringify(reportsData, null, 2));
 
-          const [year, month, day] = e.date.split("-").map(Number);
-          const eventDate = new Date(year, month - 1, day);
+        const formattedStories = (reportsData || []).flatMap((report: any) =>
+          (report.media_files || []).map((media: any) => ({
+            id: `${report.id}_${media.id}`,
+            type: media.file.toLowerCase().endsWith(".mp4") ? "video" : "image",
+            uri: media.file,
+            description: report.notes || "",
+            date: media.uploaded_at,
+          }))
+        );
 
-          return (
-            matchesClass && eventDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate())
-          );
-        })
-        .sort((a: any, b: any) => new Date(a.date) - new Date(b.date))
-        .map((e: any) => ({
-          icon: "🎉",
-          title: e.title || "Événement",
-          detail: e.description || "Aucune description fournie",
-          date: new Date(e.date).toLocaleDateString("fr-FR", {
-            weekday: "long",
-            day: "numeric",
-            month: "short",
-          }),
-        }));
-    }
+        setGalleryItems(formattedStories);
+        console.log("🖼️ Loaded stories:", formattedStories.length);
 
-    if (!computedUpcoming.length && calendarEvents?.length > 0) {
-      computedUpcoming = calendarEvents.map((e: any) => ({
-        icon: "🎉",
-        title: e.title || "Événement",
-        detail: e.description || "Aucune description",
-        date: new Date(e.date).toLocaleDateString("fr-FR", {
-          weekday: "long",
-          day: "numeric",
-          month: "short",
-        }),
-      }));
-    }
+        // 5️⃣ Upcoming Events (future only)
+        const formattedEvents = (eventsData || [])
+          .filter((e: any) => new Date(e.date) > new Date()) // future events
+          .map((e: any) => ({
+            icon: "🎉",
+            title: e.title || "Événement",
+            detail: e.description || "Aucune description fournie",
+            date: e.date,
+          }))
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // ✅ Sync to store
-    setData("upcomingActivities", computedUpcoming);
-    setData("todayTimeline", computedTodayTimeline);
-    setData("timelineByDay", computedTimelineByDay);
-    setData("galleryItems", computedGallery);
-  }, [childrenList, weeklyPlans, calendarEvents]);
+        setEvents(formattedEvents);
+        console.log("🎉 Formatted future events:", formattedEvents.length);
+      } catch (error: any) {
+        console.error("❌ Error loading activity data:", error.response?.data || error.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-  const weekDays = Object.keys(timelineByDay || { Lundi: [] });
+  if (loading) {
+    return (
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={{ color: colors.textLight, marginTop: 8 }}>Chargement des activités...</Text>
+      </View>
+    );
+  }
+
+  const todayName = getCurrentDay();
+  const todayTimeline = timelineByDay?.[todayName] || [];
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
@@ -128,7 +141,7 @@ export default function Activity() {
         </TouchableOpacity>
       </View>
 
-      {/* Onglets de filtre */}
+      {/* Tabs */}
       <View
         className="flex-row justify-around mx-5 rounded-2xl shadow-sm mt-4 py-2 mb-5"
         style={{ backgroundColor: colors.cardBackground }}
@@ -158,7 +171,7 @@ export default function Activity() {
         ))}
       </View>
 
-      {/* Contenu */}
+      {/* Content */}
       <ScrollView
         className="flex-1 px-5"
         showsVerticalScrollIndicator={false}
@@ -169,7 +182,7 @@ export default function Activity() {
           <>
             <LiveView />
             <Card title="Programme du jour">
-              {todayTimeline?.length > 0 ? (
+              {todayTimeline.length > 0 ? (
                 todayTimeline.map((item, index) => <TimelineItem key={index} item={item} />)
               ) : (
                 <Text className="text-center py-4" style={{ color: colors.textLight }}>
@@ -182,28 +195,43 @@ export default function Activity() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {galleryItems?.length > 0 ? (
                   galleryItems.map((item, index) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/story-viewer",
-                          params: { index: index.toString() },
-                        })
-                      }
-                    >
-                      {item.type === "image" ? (
-                        <Image source={{ uri: item.uri }} className="w-24 h-24 rounded-xl mr-3" />
-                      ) : (
-                        <View
-                          className="w-24 h-24 rounded-xl mr-3 items-center justify-center"
-                          style={{ backgroundColor: colors.textDark }}
+                    <View key={item.id} className="mr-3 items-center">
+                      <TouchableOpacity
+                        onPress={() =>
+                          router.push({
+                            pathname: "/story-viewer",
+                            params: { index: index.toString() },
+                          })
+                        }
+                      >
+                        {item.type === "image" ? (
+                          <Image source={{ uri: item.uri }} className="w-24 h-24 rounded-xl" />
+                        ) : (
+                          <View
+                            className="w-24 h-24 rounded-xl items-center justify-center"
+                            style={{ backgroundColor: colors.textDark }}
+                          >
+                            <Text className="text-xs" style={{ color: "#FFF" }}>
+                              🎬 Vidéo
+                            </Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                      {item.description ? (
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            color: colors.textLight,
+                            fontSize: 12,
+                            maxWidth: 100,
+                            textAlign: "center",
+                            marginTop: 4,
+                          }}
                         >
-                          <Text className="text-xs" style={{ color: "#FFF" }}>
-                            🎬 Vidéo
-                          </Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
+                          {item.description}
+                        </Text>
+                      ) : null}
+                    </View>
                   ))
                 ) : (
                   <Text style={{ color: colors.textLight }}>Aucun média disponible.</Text>
@@ -272,29 +300,42 @@ export default function Activity() {
           </View>
         )}
 
-        {/* 🔮 À VENIR */}
+        {/* 🔮 À VENIR — ÉVÉNEMENTS UNIQUEMENT */}
         {selectedFilter === "upcoming" && (
           <Card title="Événements à venir">
-            {upcomingActivities?.length > 0 ? (
-              upcomingActivities.map((item, index) => (
-                <View key={index} className="flex-row items-center mb-4">
-                  <View
-                    className="w-12 h-12 rounded-full items-center justify-center mr-3"
-                    style={{ backgroundColor: colors.accentLight }}
-                  >
-                    <Text className="text-lg">{item.icon}</Text>
+            {events.length > 0 ? (
+              events.map((event, index) => {
+                const eventDate = new Date(event.date);
+                const formattedDate = eventDate.toLocaleDateString("fr-FR", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+
+                return (
+                  <View key={index} className="flex-row items-center mb-4">
+                    <View
+                      className="w-12 h-12 rounded-full items-center justify-center mr-3"
+                      style={{ backgroundColor: colors.accentLight }}
+                    >
+                      <Text className="text-lg">🎉</Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-medium" style={{ color: colors.textDark }}>
+                        {event.title || "Événement"}
+                      </Text>
+                      <Text style={{ color: colors.text }}>
+                        {event.detail || event.description || "Aucune description"}
+                      </Text>
+                      <Text className="text-sm mt-1" style={{ color: colors.textLight }}>
+                        {formattedDate}
+                      </Text>
+                    </View>
                   </View>
-                  <View className="flex-1">
-                    <Text className="font-medium" style={{ color: colors.textDark }}>
-                      {item.title}
-                    </Text>
-                    <Text style={{ color: colors.text }}>{item.detail || "Activité à venir"}</Text>
-                    <Text className="text-sm mt-1" style={{ color: colors.textLight }}>
-                      {item.date || "À déterminer"}
-                    </Text>
-                  </View>
-                </View>
-              ))
+                );
+              })
             ) : (
               <Text className="text-center py-4" style={{ color: colors.textLight }}>
                 Aucun événement à venir.

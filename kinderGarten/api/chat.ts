@@ -1,34 +1,30 @@
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.0.37:8000/api/chat"; // ⚠️ adjust to your backend
+const BASE_URL = "http://192.168.0.37:8000/api/chat/";
 
-// Fetch all conversations (depends on user role)
-export const getConversations = async (token: string) => {
-  const res = await axios.get(`${BASE_URL}/conversations/`, {
+export async function getOrCreateConversation() {
+  const token = await AsyncStorage.getItem("access_token");
+  const res = await axios.post(`${BASE_URL}conversations/`, {}, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
-};
+}
 
-// Fetch one conversation (messages inside)
-export const getConversationDetails = async (id: string, token: string) => {
-  const res = await axios.get(`${BASE_URL}/conversations/${id}/`, {
+export async function getMessages(conversationId: number) {
+  const token = await AsyncStorage.getItem("access_token");
+  const res = await axios.get(`${BASE_URL}conversations/${conversationId}/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return res.data;
-};
+  return res.data.messages;
+}
 
-// Send message
-export const sendMessage = async (conversationId: string, text: string, token: string) => {
+export async function sendMessage(conversationId: number, text: string) {
+  const token = await AsyncStorage.getItem("access_token");
   const res = await axios.post(
-    `${BASE_URL}/messages/`,
-    {
-      conversation: conversationId,
-      text,
-    },
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
+    `${BASE_URL}messages/`,
+    { conversation: conversationId, text },
+    { headers: { Authorization: `Bearer ${token}` } }
   );
   return res.data;
-};
+}

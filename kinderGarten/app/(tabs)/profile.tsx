@@ -13,20 +13,21 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useAppStore } from "../../store/useAppStore";
 import colors from "../../config/colors";
 import Card from "../../components/Card";
 import Row from "../../components/Row";
+import * as ImagePicker from "expo-image-picker";
+import { getMyChild, updateChild, uploadAvatar } from "@/api/children";
 
-export default function Profile({ childId = "child_014" }) {
-  const { data, setData } = useAppStore();
-  const { childrenList, classes } = data || {};
+export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
-  const [localProfile, setLocalProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   /** 🧮 Calcul de l’âge */
   const getAge = (birthdate?: string) => {
@@ -44,57 +45,113 @@ export default function Profile({ childId = "child_014" }) {
     return `${years} an${years > 1 ? "s" : ""}${months > 0 ? ` ${months} mois` : ""}`;
   };
 
-  /** 📦 Construction du profil enfant */
+  /** 📦 Charger le profil depuis l’API */
   useEffect(() => {
-    if (!childrenList || !classes) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const data = await getMyChild();
+        console.log("✅ Profil chargé:", data);
 
-    const child = childrenList.find((c: any) => c.id === childId);
-    if (!child) return;
+        const fullProfile = {
+          id: data?.id,
+          name: data?.name || "N/D",
+          avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
+          group: data?.classroom_name || "Classe inconnue",
+          birthdate: data?.birthdate || "2020-01-01",
+          age: getAge(data?.birthdate || "2020-01-01"),
+          weight: data?.weight || "N/D",
+          height: data?.height || "N/D",
+          gender: data?.gender || "Fille",
+          allergies: data?.allergies || "Aucune",
+          conditions: data?.conditions || "Aucune",
+          medication: data?.medication || "N/D",
+          doctor: data?.doctor || "N/D",
+          emergencyContact: {
+            name: data?.emergency_contact_name || "N/D",
+            relation: data?.emergency_contact_relation || "N/D",
+            phone: data?.emergency_contact_phone || "N/D",
+          },
+          authorizedPickups: data?.authorized_pickups || [],
+          classInfo: {
+            teacherName: data?.teacher_name || "Inconnu",
+            classroomName: data?.classroom_name || "N/D",
+            responsibleName: data?.responsible_name || "N/D",
+            responsiblePhone: data?.responsible_phone || "",
+          },
+        };
 
-    const classInfo = classes.find((cl: any) => cl.name === child.className);
+        setProfile(fullProfile);
+      } catch (error: any) {
+        console.error("❌ Erreur de chargement:", error.response?.data || error.message);
+        Alert.alert("Erreur", "Impossible de charger le profil de l’enfant.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-    const fullProfile = {
-      id: child.id,
-      name: child.name,
-      avatar: child.avatar,
-      group: child.className || "Classe inconnue",
-      birthdate: child.birthdate || "2020-01-01",
-      age: child.age || getAge(child.birthdate || "2020-01-01"),
-      weight: child.weight || "N/D",
-      height: child.height || "N/D",
-      gender: child.gender || "Fille",
-      allergies: child.allergies || "Aucune",
-      conditions: child.medicalNote || "Aucune",
-      medication: "N/D",
-      doctor: classInfo ? `${classInfo.teacher} — ${classInfo.room}` : "N/D",
-      emergencyContact: child.emergencyContact || {
-        name: "N/D",
-        relation: "N/D",
-        phone: "N/D",
-      },
-      authorizedPickups: child.authorizedPickups || [],
-      classInfo: {
-        teacherName: classInfo?.teacher || "Inconnu",
-        teacherPhone: "",
-        classroomName: classInfo?.room || "N/D",
-        responsibleName: classInfo?.assistant || "N/D",
-        responsiblePhone: "",
-      },
-    };
-
-    setLocalProfile(fullProfile);
-    setData("profile", fullProfile);
-  }, [childId, childrenList, classes]);
-
+  /** 🔁 Mise à jour d’un champ */
   const updateField = (key: string, value: any) => {
-    setLocalProfile((prev: any) => ({ ...prev, [key]: value }));
+    setProfile((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  const saveProfile = () => {
-    setData("profile", localProfile);
-    setIsEditing(false);
+  /** ☁️ Changer l’avatar */
+  const handleChangeAvatar = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        const uri = result.assets[0].uri;
+        setLoading(true);
+        const uploadedUrl = await uploadAvatar(uri);
+        await updateChild(profile.id, { avatar: uploadedUrl });
+        updateField("avatar", uploadedUrl);
+        Alert.alert("✅ Succès", "Photo de profil mise à jour !");
+      }
+    } catch (error) {
+      console.error("❌ Erreur de téléchargement:", error);
+      Alert.alert("Erreur", "Impossible de mettre à jour la photo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  /** 💾 Sauvegarder les modifications */
+  const saveProfile = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        name: profile.name,
+        birthdate: profile.birthdate,
+        gender: profile.gender,
+        allergies: profile.allergies,
+        conditions: profile.conditions,
+        medication: profile.medication,
+        doctor: profile.doctor,
+        weight: profile.weight,
+        height: profile.height,
+        emergency_contact_name: profile.emergencyContact?.name,
+        emergency_contact_relation: profile.emergencyContact?.relation,
+        emergency_contact_phone: profile.emergencyContact?.phone,
+        authorized_pickups: profile.authorizedPickups || [],
+      };
+      await updateChild(profile.id, payload);
+      Alert.alert("✅ Succès", "Profil mis à jour sur le serveur.");
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error("❌ Erreur de sauvegarde:", error.response?.data || error.message);
+      Alert.alert("Erreur", "Impossible d’enregistrer les modifications.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** 📞 Appel téléphonique */
   const handlePhoneCall = (phone: string) => {
     if (!phone || phone === "N/D") return;
     const sanitized = phone.replace(/[^+\d]/g, "");
@@ -107,13 +164,14 @@ export default function Profile({ childId = "child_014" }) {
       .catch(() => Alert.alert("Erreur", "Une erreur est survenue lors de l’appel."));
   };
 
-  if (!localProfile) {
+  if (loading || !profile) {
     return (
       <View
         className="flex-1 items-center justify-center"
         style={{ backgroundColor: colors.background }}
       >
-        <Text style={{ color: colors.textLight }}>Chargement du profil...</Text>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={{ color: colors.textLight, marginTop: 8 }}>Chargement du profil...</Text>
       </View>
     );
   }
@@ -146,11 +204,12 @@ export default function Profile({ childId = "child_014" }) {
           )}
         </TouchableOpacity>
       </View>
-      {/* 🧱 Scroll content inside KeyboardAvoidingView */}
+
+      {/* 🧱 Scroll content */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // adjust if needed
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView
           className="flex-1 px-5"
@@ -161,21 +220,23 @@ export default function Profile({ childId = "child_014" }) {
           {/* 👶 Informations sur l’enfant */}
           <Card title="Informations de l’enfant">
             <View className="items-center">
-              <Image
-                source={{ uri: localProfile?.avatar }}
-                className="w-28 h-28 rounded-full mb-3"
-              />
+              <TouchableOpacity
+                disabled={!isEditing}
+                onPress={isEditing ? handleChangeAvatar : undefined}
+              >
+                <Image source={{ uri: profile?.avatar }} className="w-28 h-28 rounded-full mb-3" />
+              </TouchableOpacity>
               {isEditing ? (
                 <>
                   <TextInput
-                    value={localProfile?.name}
+                    value={profile?.name}
                     onChangeText={(t) => updateField("name", t)}
                     className="text-center text-xl font-semibold border-b border-gray-300 w-48 mb-1"
                     style={{ color: colors.textDark }}
                   />
                   <TextInput
-                    value={localProfile?.group}
-                    onChangeText={(t) => updateField("group", t)}
+                    value={profile?.group}
+                    editable={false}
                     className="text-center border-b border-gray-300 w-48"
                     style={{ color: colors.text }}
                   />
@@ -183,10 +244,10 @@ export default function Profile({ childId = "child_014" }) {
               ) : (
                 <>
                   <Text className="text-xl font-semibold" style={{ color: colors.textDark }}>
-                    {localProfile?.name}
+                    {profile?.name}
                   </Text>
                   <Text style={{ color: colors.text, marginTop: 4 }}>
-                    {getAge(localProfile?.birthdate)} • {localProfile?.group}
+                    {getAge(profile?.birthdate)} • {profile?.group}
                   </Text>
                 </>
               )}
@@ -195,7 +256,6 @@ export default function Profile({ childId = "child_014" }) {
 
           {/* 📏 Informations physiques */}
           <Card title="Informations physiques">
-            {/* 🎂 Date de naissance */}
             <Row label="🎂 Date de naissance">
               {isEditing ? (
                 <>
@@ -207,13 +267,13 @@ export default function Profile({ childId = "child_014" }) {
                       className="text-right font-medium py-1"
                       style={{ color: colors.textDark }}
                     >
-                      {localProfile?.birthdate || "Sélectionner une date"}
+                      {profile?.birthdate || "Sélectionner une date"}
                     </Text>
                   </TouchableOpacity>
 
                   {showDatePicker && (
                     <DateTimePicker
-                      value={new Date(localProfile?.birthdate || "2020-01-01")}
+                      value={new Date(profile?.birthdate || "2020-01-01")}
                       mode="date"
                       display="default"
                       maximumDate={new Date()}
@@ -230,22 +290,18 @@ export default function Profile({ childId = "child_014" }) {
                 </>
               ) : (
                 <Text className="font-medium text-right" style={{ color: colors.textDark }}>
-                  {localProfile?.birthdate}
+                  {profile?.birthdate}
                 </Text>
               )}
             </Row>
 
-            {/* ⚖️ Poids */}
-            {renderRow("⚖️ Poids", "weight", localProfile?.weight, isEditing, (v) =>
+            {renderRow("⚖️ Poids", "weight", profile?.weight, isEditing, (v) =>
               updateField("weight", v)
             )}
-
-            {/* 📏 Taille */}
-            {renderRow("📏 Taille", "height", localProfile?.height, isEditing, (v) =>
+            {renderRow("📏 Taille", "height", profile?.height, isEditing, (v) =>
               updateField("height", v)
             )}
 
-            {/* 👧 Sexe */}
             <Row label="👧 Sexe">
               {isEditing ? (
                 <TouchableOpacity
@@ -253,13 +309,13 @@ export default function Profile({ childId = "child_014" }) {
                   className="flex-row justify-between items-center border-b border-gray-300 w-40"
                 >
                   <Text className="text-right font-medium py-1" style={{ color: colors.textDark }}>
-                    {localProfile?.gender || "Sélectionner le sexe"}
+                    {profile?.gender || "Sélectionner le sexe"}
                   </Text>
                   <ChevronDown color={colors.textDark} size={18} />
                 </TouchableOpacity>
               ) : (
                 <Text className="font-medium text-right" style={{ color: colors.textDark }}>
-                  {localProfile?.gender}
+                  {profile?.gender}
                 </Text>
               )}
             </Row>
@@ -276,15 +332,13 @@ export default function Profile({ childId = "child_014" }) {
                       updateField("gender", option);
                       setShowGenderDropdown(false);
                     }}
-                    className={`py-2 rounded-xl ${
-                      localProfile?.gender === option ? "bg-gray-100" : ""
-                    }`}
+                    className={`py-2 rounded-xl ${profile?.gender === option ? "bg-gray-100" : ""}`}
                   >
                     <Text
                       className="text-right"
                       style={{
-                        color: localProfile?.gender === option ? colors.accent : colors.textDark,
-                        fontWeight: localProfile?.gender === option ? "600" : "400",
+                        color: profile?.gender === option ? colors.accent : colors.textDark,
+                        fontWeight: profile?.gender === option ? "600" : "400",
                       }}
                     >
                       {option}
@@ -297,77 +351,58 @@ export default function Profile({ childId = "child_014" }) {
 
           {/* 🚑 Santé & Allergies */}
           <Card title="Santé & allergies">
-            {renderRow("🤧 Allergies", "allergies", localProfile?.allergies, isEditing, (v) =>
+            {renderRow("🤧 Allergies", "allergies", profile?.allergies, isEditing, (v) =>
               updateField("allergies", v)
             )}
-            {renderRow("❤️ Conditions", "conditions", localProfile?.conditions, isEditing, (v) =>
+            {renderRow("❤️ Conditions", "conditions", profile?.conditions, isEditing, (v) =>
               updateField("conditions", v)
             )}
-            {renderRow("💊 Médication", "medication", localProfile?.medication, isEditing, (v) =>
+            {renderRow("💊 Médication", "medication", profile?.medication, isEditing, (v) =>
               updateField("medication", v)
             )}
-            {renderRow("👨‍⚕️ Médecin", "doctor", localProfile?.doctor, isEditing, (v) =>
+            {renderRow("👨‍⚕️ Médecin", "doctor", profile?.doctor, isEditing, (v) =>
               updateField("doctor", v)
             )}
           </Card>
-          {/* 🚗 Personnes autorisées à récupérer l’enfant */}
+
+          {/* 🚗 Personnes autorisées */}
           <Card title="Personnes autorisées à récupérer l’enfant">
-            {localProfile?.authorizedPickups?.length > 0 ? (
-              localProfile.authorizedPickups.map((person: any, index: number) => (
+            {profile?.authorizedPickups?.length > 0 ? (
+              profile.authorizedPickups.map((person: any, index: number) => (
                 <View key={index} className="mb-3">
-                  {renderRow(
-                    `👤 Nom ${index + 1}`,
-                    `authorizedPickups[${index}].name`,
-                    person.name,
-                    isEditing,
-                    (v) => {
-                      const updated = [...localProfile.authorizedPickups];
-                      updated[index] = { ...updated[index], name: v };
-                      updateField("authorizedPickups", updated);
-                    }
-                  )}
+                  {renderRow(`👤 Nom ${index + 1}`, "", person.name, isEditing, (v) => {
+                    const updated = [...profile.authorizedPickups];
+                    updated[index] = { ...updated[index], name: v };
+                    updateField("authorizedPickups", updated);
+                  })}
                   {renderRow(
                     `📞 Téléphone ${index + 1}`,
-                    `authorizedPickups[${index}].phone`,
+                    "",
                     person.phone,
                     isEditing,
                     (v) => {
-                      const updated = [...localProfile.authorizedPickups];
+                      const updated = [...profile.authorizedPickups];
                       updated[index] = { ...updated[index], phone: v };
                       updateField("authorizedPickups", updated);
                     },
                     handlePhoneCall
                   )}
-                  {renderRow(
-                    `👥 Relation ${index + 1}`,
-                    `authorizedPickups[${index}].relation`,
-                    person.relation,
-                    isEditing,
-                    (v) => {
-                      const updated = [...localProfile.authorizedPickups];
-                      updated[index] = { ...updated[index], relation: v };
-                      updateField("authorizedPickups", updated);
-                    }
-                  )}
-                  <View
-                    style={{
-                      borderBottomWidth: index < localProfile.authorizedPickups.length - 1 ? 1 : 0,
-                      borderColor: "#eee",
-                      marginTop: 8,
-                    }}
-                  />
+                  {renderRow(`👥 Relation ${index + 1}`, "", person.relation, isEditing, (v) => {
+                    const updated = [...profile.authorizedPickups];
+                    updated[index] = { ...updated[index], relation: v };
+                    updateField("authorizedPickups", updated);
+                  })}
                 </View>
               ))
             ) : (
               <Text style={{ color: colors.text }}>Aucune personne autorisée</Text>
             )}
 
-            {/* ➕ Add button in edit mode */}
             {isEditing && (
               <TouchableOpacity
                 onPress={() => {
                   const updated = [
-                    ...(localProfile.authorizedPickups || []),
+                    ...(profile.authorizedPickups || []),
                     { name: "Nouveau", phone: "N/D", relation: "N/D" },
                   ];
                   updateField("authorizedPickups", updated);
@@ -381,61 +416,39 @@ export default function Profile({ childId = "child_014" }) {
 
           {/* 🚨 Contact d’urgence */}
           <Card title="Contact d’urgence">
-            {renderRow(
-              "👤 Nom",
-              "emergencyContact.name",
-              localProfile?.emergencyContact?.name,
-              isEditing,
-              (v) => updateField("emergencyContact", { ...localProfile?.emergencyContact, name: v })
+            {renderRow("👤 Nom", "", profile?.emergencyContact?.name, isEditing, (v) =>
+              updateField("emergencyContact", { ...profile?.emergencyContact, name: v })
             )}
-            {renderRow(
-              "👤 Relation",
-              "emergencyContact.relation",
-              localProfile?.emergencyContact?.relation,
-              isEditing,
-              (v) =>
-                updateField("emergencyContact", { ...localProfile?.emergencyContact, relation: v })
+            {renderRow("👥 Relation", "", profile?.emergencyContact?.relation, isEditing, (v) =>
+              updateField("emergencyContact", { ...profile?.emergencyContact, relation: v })
             )}
             {renderRow(
               "📞 Téléphone",
-              "emergencyContact.phone",
-              localProfile?.emergencyContact?.phone,
+              "",
+              profile?.emergencyContact?.phone,
               isEditing,
-              (v) =>
-                updateField("emergencyContact", { ...localProfile?.emergencyContact, phone: v }),
+              (v) => updateField("emergencyContact", { ...profile?.emergencyContact, phone: v }),
               handlePhoneCall
             )}
           </Card>
 
           {/* 🎓 Informations sur la classe */}
           <Card title="Informations sur la classe">
-            {renderRow(
-              "👩‍🏫 Enseignant(e)",
-              "classInfo.teacherName",
-              localProfile?.classInfo?.teacherName,
-              isEditing,
-              (v) => updateField("classInfo", { ...localProfile?.classInfo, teacherName: v })
+            {renderRow("👩‍🏫 Enseignant(e)", "", profile?.classInfo?.teacherName, isEditing, (v) =>
+              updateField("classInfo", { ...profile?.classInfo, teacherName: v })
             )}
-            {renderRow(
-              "🚪 Salle",
-              "classInfo.classroomName",
-              localProfile?.classInfo?.classroomName,
-              isEditing,
-              (v) => updateField("classInfo", { ...localProfile?.classInfo, classroomName: v })
+            {renderRow("🚪 Salle", "", profile?.classInfo?.classroomName, isEditing, (v) =>
+              updateField("classInfo", { ...profile?.classInfo, classroomName: v })
             )}
-            {renderRow(
-              "🧑 Responsable",
-              "classInfo.responsibleName",
-              localProfile?.classInfo?.responsibleName,
-              isEditing,
-              (v) => updateField("classInfo", { ...localProfile?.classInfo, responsibleName: v })
+            {renderRow("🧑 Responsable", "", profile?.classInfo?.responsibleName, isEditing, (v) =>
+              updateField("classInfo", { ...profile?.classInfo, responsibleName: v })
             )}
             {renderRow(
               "📞 Téléphone",
-              "classInfo.responsiblePhone",
-              localProfile?.classInfo?.responsiblePhone,
+              "",
+              profile?.classInfo?.responsiblePhone,
               isEditing,
-              (v) => updateField("classInfo", { ...localProfile?.classInfo, responsiblePhone: v }),
+              (v) => updateField("classInfo", { ...profile?.classInfo, responsiblePhone: v }),
               handlePhoneCall
             )}
           </Card>
@@ -445,7 +458,7 @@ export default function Profile({ childId = "child_014" }) {
   );
 }
 
-/* 🧱 Fonction de ligne réutilisable avec gestion du retour à la ligne */
+/** 🧱 Ligne réutilisable */
 function renderRow(
   label: string,
   key: string,
@@ -455,24 +468,15 @@ function renderRow(
   onPressPhone?: (v: string) => void
 ) {
   const isPhoneField = label.toLowerCase().includes("téléphone");
-
   return (
     <View className="flex-row justify-between items-start mb-3" style={{ flexWrap: "wrap" }}>
-      {/* Label */}
       <View style={{ flexShrink: 1, flexBasis: "40%" }}>
         <Text numberOfLines={2} ellipsizeMode="tail" style={{ color: colors.text }}>
           {label}
         </Text>
       </View>
 
-      {/* Value */}
-      <View
-        style={{
-          flexShrink: 1,
-          flexBasis: "58%",
-          alignItems: "flex-end",
-        }}
-      >
+      <View style={{ flexShrink: 1, flexBasis: "58%", alignItems: "flex-end" }}>
         {editable ? (
           <TextInput
             value={value}
@@ -488,7 +492,6 @@ function renderRow(
                 color: colors.accent,
                 textAlign: "right",
                 textDecorationLine: "underline",
-                flexWrap: "wrap",
               }}
             >
               {value}

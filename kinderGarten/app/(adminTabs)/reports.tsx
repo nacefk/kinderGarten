@@ -213,28 +213,21 @@ export default function ReportsScreen() {
       const newReports: Record<number, number> = {};
 
       for (const child of selectedChildren) {
-        const formData = new FormData();
-        formData.append("child", child.id.toString());
-        formData.append("meal", meal);
-        formData.append("nap", nap);
-        formData.append("behavior", behavior);
-        formData.append("notes", notes);
+        console.log("👶 Child ID sent:", child.id);
 
-        // ✅ append all selected media
-        mediaList.forEach((asset, i) => {
-          const fileType = asset.type === "video" ? "video/mp4" : "image/jpeg";
-          const fileName = asset.fileName || `media_${i}.${fileType.split("/")[1]}`;
-          formData.append("media", {
-            uri: asset.uri,
-            name: fileName,
-            type: fileType,
-          } as any);
+        const created = await createDailyReport({
+          child: child.id, // ✅ Pass numeric ID, not FormData
+          meal,
+          nap,
+          behavior,
+          notes,
+          mediaFiles: mediaList, // ✅ Send plain array of files
         });
 
-        const created = await createDailyReport(formData);
         newReports[child.id] = created.id;
       }
 
+      // ✅ Update local state after saving
       setReportsMap((prev) => ({ ...prev, ...newReports }));
       await loadReportsForClass(selectedClass.id);
 
