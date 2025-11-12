@@ -1,63 +1,71 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Image, StatusBar } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LogOut } from "lucide-react-native";
 import colors from "@/config/colors";
 import { useRouter } from "expo-router";
-import { useAppStore } from "@/store/useAppStore";
+import { getAttendanceSummary, getPendingExtraHours } from "@/api/attendance";
 
-type PresenceStatus = "present" | "absent";
-type ExtraHourStatus = "pending" | "approved" | "rejected";
+type ExtraHour = {
+  id: number;
+  child_name: string;
+  start: string;
+  end: string;
+  status: "pending" | "approved" | "rejected";
+};
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const classes = useAppStore((state) => state.data.classList || []);
-  const children = useAppStore((state) => state.data.childrenList || []);
+  const [presence, setPresence] = useState({ present: 0, absent: 0 });
+  const [extraHours, setExtraHours] = useState<ExtraHour[]>([]);
+  const [loadingPresence, setLoadingPresence] = useState(true);
+  const [loadingExtra, setLoadingExtra] = useState(true);
 
-  const [selectedClass, setSelectedClass] = useState<string>("all");
-  const [presenceMap, setPresenceMap] = useState<Record<string, PresenceStatus>>({});
-  const [extraHourRequests, setExtraHourRequests] = useState<
-    { id: string; name: string; hours: string; status: ExtraHourStatus }[]
-  >([
-    { id: "1", name: "Sophie Dupont", hours: "17h00 → 18h30", status: "pending" },
-    { id: "2", name: "Alex Martin", hours: "16h30 → 17h30", status: "pending" },
-  ]);
-
-  // ✅ Initialize presence
+  // ✅ Fetch today's presence summary
   useEffect(() => {
-    const initial = children.reduce((acc: Record<string, PresenceStatus>, c: any) => {
-      acc[c.id] = "present";
-      return acc;
-    }, {});
-    setPresenceMap(initial);
-  }, [children]);
+    (async () => {
+      try {
+        setLoadingPresence(true);
+        const data = await getAttendanceSummary();
+        setPresence(data);
+      } catch (err: any) {
+        console.error("❌ Error loading attendance summary:", err.message);
+      } finally {
+        setLoadingPresence(false);
+      }
+    })();
+  }, []);
 
-  // ✅ Toggle presence
-  const togglePresence = (id: string) => {
-    setPresenceMap((prev) => ({
-      ...prev,
-      [id]: prev[id] === "present" ? "absent" : "present",
-    }));
-  };
+  // ✅ Fetch pending extra-hour requests
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingExtra(true);
+        const data = await getPendingExtraHours();
+        setExtraHours(data);
+      } catch (err: any) {
+        console.error("❌ Error loading extra-hour requests:", err.message);
+      } finally {
+        setLoadingExtra(false);
+      }
+    })();
+  }, []);
 
-  // ✅ Approve or reject extra hour request
-  const handleApprove = (id: string) => {
-    setExtraHourRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "approved" } : r))
-    );
-  };
-
-  const handleReject = (id: string) => {
-    setExtraHourRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "rejected" } : r))
-    );
-  };
+  // ✅ Optional: format hours nicely
+  const formatTime = (time: string) => time.slice(0, 5); // "17:00"
 
   return (
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
-      {/* En-tête */}
+      {/* Header */}
       <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
@@ -93,23 +101,27 @@ export default function DashboardScreen() {
           Gérez la présence quotidienne des enfants.
         </Text>
 
-        <View className="flex-row justify-between items-center">
-          <View>
-            <Text className="text-3xl font-bold" style={{ color: colors.accent }}>
-              18
-            </Text>
-            <Text style={{ color: colors.textLight }}>Présents</Text>
+        {loadingPresence ? (
+          <ActivityIndicator color={colors.accent} size="small" />
+        ) : (
+          <View className="flex-row justify-between items-center mt-3">
+            <View>
+              <Text className="text-3xl font-bold" style={{ color: colors.accent }}>
+                {presence.present}
+              </Text>
+              <Text style={{ color: colors.textLight }}>Présents</Text>
+            </View>
+            <View>
+              <Text className="text-3xl font-bold" style={{ color: "#E53935" }}>
+                {presence.absent}
+              </Text>
+              <Text style={{ color: colors.textLight }}>Absents</Text>
+            </View>
           </View>
-          <View>
-            <Text className="text-3xl font-bold" style={{ color: "#E53935" }}>
-              2
-            </Text>
-            <Text style={{ color: colors.textLight }}>Absents</Text>
-          </View>
-        </View>
+        )}
       </TouchableOpacity>
 
-      {/* 🕒 Heures Supplémentaires */}
+      {/* --- Extra Hours Bloc --- */}
       <View
         className="rounded-2xl p-5 mb-10 mx-5"
         style={{
@@ -127,51 +139,30 @@ export default function DashboardScreen() {
           <Ionicons name="time-outline" size={22} color={colors.accent} />
         </View>
 
-        {extraHourRequests.map((req) => (
-          <View
-            key={req.id}
-            className="flex-row items-center justify-between mb-3 border-b pb-2"
-            style={{ borderColor: "#eee" }}
-          >
-            <View>
-              <Text className="font-medium" style={{ color: colors.textDark }}>
-                {req.name}
-              </Text>
-              <Text className="text-sm" style={{ color: colors.textLight }}>
-                {req.hours}
-              </Text>
-            </View>
-
-            {/* Status or actions */}
-            {req.status === "pending" ? (
-              <View className="flex-row">
-                <TouchableOpacity
-                  onPress={() => handleApprove(req.id)}
-                  className="mr-2 px-3 py-1 rounded-lg"
-                  style={{ backgroundColor: "#4CAF50" }}
-                >
-                  <Text className="text-white text-sm">✔</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleReject(req.id)}
-                  className="px-3 py-1 rounded-lg"
-                  style={{ backgroundColor: "#E53935" }}
-                >
-                  <Text className="text-white text-sm">✖</Text>
-                </TouchableOpacity>
-              </View>
-            ) : req.status === "approved" ? (
-              <Text style={{ color: "#4CAF50", fontWeight: "600" }}>Approuvé ✅</Text>
-            ) : (
-              <Text style={{ color: "#E53935", fontWeight: "600" }}>Refusé ❌</Text>
-            )}
-          </View>
-        ))}
-
-        {extraHourRequests.length === 0 && (
+        {loadingExtra ? (
+          <ActivityIndicator color={colors.accent} size="small" />
+        ) : extraHours.length === 0 ? (
           <Text style={{ color: colors.textLight, textAlign: "center", marginTop: 10 }}>
             Aucune demande pour le moment.
           </Text>
+        ) : (
+          extraHours.map((req) => (
+            <View
+              key={req.id}
+              className="flex-row items-center justify-between mb-3 border-b pb-2"
+              style={{ borderColor: "#eee" }}
+            >
+              <View>
+                <Text className="font-medium" style={{ color: colors.textDark }}>
+                  {req.child_name}
+                </Text>
+                <Text className="text-sm" style={{ color: colors.textLight }}>
+                  {formatTime(req.start)} → {formatTime(req.end)}
+                </Text>
+              </View>
+              <Text style={{ color: colors.accent, fontWeight: "600" }}>En attente ⏳</Text>
+            </View>
+          ))
         )}
       </View>
     </ScrollView>
