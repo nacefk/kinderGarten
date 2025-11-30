@@ -11,7 +11,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { LogOut } from "lucide-react-native";
 import colors from "@/config/colors";
 import { useRouter } from "expo-router";
-import { getAttendanceSummary, getPendingExtraHours } from "@/api/attendance";
+import {
+  getAttendanceSummary,
+  getPendingExtraHours,
+  approveExtraHour,
+  rejectExtraHour,
+} from "@/api/attendance";
 
 type ExtraHour = {
   id: number;
@@ -27,6 +32,24 @@ export default function DashboardScreen() {
   const [extraHours, setExtraHours] = useState<ExtraHour[]>([]);
   const [loadingPresence, setLoadingPresence] = useState(true);
   const [loadingExtra, setLoadingExtra] = useState(true);
+
+  const handleApprove = async (id: number) => {
+    try {
+      await approveExtraHour(id);
+      setExtraHours((prev) => prev.filter((item) => item.id !== id));
+    } catch (e) {
+      console.error("❌ Approve error:", e);
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    try {
+      await rejectExtraHour(id);
+      setExtraHours((prev) => prev.filter((item) => item.id !== id));
+    } catch (e) {
+      console.error("❌ Reject error:", e);
+    }
+  };
 
   // ✅ Fetch today's presence summary
   useEffect(() => {
@@ -160,7 +183,27 @@ export default function DashboardScreen() {
                   {formatTime(req.start)} → {formatTime(req.end)}
                 </Text>
               </View>
-              <Text style={{ color: colors.accent, fontWeight: "600" }}>En attente ⏳</Text>
+
+              {/* ACTION BUTTONS */}
+              <View className="flex-row">
+                {/* APPROVE */}
+                <TouchableOpacity
+                  onPress={() => handleApprove(req.id)}
+                  className="mr-2 p-2 rounded-lg"
+                  style={{ backgroundColor: "#4CAF50" }}
+                >
+                  <Ionicons name="checkmark" size={20} color="#fff" />
+                </TouchableOpacity>
+
+                {/* REJECT */}
+                <TouchableOpacity
+                  onPress={() => handleReject(req.id)}
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: "#E53935" }}
+                >
+                  <Ionicons name="close" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}

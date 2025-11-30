@@ -2,21 +2,23 @@ import { Redirect } from "expo-router";
 import LottieView from "lottie-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Text, View } from "react-native";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function Index() {
-  let isLoggedIn = false; // Replace with real authentication logic
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, isLoading, userRole } = useAuthStore();
+  const [showSplash, setShowSplash] = useState(true);
   const animationRef = useRef(null);
 
-  // loading takes 3 seconds to simulate an async auth check
+  // Show splash for 3.5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsLoading(false);
+      setShowSplash(false);
     }, 3500);
     return () => clearTimeout(timer);
   }, []);
 
-  if (isLoading) {
+  // Still loading
+  if (isLoading || showSplash) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
         <LottieView
@@ -32,10 +34,14 @@ export default function Index() {
     );
   }
 
-  // ✅ Navigate based on login state
-  if (isLoggedIn) {
+  // ✅ Navigate based on login state and role
+  if (isAuthenticated) {
+    if (userRole === "admin") {
+      return <Redirect href="/(adminTabs)/dashboard" />;
+    }
     return <Redirect href="/(tabs)/home" />;
   }
 
+  // Not authenticated, go to login
   return <Redirect href="/(authentication)/login" />;
 }

@@ -11,84 +11,76 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import colors from "@/config/colors";
-import { setAuthToken } from "@/api/api";
+import { login } from "@/api/auth";
+import { useAuthStore } from "@/store/useAuthStore";
+import { validation, getValidationMessage } from "@/utils/validation";
 
 export default function Login() {
   const router = useRouter();
+  const { setIsAuthenticated, setUserRole } = useAuthStore();
 
-  // 👤 Local state
-  const [tenant, setTenant] = useState("test"); // ✅ will be needed for multi-tenant login
-  // const [username, setUsername] = useState("test");
-  // const [password, setPassword] = useState("test123");
-  const [username, setUsername] = useState("nacef-app");
-  const [password, setPassword] = useState("EDbkCbn5");
+  const [tenant, setTenant] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = "http://192.168.0.37:8000/api/accounts/login/";
-
   const handleLogin = async () => {
-    if (!username || !password || !tenant) {
-      Alert.alert("Missing Fields", "Please enter tenant, username, and password.");
+    // ✅ Validate inputs
+    if (!validation.required(tenant)) {
+      Alert.alert("Validation", getValidationMessage("tenant", "required"));
+      return;
+    }
+
+    if (!validation.slug(tenant.trim())) {
+      Alert.alert("Validation", getValidationMessage("tenant", "invalid"));
+      return;
+    }
+
+    if (!validation.required(username)) {
+      Alert.alert("Validation", getValidationMessage("username", "required"));
+      return;
+    }
+
+    if (!validation.username(username.trim())) {
+      Alert.alert("Validation", getValidationMessage("username", "invalid"));
+      return;
+    }
+
+    if (!validation.required(password)) {
+      Alert.alert("Validation", getValidationMessage("password", "required"));
+      return;
+    }
+
+    if (!validation.password(password)) {
+      Alert.alert("Validation", getValidationMessage("password", "invalid"));
       return;
     }
 
     setLoading(true);
 
-    // 👀 Log the request
-    // console.log("📤 Sending login request to:", API_URL);
-    console.log("➡️ Payload:", {
-      tenant,
-      username: username.trim(),
-      password: "[HIDDEN]",
-    });
-
     try {
-      const res = await axios.post(API_URL, {
-        tenant,
-        username: username.trim(),
-        password: password.trim(),
-      });
+      const result = await login(username.trim(), password.trim(), tenant.trim());
 
-      // ✅ Log response
-      // console.log("✅ Login response:");
-      // console.log("   Status:", res.status);
-      // console.log("   Headers:", res.headers);
-      // console.log("   Data:", res.data);
-
-      const { access, refresh, role } = res.data;
-      console.log("🪪 Access token:", access ? access : "❌ missing");
-      console.log("🔁 Refresh token:", refresh ? refresh : "❌ missing");
-      // ✅ Save tokens
-      await AsyncStorage.setItem("access_token", access);
-      await AsyncStorage.setItem("refresh_token", refresh);
-      await AsyncStorage.setItem("tenant_slug", tenant);
-
-      // ✅ Set auth token for axios
-      setAuthToken(access);
+      // ✅ Update auth state
+      setIsAuthenticated(true);
+      setUserRole(result.role);
 
       // ✅ Redirect based on role
-      if (role === "admin") {
+      if (result.role === "admin") {
         router.replace("/(adminTabs)/dashboard");
       } else {
         router.replace("/(tabs)/home");
       }
     } catch (error: any) {
-      console.error("❌ Login error:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
-      });
-
+      console.error("❌ Login error:", error);
       Alert.alert(
         "Login Failed",
         error.response?.data?.detail ||
           error.response?.data?.non_field_errors?.[0] ||
-          "Invalid username, password, or tenant."
+          error.message ||
+          "Invalid credentials. Please try again."
       );
     } finally {
       setLoading(false);
@@ -130,12 +122,13 @@ export default function Login() {
             value={tenant}
             onChangeText={setTenant}
             autoCapitalize="none"
+            editable={!loading}
           />
 
           {/* Username Input */}
           <TextInput
             className="w-full rounded-2xl px-5 py-4 text-base mb-4"
-            placeholder="User ID"
+            placeholder="Username"
             placeholderTextColor={colors.textLight}
             style={{
               backgroundColor: "#F8F8F8",
@@ -146,6 +139,7 @@ export default function Login() {
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
+            editable={!loading}
           />
 
           {/* Password Input */}
@@ -165,8 +159,9 @@ export default function Login() {
               value={password}
               onChangeText={setPassword}
               style={{ color: colors.textDark }}
+              editable={!loading}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <TouchableOpacity disabled={loading} onPress={() => setShowPassword(!showPassword)}>
               <Ionicons
                 name={showPassword ? "eye-outline" : "eye-off-outline"}
                 size={22}
@@ -182,7 +177,7 @@ export default function Login() {
             activeOpacity={0.9}
             className="rounded-2xl py-4 items-center"
             style={{
-              backgroundColor: colors.accent,
+              backgroundColor: loading ? "#ccc" : colors.accent,
               shadowColor: colors.accent,
               shadowOpacity: 0.25,
               shadowRadius: 8,
@@ -212,8 +207,8 @@ export default function Login() {
               className="mr-2"
             />
             <Text style={{ color: colors.text }}>
-              <Text className="font-semibold">Note:</Text> Enter your kindergarten’s slug, username,
-              and password to sign in.
+              <Text className="font-semibold">Note:</Text> Enter your kindergarten&apos;s slug,
+              username, and password to sign in.
             </Text>
           </View>
         </View>

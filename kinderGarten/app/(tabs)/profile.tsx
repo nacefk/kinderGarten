@@ -1,6 +1,6 @@
 import { router } from "expo-router";
-import { Check, ChevronLeft, Pencil, ChevronDown } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { Check, ChevronLeft, Pencil, ChevronDown, LogOut } from "lucide-react-native";
+import { useEffect, useState, useCallback } from "react";
 import {
   Alert,
   Linking,
@@ -21,6 +21,7 @@ import Card from "../../components/Card";
 import Row from "../../components/Row";
 import * as ImagePicker from "expo-image-picker";
 import { getMyChild, updateChild, uploadAvatar } from "@/api/children";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -28,6 +29,31 @@ export default function Profile() {
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { logout } = useAuthStore();
+
+  /** ✅ Logout handler */
+  const handleLogout = useCallback(async () => {
+    Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
+      {
+        text: "Annuler",
+        onPress: () => {},
+        style: "cancel",
+      },
+      {
+        text: "Déconnecter",
+        onPress: async () => {
+          try {
+            await logout();
+            router.replace("/(authentication)/login");
+          } catch (err: any) {
+            Alert.alert("Erreur", "Impossible de se déconnecter.");
+            console.error("Logout error:", err);
+          }
+        },
+        style: "destructive",
+      },
+    ]);
+  }, [logout]);
 
   /** 🧮 Calcul de l’âge */
   const getAge = (birthdate?: string) => {
@@ -152,17 +178,17 @@ export default function Profile() {
   };
 
   /** 📞 Appel téléphonique */
-  const handlePhoneCall = (phone: string) => {
+  const handlePhoneCall = useCallback((phone: string) => {
     if (!phone || phone === "N/D") return;
     const sanitized = phone.replace(/[^+\d]/g, "");
     const url = `tel:${sanitized}`;
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) Linking.openURL(url);
-        else Alert.alert("Erreur", "Impossible d’ouvrir le composeur téléphonique.");
+        else Alert.alert("Erreur", "Impossible d'ouvrir le composeur téléphonique.");
       })
-      .catch(() => Alert.alert("Erreur", "Une erreur est survenue lors de l’appel."));
-  };
+      .catch(() => Alert.alert("Erreur", "Une erreur est survenue lors de l'appel."));
+  }, []);
 
   if (loading || !profile) {
     return (
@@ -191,18 +217,24 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          onPress={() => {
-            if (isEditing) saveProfile();
-            else setIsEditing(true);
-          }}
-        >
-          {isEditing ? (
-            <Check color={colors.textDark} size={26} />
-          ) : (
-            <Pencil color={colors.textDark} size={24} />
-          )}
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity
+            onPress={() => {
+              if (isEditing) saveProfile();
+              else setIsEditing(true);
+            }}
+          >
+            {isEditing ? (
+              <Check color={colors.textDark} size={26} />
+            ) : (
+              <Pencil color={colors.textDark} size={24} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleLogout}>
+            <LogOut color={colors.textDark} size={24} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 🧱 Scroll content */}

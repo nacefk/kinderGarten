@@ -1,12 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Tabs, Redirect } from "expo-router";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function TabsLayout() {
+  const { isAuthenticated } = useAuthStore();
+
+  // ✅ Route protection
+  if (!isAuthenticated) {
+    return <Redirect href="/(authentication)/login" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // hide top bar
-        tabBarActiveTintColor: "#007aff", // customize as you like
+        headerShown: false,
+        tabBarActiveTintColor: "#007aff",
       }}
     >
       <Tabs.Screen

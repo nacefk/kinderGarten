@@ -1,15 +1,24 @@
 import "@/global.css";
 import React, { useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Slot } from "expo-router";
-import { setAuthToken } from "@/api/api";
+import { setupAxiosInterceptors } from "@/api/api";
+import { useAuthStore } from "@/store/useAuthStore";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function RootLayout() {
+  const { checkAuth } = useAuthStore();
+
   useEffect(() => {
-    (async () => {
-      const token = await AsyncStorage.getItem("access_token");
-      if (token) setAuthToken(token);
-    })();
+    // ✅ Initialize auth on app startup
+    checkAuth();
+
+    // ✅ Setup axios interceptors for token refresh
+    setupAxiosInterceptors();
   }, []);
-  return <Slot />;
+
+  return (
+    <ErrorBoundary>
+      <Slot />
+    </ErrorBoundary>
+  );
 }

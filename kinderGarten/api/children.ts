@@ -1,13 +1,15 @@
 import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { secureStorage } from "@/utils/secureStorage";
+import { api } from "./api";
+import { API_CONFIG, API_ENDPOINTS } from "@/config/api";
 
-const API_URL = "http://192.168.0.37:8000/api/children/";
+const API_URL = `${API_CONFIG.baseURL}${API_ENDPOINTS.CHILDREN}`;
 
 /**
  * Helper to get auth headers
  */
 async function getAuthHeaders() {
-  const token = await AsyncStorage.getItem("access_token");
+  const token = await secureStorage.getAccessToken();
   return { Authorization: `Bearer ${token}` };
 }
 
@@ -15,16 +17,12 @@ async function getAuthHeaders() {
  * Fetch all children or filter by classroom or club
  */
 export async function getChildren(filter: { classroom?: number; club?: number } = {}) {
-  const token = await AsyncStorage.getItem("access_token");
   const params: any = {};
 
   if (filter.classroom) params.classroom = filter.classroom;
-  else if (filter.club) params.club = filter.club; // ✅ only one at a time
+  else if (filter.club) params.club = filter.club;
 
-  const res = await axios.get(API_URL, {
-    headers: { Authorization: `Bearer ${token}` },
-    params,
-  });
+  const res = await api.get(API_ENDPOINTS.CHILDREN, { params });
   return res.data;
 }
 
@@ -33,8 +31,7 @@ export async function getChildren(filter: { classroom?: number; club?: number } 
  * Fetch a single child by ID
  */
 export async function getChildById(id: number | string) {
-  const headers = await getAuthHeaders();
-  const res = await axios.get(`${API_URL}${id}/`, { headers });
+  const res = await api.get(`${API_ENDPOINTS.CHILDREN}${id}/`);
   return res.data;
 }
 
@@ -48,7 +45,7 @@ export async function createChild({
   classroom,
   avatar,
   hasMobileApp,
-  clubs = [], // ✅ add this
+  clubs = [],
 }: {
   name: string;
   birthdate: string;
@@ -56,15 +53,17 @@ export async function createChild({
   classroom?: number;
   avatar?: string;
   hasMobileApp?: boolean;
-  clubs?: number[]; // ✅ optional array of club IDs
+  clubs?: number[];
 }) {
-  const headers = await getAuthHeaders();
-
-  const res = await axios.post(
-    API_URL,
-    { name, birthdate, parent_name, classroom, avatar, hasMobileApp, clubs },
-    { headers }
-  );
+  const res = await api.post(API_ENDPOINTS.CHILDREN, {
+    name,
+    birthdate,
+    parent_name,
+    classroom,
+    avatar,
+    hasMobileApp,
+    clubs,
+  });
 
   return res.data;
 }
@@ -73,14 +72,9 @@ export async function createChild({
 /**
  * Update an existing child (PATCH = partial update)
  */
-export async function updateChild(
-  id: number | string,
-  payload: Record<string, any>
-) {
-  const headers = await getAuthHeaders();
-
+export async function updateChild(id: number | string, payload: Record<string, any>) {
   try {
-    const res = await axios.patch(`${API_URL}${id}/`, payload, { headers });
+    const res = await api.patch(`${API_ENDPOINTS.CHILDREN}${id}/`, payload);
     return res.data;
   } catch (e: any) {
     console.error("❌ Error updating child:", e.response?.data || e.message);
@@ -91,20 +85,13 @@ export async function updateChild(
  * Fetch all classrooms (for dropdown)
  */
 export async function getClassrooms() {
-  const token = await AsyncStorage.getItem("access_token");
-
-  const res = await axios.get("http://192.168.0.37:8000/api/children/classes/", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  return res.data; // [{id: 1, name: "Petite Section"}, ...]
+  const res = await api.get(API_ENDPOINTS.CHILDREN_CLASSES);
+  return res.data;
 }
 /**
  * Upload child avatar (multipart/form-data)
  */
 export async function uploadAvatar(uri: string): Promise<string> {
-  const headers = await getAuthHeaders();
-
   const formData = new FormData();
   formData.append("file", {
     uri,
@@ -112,35 +99,29 @@ export async function uploadAvatar(uri: string): Promise<string> {
     type: "image/jpeg",
   } as any);
 
-  const res = await axios.post(`${API_URL}upload-avatar/`, formData, {
+  const res = await api.post(`${API_ENDPOINTS.CHILDREN}upload-avatar/`, formData, {
     headers: {
-      ...headers,
       "Content-Type": "multipart/form-data",
     },
   });
 
-  return res.data.url; // Django should return { "url": "..." }
+  return res.data.url;
 }
 
 /**
  * Delete a child by ID
  */
 export async function deleteChild(id: number) {
-  const headers = await getAuthHeaders();
-  const res = await axios.delete(`${API_URL}${id}/`, { headers });
+  const res = await api.delete(`${API_ENDPOINTS.CHILDREN}${id}/`);
   return res.data;
 }
 /**
  * Fetch all clubs (for dropdown)
  */
 export async function getClubs() {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await axios.get("http://192.168.0.37:8000/api/children/clubs/", {
-      headers,
-    });
-    return res.data; // [{ id, name, description, instructor_name, ... }]
+    const res = await api.get(API_ENDPOINTS.CHILDREN_CLUBS);
+    return res.data;
   } catch (e: any) {
     console.error("❌ Error fetching clubs:", e.response?.data || e.message);
     throw e;
@@ -150,24 +131,15 @@ export async function getClubs() {
  * Create a new club
  */
 export async function createClub(name: string) {
-  const headers = await getAuthHeaders();
-  const res = await axios.post(
-    "http://192.168.0.37:8000/api/children/clubs/",
-    { name },
-    { headers }
-  );
+  const res = await api.post(API_ENDPOINTS.CHILDREN_CLUBS, { name });
   return res.data;
 }
 /**
  * Delete a classroom by ID
  */
 export async function deleteClass(id: number) {
-  const headers = await getAuthHeaders();
   try {
-    const res = await axios.delete(
-      `http://192.168.0.37:8000/api/children/classes/${id}/`,
-      { headers }
-    );
+    const res = await api.delete(`${API_ENDPOINTS.CHILDREN_CLASSES}${id}/`);
     return res.data;
   } catch (e: any) {
     console.error("❌ Error deleting class:", e.response?.data || e.message);
@@ -179,12 +151,8 @@ export async function deleteClass(id: number) {
  * Delete a club by ID
  */
 export async function deleteClub(id: number) {
-  const headers = await getAuthHeaders();
   try {
-    const res = await axios.delete(
-      `http://192.168.0.37:8000/api/children/clubs/${id}/`,
-      { headers }
-    );
+    const res = await api.delete(`${API_ENDPOINTS.CHILDREN_CLUBS}${id}/`);
     return res.data;
   } catch (e: any) {
     console.error("❌ Error deleting club:", e.response?.data || e.message);
@@ -195,10 +163,8 @@ export async function deleteClub(id: number) {
  * 🔹 Fetch the current parent's linked child (via /api/children/me/)
  */
 export async function getMyChild() {
-  const headers = await getAuthHeaders();
-
   try {
-    const res = await axios.get(`${API_URL}me/`, { headers });
+    const res = await api.get(API_ENDPOINTS.CHILDREN_ME);
     console.log("✅ /me/ response:", res.data);
     return res.data;
   } catch (err: any) {

@@ -54,7 +54,7 @@ export default function CalendarScreen() {
   const [weeklyPlans, setWeeklyPlans] = useState<Record<string, any>>({});
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
-  const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+  const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
   // ---------- INITIAL LOAD ----------
   useEffect(() => {
@@ -82,17 +82,40 @@ export default function CalendarScreen() {
       ]);
       setCalendarEvents(eventsData);
 
+      const ALL_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
       const groupedPlans = plansData.reduce((acc: any, plan: any) => {
-        // use class_name_detail for display grouping
         const className = plan.class_name_detail?.name || plan.class_name?.name || "Inconnu";
-        const { day, time, title, id } = plan;
 
-        if (!acc[className]) acc[className] = {};
-        if (!acc[className][day]) acc[className][day] = [];
+        // 🔥 First time we encounter a class → pre-fill all 7 days
+        if (!acc[className]) {
+          acc[className] = {};
+          ALL_DAYS.forEach((d) => {
+            acc[className][d] = [];
+          });
+        }
 
-        acc[className][day].push({ id, time, title, day, class_name: className });
+        // 🔥 Insert activity into its correct day
+        acc[className][plan.day].push({
+          id: plan.id,
+          time: plan.time,
+          title: plan.title,
+          day: plan.day,
+          class_name: className,
+        });
+
         return acc;
       }, {});
+
+      // 🔥 Make sure selected class still has all days
+      if (selectedClass) {
+        const cls = selectedClass.name;
+        if (groupedPlans[cls]) {
+          ALL_DAYS.forEach((d) => {
+            if (!groupedPlans[cls][d]) groupedPlans[cls][d] = [];
+          });
+        }
+      }
 
       setWeeklyPlans(groupedPlans);
     } catch (error) {

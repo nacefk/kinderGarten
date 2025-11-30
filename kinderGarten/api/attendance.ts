@@ -1,39 +1,47 @@
-// 📄 src/api/attendance.ts
+import { api } from "./api";
+import { API_ENDPOINTS } from "@/config/api";
+import { withRetry } from "@/utils/apiRetry";
 
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const BASE_URL = "http://192.168.0.37:8000/api/attendance/";
-
-/**
- * ✅ Get presence summary
- * Returns: { present: number, absent: number }
- */
+/** Summary */
 export async function getAttendanceSummary() {
-  const token = await AsyncStorage.getItem("access_token");
-  const res = await axios.get(`${BASE_URL}summary/`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
+  return withRetry(() => api.get(API_ENDPOINTS.ATTENDANCE_SUMMARY));
 }
 
-/**
- * ✅ Get pending extra-hour requests
- * Returns: [{ id, child_name, start, end, status }]
- */
+/** Pending extra-hours (for admin) */
 export async function getPendingExtraHours() {
-  const token = await AsyncStorage.getItem("access_token");
-  const res = await axios.get(`${BASE_URL}extra/`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
+  return withRetry(() => api.get(API_ENDPOINTS.ATTENDANCE_EXTRA));
 }
+
+/** Save attendance (presence screen) */
 export async function saveAttendanceRecords(records: any[]) {
-  const token = await AsyncStorage.getItem("access_token");
-  const res = await axios.post(
-    `${BASE_URL}update/`,
-    { records },
-    { headers: { Authorization: `Bearer ${token}` } }
+  return withRetry(() =>
+    api.post(API_ENDPOINTS.ATTENDANCE_UPDATE, { records })
   );
-  return res.data;
+}
+
+/** Parent: request extra hours */
+export async function requestExtraHour(payload: {
+  child: number;
+  start: string;
+  end: string;
+}) {
+  return withRetry(() =>
+    api.post(`${API_ENDPOINTS.ATTENDANCE_EXTRA}request/`, payload)
+  );
+}
+
+/** Admin: approve / reject extra hour */
+export async function handleExtraHourAction(id: number, action: "approve" | "reject") {
+  return withRetry(() =>
+    api.post(`${API_ENDPOINTS.ATTENDANCE_EXTRA}${id}/action/`, { action })
+  );
+}
+
+// Optional helpers
+export async function approveExtraHour(id: number) {
+  return handleExtraHourAction(id, "approve");
+}
+
+export async function rejectExtraHour(id: number) {
+  return handleExtraHourAction(id, "reject");
 }

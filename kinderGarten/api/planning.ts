@@ -1,30 +1,13 @@
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { api } from "./api";
+import { API_ENDPOINTS } from "@/config/api";
 
-// 👇 Update to your Django base URL (same as your children API)
-const BASE_URL = "http://192.168.0.37:8000/api/planning/";
-
-/**
- * Helper to get authenticated headers
- */
-async function getAuthHeaders() {
-  const token = await AsyncStorage.getItem("access_token");
-  return {
-    Authorization: `Bearer ${token}`,
-  };
-}
-
-/* -------------------------------
-   EVENTS ENDPOINTS
--------------------------------- */
+/* Events Endpoints */
 
 /**
  * Fetch all events
  */
 export async function getEvents(filter?: { class_name?: number }) {
-  const headers = await getAuthHeaders();
-  const res = await axios.get(`${BASE_URL}events/`, {
-    headers,
+  const res = await api.get(API_ENDPOINTS.PLANNING_EVENTS, {
     params: filter || {},
   });
   return res.data;
@@ -44,12 +27,12 @@ export async function createEvent({
   description?: string;
   class_name: string;
 }) {
-  const headers = await getAuthHeaders();
-  const res = await axios.post(
-    `${BASE_URL}events/`,
-    { title, date, description, class_name },
-    { headers }
-  );
+  const res = await api.post(API_ENDPOINTS.PLANNING_EVENTS, {
+    title,
+    date,
+    description,
+    class_name,
+  });
   return res.data;
 }
 
@@ -57,8 +40,7 @@ export async function createEvent({
  * Update an event
  */
 export async function updateEvent(id: string, data: any) {
-  const headers = await getAuthHeaders();
-  const res = await axios.put(`${BASE_URL}events/${id}/`, data, { headers });
+  const res = await api.put(`${API_ENDPOINTS.PLANNING_EVENTS}${id}/`, data);
   return res.data;
 }
 
@@ -66,22 +48,17 @@ export async function updateEvent(id: string, data: any) {
  * Delete an event
  */
 export async function deleteEvent(id: string) {
-  const headers = await getAuthHeaders();
-  const res = await axios.delete(`${BASE_URL}events/${id}/`, { headers });
+  const res = await api.delete(`${API_ENDPOINTS.PLANNING_EVENTS}${id}/`);
   return res.data;
 }
 
-/* -------------------------------
-   WEEKLY PLANS ENDPOINTS
--------------------------------- */
+/* Weekly Plans Endpoints */
 
 /**
  * Fetch all weekly plans
  */
 export async function getPlans(filter?: { class_name?: number }) {
-  const headers = await getAuthHeaders();
-  const res = await axios.get(`${BASE_URL}plans/`, {
-    headers,
+  const res = await api.get(API_ENDPOINTS.PLANNING_PLANS, {
     params: filter || {},
   });
   return res.data;
@@ -101,12 +78,12 @@ export async function createPlan({
   day: string;
   class_name: string;
 }) {
-  const headers = await getAuthHeaders();
-  const res = await axios.post(
-    `${BASE_URL}plans/`,
-    { time, title, day, class_name },
-    { headers }
-  );
+  const res = await api.post(API_ENDPOINTS.PLANNING_PLANS, {
+    time,
+    title,
+    day,
+    class_name,
+  });
   return res.data;
 }
 
@@ -114,8 +91,7 @@ export async function createPlan({
  * Update a plan
  */
 export async function updatePlan(id: string, data: any) {
-  const headers = await getAuthHeaders();
-  const res = await axios.put(`${BASE_URL}plans/${id}/`, data, { headers });
+  const res = await api.put(`${API_ENDPOINTS.PLANNING_PLANS}${id}/`, data);
   return res.data;
 }
 
@@ -123,7 +99,6 @@ export async function updatePlan(id: string, data: any) {
  * Delete a plan
  */
 export async function deletePlan(id: string) {
-  const headers = await getAuthHeaders();
-  const res = await axios.delete(`${BASE_URL}plans/${id}/`, { headers });
+  const res = await api.delete(`${API_ENDPOINTS.PLANNING_PLANS}${id}/`);
   return res.data;
 }

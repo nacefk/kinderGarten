@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { Bell, ChevronDown, ChevronLeft } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Image,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import colors from "../../config/colors";
 import Card from "../../components/Card";
@@ -30,10 +31,32 @@ export default function Activity() {
   const [weekDays, setWeekDays] = useState<string[]>(["Lundi"]);
 
   /** 📅 Get current day in French */
-  const getCurrentDay = () => {
+  const getCurrentDay = useCallback(() => {
     const today = new Date().toLocaleDateString("fr-FR", { weekday: "long" });
     return today.charAt(0).toUpperCase() + today.slice(1);
-  };
+  }, []);
+
+  /** 🎬 Navigate to story viewer */
+  const handleStoryPress = useCallback(
+    (index: number) => {
+      router.push({
+        pathname: "/story-viewer",
+        params: { index: index.toString() },
+      });
+    },
+    [router]
+  );
+
+  /** 📅 Toggle day dropdown */
+  const handleDayDropdownToggle = useCallback(() => {
+    setShowDayDropdown((prev) => !prev);
+  }, []);
+
+  /** 📅 Select day from dropdown */
+  const handleSelectDay = useCallback((day: string) => {
+    setSelectedDay(day);
+    setShowDayDropdown(false);
+  }, []);
 
   /** 📦 Load class plans, events, and reports */
   useEffect(() => {
@@ -43,64 +66,97 @@ export default function Activity() {
 
         // 1️⃣ Fetch logged-in parent's child
         const child = await getMyChild();
-        const className = child.classroom?.name;
+        if (!child || !child.id) {
+          throw new Error("Child data not found");
+        }
+
+        console.log("🔍 Child loaded:", child.name);
+
+        const classId = child.classroom;
         const childId = child.id;
-        console.log("✅ Child:", child.name, "| Class:", className);
 
-        // 2️⃣ Fetch plans, events, and reports concurrently
-        const [plansData, eventsData, reportsData] = await Promise.all([
-          getPlans({ class_name: className }),
-          getEvents(),
-          getReports(childId),
-        ]);
-        console.log("📅 Events fetched:", eventsData?.length);
+        console.log("✅ Child:", child.name, "| Class id:", classId);
 
-        // 3️⃣ Group class plans by day
+        // 2️⃣ Fetch plans, events, and reports concurrently with error boundaries
+        let plansData = [];
+        let eventsData = [];
+        let reportsData = [];
+
+        try {
+          [plansData, eventsData, reportsData] = await Promise.all([
+            getPlans({ class_name: classId }).catch((err) => {
+              console.warn("⚠️ Error loading plans:", err.message);
+              return [];
+            }),
+            getEvents().catch((err) => {
+              console.warn("⚠️ Error loading events:", err.message);
+              return [];
+            }),
+            getReports(childId).catch((err) => {
+              console.warn("⚠️ Error loading reports:", err.message);
+              return [];
+            }),
+          ]);
+        } catch (err) {
+          console.error("❌ Error fetching activity data:", err);
+        }
+
+        console.log("📅 Plans fetched:", plansData.length);
+        console.log("📅 Events fetched:", eventsData.length);
+        console.log("📅 Reports fetched:", reportsData.length);
+
+        // 3️⃣ Group class plans by day with safety checks
         const grouped: Record<string, any[]> = {};
-        plansData.forEach((plan: any) => {
-          const day = plan.day || "Lundi";
-          if (!grouped[day]) grouped[day] = [];
-          grouped[day].push({
-            time: plan.time,
-            title: plan.title,
-            detail: plan.description || "",
-            icon: "🧩",
+        if (Array.isArray(plansData)) {
+          plansData.forEach((plan: any) => {
+            if (plan && plan.day) {
+              const day = plan.day || "Lundi";
+              if (!grouped[day]) grouped[day] = [];
+              grouped[day].push({
+                time: plan.time || "N/A",
+                title: plan.title || "Untitled",
+                detail: plan.description || "",
+                icon: "🧩",
+              });
+            }
           });
-        });
+        }
+
         setTimelineByDay(grouped);
         setWeekDays(Object.keys(grouped).length ? Object.keys(grouped) : ["Lundi"]);
 
-        // 4️⃣ Reports (real photos/videos)
-        console.log("🧾 Raw reportsData:", JSON.stringify(reportsData, null, 2));
-
-        const formattedStories = (reportsData || []).flatMap((report: any) =>
-          (report.media_files || []).map((media: any) => ({
-            id: `${report.id}_${media.id}`,
-            type: media.file.toLowerCase().endsWith(".mp4") ? "video" : "image",
-            uri: media.file,
-            description: report.notes || "",
-            date: media.uploaded_at,
-          }))
-        );
+        // 4️⃣ Format media galleries from reports with safety checks
+        const formattedStories = (Array.isArray(reportsData) ? reportsData : [])
+          .filter((report) => report && report.media_files)
+          .flatMap((report: any) =>
+            (report.media_files || [])
+              .filter((media) => media && media.file)
+              .map((media: any) => ({
+                id: `${report.id}_${media.id}`,
+                type: media.file.toLowerCase().endsWith(".mp4") ? "video" : "image",
+                uri: media.file,
+                description: report.notes || "",
+                date: media.uploaded_at,
+              }))
+          );
 
         setGalleryItems(formattedStories);
-        console.log("🖼️ Loaded stories:", formattedStories.length);
 
-        // 5️⃣ Upcoming Events (future only)
-        const formattedEvents = (eventsData || [])
-          .filter((e: any) => new Date(e.date) > new Date()) // future events
+        // 5️⃣ Upcoming Events with safety checks
+        const formattedEvents = (Array.isArray(eventsData) ? eventsData : [])
+          .filter((e: any) => e && e.date && new Date(e.date) > new Date())
           .map((e: any) => ({
             icon: "🎉",
-            title: e.title || "Événement",
-            detail: e.description || "Aucune description fournie",
+            title: e.title || "Event",
+            detail: e.description || "",
             date: e.date,
           }))
-          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         setEvents(formattedEvents);
-        console.log("🎉 Formatted future events:", formattedEvents.length);
       } catch (error: any) {
-        console.error("❌ Error loading activity data:", error.response?.data || error.message);
+        console.error("❌ Error loading activity data:", error.message);
+        Alert.alert("Erreur", "Impossible de charger les activités. Veuillez réessayer.");
       } finally {
         setLoading(false);
       }
@@ -196,14 +252,7 @@ export default function Activity() {
                 {galleryItems?.length > 0 ? (
                   galleryItems.map((item, index) => (
                     <View key={item.id} className="mr-3 items-center">
-                      <TouchableOpacity
-                        onPress={() =>
-                          router.push({
-                            pathname: "/story-viewer",
-                            params: { index: index.toString() },
-                          })
-                        }
-                      >
+                      <TouchableOpacity onPress={() => handleStoryPress(index)}>
                         {item.type === "image" ? (
                           <Image source={{ uri: item.uri }} className="w-24 h-24 rounded-xl" />
                         ) : (
@@ -245,7 +294,7 @@ export default function Activity() {
         {selectedFilter === "week" && (
           <View className="mt-6">
             <TouchableOpacity
-              onPress={() => setShowDayDropdown(!showDayDropdown)}
+              onPress={handleDayDropdownToggle}
               className="flex-row justify-between items-center rounded-2xl p-4 shadow-sm"
               style={{ backgroundColor: colors.cardBackground }}
             >
@@ -263,10 +312,7 @@ export default function Activity() {
                 {weekDays.map((day) => (
                   <TouchableOpacity
                     key={day}
-                    onPress={() => {
-                      setSelectedDay(day);
-                      setShowDayDropdown(false);
-                    }}
+                    onPress={() => handleSelectDay(day)}
                     className="py-2 rounded-xl"
                     style={{
                       backgroundColor: selectedDay === day ? colors.accentLight : "transparent",

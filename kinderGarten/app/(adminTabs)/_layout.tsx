@@ -1,12 +1,20 @@
-import { Tabs } from "expo-router";
+import { Tabs, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function AdminLayout() {
+  const { isAuthenticated, userRole } = useAuthStore();
+
+  // ✅ Route protection: ensure user is authenticated and is admin
+  if (!isAuthenticated || userRole !== "admin") {
+    return <Redirect href="/(authentication)/login" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // hide top bar
+        headerShown: false,
         tabBarActiveTintColor: "#007aff",
       }}
     >

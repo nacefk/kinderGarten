@@ -1,40 +1,69 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { api, setAuthToken } from "./api";
+import axios from "axios";
+import { secureStorage } from "@/utils/secureStorage";
+import { setAuthToken, clearAuthToken } from "./api";
 import { getChildren } from "./children";
+import { API_CONFIG, API_ENDPOINTS } from "@/config/api";
 
-export async function login(username: string, password: string) {
-  const res = await api.post("auth/login/", { username, password });
-  const { access, refresh, role } = res.data;
- console.log("🪪 Access token:", access);
-  console.log("🔁 Refresh token:", refresh);
-  // ✅ Store tokens
-  await AsyncStorage.setItem("access_token", access);
-  await AsyncStorage.setItem("refresh_token", refresh);
+export async function login(username: string, password: string, tenant: string) {
+  try {
+    // ✅ Call login endpoint
+    const res = await axios.post(
+      `${API_CONFIG.baseURL}${API_ENDPOINTS.AUTH_LOGIN}`,
+      { username, password, tenant },
+      { timeout: API_CONFIG.timeout }
+    );
 
-  // ✅ Apply token globally
-  setAuthToken(access);
+    const { access, refresh, role } = res.data;
 
-  // ✅ Fetch the parent’s child right after login
-  let child = null;
-  if (role === "parent") {
-    try {
-      const children = await getChildren(); // backend filters automatically
-      child = children?.[0] || null;
-      if (child) {
-        await AsyncStorage.setItem("child_data", JSON.stringify(child));
-        console.log("👶 Child profile loaded:", child.name);
-      } else {
-        console.warn("⚠️ No child linked to this account yet.");
-      }
-    } catch (e: any) {
-      console.error("❌ Failed to fetch child data:", e.response?.data || e.message);
+    if (!access || !refresh) {
+      throw new Error("Missing tokens in login response");
     }
-  }
 
-  return { ...res.data, child };
+    // ✅ Save tokens securely (NOT logged)
+    await Promise.all([
+      secureStorage.setAccessToken(access),
+      secureStorage.setRefreshToken(refresh),
+      secureStorage.setTenantSlug(tenant),
+      secureStorage.setUserRole(role),
+    ]);
+
+    // ✅ Set token for API
+    await setAuthToken(access);
+
+    // ✅ Fetch the parent's child right after login (if parent role)
+    let child = null;
+    if (role === "parent") {
+      try {
+        const children = await getChildren();
+        child = children?.[0] || null;
+        if (child) {
+          console.log("✅ Child profile loaded:", child.name);
+        } else {
+          console.warn("⚠️ No child linked to this account yet.");
+        }
+      } catch (e: any) {
+        console.error(
+          "❌ Failed to fetch child data:",
+          e.response?.data?.detail || e.message
+        );
+      }
+    }
+
+    return { role, child };
+  } catch (error: any) {
+    console.error("❌ Login error:", {
+      message: error.message,
+      status: error.response?.status,
+      details: error.response?.data,
+    });
+    throw error;
+  }
 }
 
 export async function logout() {
-  await AsyncStorage.multiRemove(["access_token", "refresh_token", "child_data"]);
-  setAuthToken(undefined);
+  try {
+    await clearAuthToken();
+  } catch (error) {
+    console.error("❌ Logout failed:", error);
+  }
 }
