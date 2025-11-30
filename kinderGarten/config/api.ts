@@ -5,7 +5,7 @@ const ENV = __DEV__ ? "development" : "production";
 
 const API_CONFIGS = {
   development: {
-    baseURL: "http://192.168.0.37:8000/api/",
+    baseURL: "http://localhost:8000/api/",
     timeout: 10000,
   },
   production: {

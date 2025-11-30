@@ -27,44 +27,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    // ✅ Validate tenant
-    if (!validation.required(tenant)) {
-      Alert.alert("Validation Error", getValidationMessage("tenant", "required"));
-      return;
-    }
+    // ℹ️ Validation temporarily disabled for testing
 
     // Convert tenant to slug format using helper
     const tenantSlug = convertToSlug(tenant);
-
-    if (!validation.slug(tenantSlug)) {
-      Alert.alert(
-        "Invalid Tenant",
-        "Tenant slug must contain only lowercase letters, numbers, and hyphens.\n\nExample: new-kindergarten"
-      );
-      return;
-    }
-
-    // ✅ Validate username
-    if (!validation.required(username)) {
-      Alert.alert("Validation Error", getValidationMessage("username", "required"));
-      return;
-    }
-
-    if (!validation.username(username.trim())) {
-      Alert.alert("Validation Error", getValidationMessage("username", "invalid"));
-      return;
-    }
-
-    // ✅ Validate password
-    if (!validation.required(password)) {
-      Alert.alert("Validation Error", getValidationMessage("password", "required"));
-      return;
-    }
-
-    if (!validation.password(password)) {
-      Alert.alert("Validation Error", getValidationMessage("password", "invalid"));
-      return;
-    }
 
     setLoading(true);
 
@@ -101,7 +67,8 @@ export default function Login() {
           error.response?.data?.non_field_errors?.[0] ||
           "Invalid request. Please check all fields.";
       } else if (error.message?.includes("Network") || error.code === "ECONNREFUSED") {
-        errorMessage = "Cannot connect to server. Check your internet connection and server address.";
+        errorMessage =
+          "Cannot connect to server. Check your internet connection and server address.";
       }
 
       Alert.alert("Login Failed", errorMessage);
@@ -230,8 +197,8 @@ export default function Login() {
               className="mr-2"
             />
             <Text style={{ color: colors.text }}>
-              <Text className="font-semibold">Slug format:</Text> Use lowercase letters, numbers, and
-              hyphens (e.g., new-kindergarten).{"\n\n"}
+              <Text className="font-semibold">Slug format:</Text> Use lowercase letters, numbers,
+              and hyphens (e.g., new-kindergarten).{"\n\n"}
               <Text className="font-semibold">Example login:</Text> tenant-user / tenant123 /
               new-kindergarten
             </Text>
