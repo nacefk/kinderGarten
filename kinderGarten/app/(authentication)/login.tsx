@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { login } from "@/api/auth";
 import { useAuthStore } from "@/store/useAuthStore";
-import { validation, getValidationMessage } from "@/utils/validation";
+import { validation, getValidationMessage, convertToSlug } from "@/utils/validation";
 
 export default function Login() {
   const router = useRouter();
@@ -27,41 +27,49 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    // ✅ Validate inputs
+    // ✅ Validate tenant
     if (!validation.required(tenant)) {
-      Alert.alert("Validation", getValidationMessage("tenant", "required"));
+      Alert.alert("Validation Error", getValidationMessage("tenant", "required"));
       return;
     }
 
-    if (!validation.slug(tenant.trim())) {
-      Alert.alert("Validation", getValidationMessage("tenant", "invalid"));
+    // Convert tenant to slug format using helper
+    const tenantSlug = convertToSlug(tenant);
+
+    if (!validation.slug(tenantSlug)) {
+      Alert.alert(
+        "Invalid Tenant",
+        "Tenant slug must contain only lowercase letters, numbers, and hyphens.\n\nExample: new-kindergarten"
+      );
       return;
     }
 
+    // ✅ Validate username
     if (!validation.required(username)) {
-      Alert.alert("Validation", getValidationMessage("username", "required"));
+      Alert.alert("Validation Error", getValidationMessage("username", "required"));
       return;
     }
 
     if (!validation.username(username.trim())) {
-      Alert.alert("Validation", getValidationMessage("username", "invalid"));
+      Alert.alert("Validation Error", getValidationMessage("username", "invalid"));
       return;
     }
 
+    // ✅ Validate password
     if (!validation.required(password)) {
-      Alert.alert("Validation", getValidationMessage("password", "required"));
+      Alert.alert("Validation Error", getValidationMessage("password", "required"));
       return;
     }
 
     if (!validation.password(password)) {
-      Alert.alert("Validation", getValidationMessage("password", "invalid"));
+      Alert.alert("Validation Error", getValidationMessage("password", "invalid"));
       return;
     }
 
     setLoading(true);
 
     try {
-      const result = await login(username.trim(), password.trim(), tenant.trim());
+      const result = await login(username.trim(), password.trim(), tenantSlug);
 
       // ✅ Update auth state
       setIsAuthenticated(true);
@@ -74,14 +82,29 @@ export default function Login() {
         router.replace("/(tabs)/home");
       }
     } catch (error: any) {
-      console.error("❌ Login error:", error);
-      Alert.alert(
-        "Login Failed",
-        error.response?.data?.detail ||
+      console.error("❌ Login error:", {
+        message: error.message,
+        status: error.response?.status,
+        details: error.response?.data,
+      });
+
+      // ✅ Provide detailed error messages
+      let errorMessage = "Invalid credentials. Please try again.";
+
+      if (error.response?.status === 401) {
+        errorMessage = "Invalid username or password. Please check your credentials.";
+      } else if (error.response?.status === 404) {
+        errorMessage = "Kindergarten not found. Check the tenant slug: " + tenantSlug;
+      } else if (error.response?.status === 400) {
+        errorMessage =
+          error.response?.data?.detail ||
           error.response?.data?.non_field_errors?.[0] ||
-          error.message ||
-          "Invalid credentials. Please try again."
-      );
+          "Invalid request. Please check all fields.";
+      } else if (error.message?.includes("Network") || error.code === "ECONNREFUSED") {
+        errorMessage = "Cannot connect to server. Check your internet connection and server address.";
+      }
+
+      Alert.alert("Login Failed", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -111,7 +134,7 @@ export default function Login() {
           {/* Tenant Input */}
           <TextInput
             className="w-full rounded-2xl px-5 py-4 text-base mb-4"
-            placeholder="Crèche slug (e.g. arc-en-ciel)"
+            placeholder="Kindergarten slug (e.g. new-kindergarten)"
             placeholderTextColor={colors.textLight}
             style={{
               backgroundColor: "#F8F8F8",
@@ -207,8 +230,10 @@ export default function Login() {
               className="mr-2"
             />
             <Text style={{ color: colors.text }}>
-              <Text className="font-semibold">Note:</Text> Enter your kindergarten&apos;s slug,
-              username, and password to sign in.
+              <Text className="font-semibold">Slug format:</Text> Use lowercase letters, numbers, and
+              hyphens (e.g., new-kindergarten).{"\n\n"}
+              <Text className="font-semibold">Example login:</Text> tenant-user / tenant123 /
+              new-kindergarten
             </Text>
           </View>
         </View>

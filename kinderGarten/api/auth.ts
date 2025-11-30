@@ -6,12 +6,20 @@ import { API_CONFIG, API_ENDPOINTS } from "@/config/api";
 
 export async function login(username: string, password: string, tenant: string) {
   try {
+    console.log("🔐 Login attempt:", {
+      username,
+      tenant,
+      timestamp: new Date().toISOString(),
+    });
+
     // ✅ Call login endpoint
     const res = await axios.post(
       `${API_CONFIG.baseURL}${API_ENDPOINTS.AUTH_LOGIN}`,
       { username, password, tenant },
       { timeout: API_CONFIG.timeout }
     );
+
+    console.log("✅ Login successful");
 
     const { access, refresh, role } = res.data;
 
@@ -54,7 +62,10 @@ export async function login(username: string, password: string, tenant: string) 
     console.error("❌ Login error:", {
       message: error.message,
       status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
       details: error.response?.data,
+      code: error.code,
     });
     throw error;
   }

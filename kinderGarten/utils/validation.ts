@@ -109,3 +109,16 @@ export function getValidationMessage(field: string, type: string): string {
 
   return messages[field]?.[type] || `Invalid ${field}`;
 }
+
+/**
+ * Convert a tenant name to slug format
+ * Example: "New Kindergarten" → "new-kindergarten"
+ */
+export function convertToSlug(tenantName: string): string {
+  return tenantName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, "") // Remove special characters
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+}
