@@ -3,14 +3,28 @@ import { API_ENDPOINTS } from "@/config/api";
 
 /**
  * 🔹 Create a daily report (supports multiple media uploads)
+ * Maps frontend fields to backend API schema
  */
 export async function createDailyReport(data: any) {
   const formData = new FormData();
 
+  // Required fields
   formData.append("child", String(Number(data.child)));
-  formData.append("meal", data.meal || "");
-  formData.append("nap", data.nap || "");
-  formData.append("behavior", data.behavior || "");
+  formData.append("date", data.date || new Date().toISOString().split('T')[0]);
+
+  // Map frontend fields to backend schema
+  // Frontend: meal -> Backend: eating
+  formData.append("eating", data.meal || data.eating || "");
+
+  // Frontend: nap -> Backend: sleeping
+  formData.append("sleeping", data.nap || data.sleeping || "");
+
+  // Frontend: behavior -> Backend: mood
+  formData.append("mood", data.behavior || data.mood || "neutral");
+
+  // Activities field
+  formData.append("activities", data.activities || "");
+
   formData.append("notes", data.notes || "");
 
   if (data.mediaFiles && data.mediaFiles.length > 0) {

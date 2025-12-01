@@ -4,37 +4,86 @@ import { withRetry } from "@/utils/apiRetry";
 
 /** Summary */
 export async function getAttendanceSummary() {
-  return withRetry(() => api.get(API_ENDPOINTS.ATTENDANCE_SUMMARY));
+  const response = await withRetry(() => api.get(API_ENDPOINTS.ATTENDANCE_SUMMARY));
+  return response.data;
 }
 
 /** Pending extra-hours (for admin) */
 export async function getPendingExtraHours() {
-  return withRetry(() => api.get(API_ENDPOINTS.ATTENDANCE_EXTRA));
+  const response = await withRetry(() => api.get(API_ENDPOINTS.ATTENDANCE_EXTRA));
+  return response.data;
 }
 
 /** Save attendance (presence screen) */
 export async function saveAttendanceRecords(records: any[]) {
-  return withRetry(() =>
+  const response = await withRetry(() =>
     api.post(API_ENDPOINTS.ATTENDANCE_UPDATE, { records })
   );
+  return response.data;
 }
 
 /** Parent: request extra hours */
 export async function requestExtraHour(payload: {
   child: number;
-  start: string;
-  end: string;
+  start?: string;
+  end?: string;
+  date?: string;
+  hours?: number;
 }) {
-  return withRetry(() =>
-    api.post(`${API_ENDPOINTS.ATTENDANCE_EXTRA}request/`, payload)
+  // Convert ISO datetime strings to date and hours
+  let date = payload.date;
+  let hours = payload.hours;
+
+  if (!date && payload.start) {
+    try {
+      // Extract date from ISO datetime string (e.g., "2024-01-15T09:00:00")
+      date = payload.start.split('T')[0];
+    } catch (e) {
+      throw new Error("Invalid start datetime format. Expected ISO format (YYYY-MM-DDTHH:mm:ss)");
+    }
+  }
+
+  if (!hours && payload.start && payload.end) {
+    try {
+      // Parse ISO datetimes and calculate duration in hours
+      const startTime = new Date(payload.start);
+      const endTime = new Date(payload.end);
+
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+        throw new Error("Invalid datetime format");
+      }
+
+      const durationMs = endTime.getTime() - startTime.getTime();
+      if (durationMs <= 0) {
+        throw new Error("End time must be after start time");
+      }
+
+      hours = Math.round((durationMs / (1000 * 60 * 60)) * 10) / 10; // Round to 0.1 hours
+    } catch (e) {
+      throw new Error(`Failed to calculate hours: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    }
+  }
+
+  if (!date || hours === undefined || hours <= 0) {
+    throw new Error("date and positive hours are required (or start/end datetime strings)");
+  }
+
+  const response = await withRetry(() =>
+    api.post(`${API_ENDPOINTS.ATTENDANCE_EXTRA}request/`, {
+      child: payload.child,
+      date,
+      hours,
+    })
   );
+  return response.data;
 }
 
 /** Admin: approve / reject extra hour */
 export async function handleExtraHourAction(id: number, action: "approve" | "reject") {
-  return withRetry(() =>
+  const response = await withRetry(() =>
     api.post(`${API_ENDPOINTS.ATTENDANCE_EXTRA}${id}/action/`, { action })
   );
+  return response.data;
 }
 
 // Optional helpers

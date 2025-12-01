@@ -57,9 +57,18 @@ export default function DashboardScreen() {
       try {
         setLoadingPresence(true);
         const data = await getAttendanceSummary();
-        setPresence(data);
+        // Ensure data has required fields
+        if (data && typeof data === "object") {
+          setPresence({
+            present: data.present || 0,
+            absent: data.absent || 0,
+          });
+        } else {
+          setPresence({ present: 0, absent: 0 });
+        }
       } catch (err: any) {
         console.error("❌ Error loading attendance summary:", err.message);
+        setPresence({ present: 0, absent: 0 }); // Set defaults on error
       } finally {
         setLoadingPresence(false);
       }
@@ -72,9 +81,19 @@ export default function DashboardScreen() {
       try {
         setLoadingExtra(true);
         const data = await getPendingExtraHours();
-        setExtraHours(data);
+        // Ensure data is an array (handle cases where API returns object)
+        if (Array.isArray(data)) {
+          setExtraHours(data);
+        } else if (data && typeof data === "object") {
+          // If API returns {results: [...]} or similar
+          const results = (data as any).results || (data as any).data || [];
+          setExtraHours(Array.isArray(results) ? results : []);
+        } else {
+          setExtraHours([]);
+        }
       } catch (err: any) {
         console.error("❌ Error loading extra-hour requests:", err.message);
+        setExtraHours([]); // Set to empty array on error
       } finally {
         setLoadingExtra(false);
       }
@@ -164,7 +183,7 @@ export default function DashboardScreen() {
 
         {loadingExtra ? (
           <ActivityIndicator color={colors.accent} size="small" />
-        ) : extraHours.length === 0 ? (
+        ) : !Array.isArray(extraHours) || extraHours.length === 0 ? (
           <Text style={{ color: colors.textLight, textAlign: "center", marginTop: 10 }}>
             Aucune demande pour le moment.
           </Text>
