@@ -22,7 +22,9 @@ export const useAppStore = create((set, get) => ({
     fetchChildren: async (filters = {}) => {
       try {
         // filters can be { classroom: id } or { club: id }
-        const data = await getChildren(filters);
+        const response = await getChildren(filters);
+        // ✅ Extract the 'results' array from paginated response
+        const data = response?.results || response || [];
         set((state) => ({
           data: { ...state.data, childrenList: data },
         }));
@@ -33,20 +35,33 @@ export const useAppStore = create((set, get) => ({
 
     // 🏫 Fetch all classes
     fetchClasses: async () => {
+      console.log("📦 [STORE] fetchClasses() called");
       try {
-        const data = await getClasses();
-        set((state) => ({
-          data: { ...state.data, classList: data },
-        }));
+        console.log("📦 [STORE] Calling getClasses() API...");
+        const response = await getClasses();
+        console.log("📦 [STORE] getClasses() returned:", response);
+        // ✅ Extract the 'results' array from paginated response
+        const data = response?.results || response || [];
+        console.log("📦 [STORE] Extracted data array with", Array.isArray(data) ? data.length : 0, "classes");
+        set((state) => {
+          const newState = {
+            data: { ...state.data, classList: data },
+          };
+          console.log("📦 [STORE] New state classList:", newState.data.classList);
+          return newState;
+        });
+        console.log("✅ [STORE] classList updated successfully");
       } catch (err) {
-        console.error("❌ fetchClasses:", err);
+        console.error("❌ [STORE] fetchClasses error:", err);
       }
     },
 
     // 🎨 Fetch all clubs
     fetchClubs: async () => {
       try {
-        const data = await getClubs();
+        const response = await getClubs();
+        // ✅ Extract the 'results' array from paginated response
+        const data = response?.results || response || [];
         set((state) => ({
           data: { ...state.data, clubList: data },
         }));

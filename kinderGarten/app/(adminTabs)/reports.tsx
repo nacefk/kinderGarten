@@ -27,7 +27,7 @@ export default function ReportsScreen() {
   const { fetchClasses, fetchChildren, fetchClubs } = useAppStore((state) => state.actions);
 
   const [selectedClass, setSelectedClass] = useState<any | null>(
-    classes.length > 0 ? classes[0] : null
+    Array.isArray(classes) && classes.length > 0 ? classes[0] : null
   );
   const [selectedChildren, setSelectedChildren] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -46,6 +46,7 @@ export default function ReportsScreen() {
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const [showClubDropdown, setShowClubDropdown] = useState(false);
   const [childrenList, setChildrenList] = useState<any[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const handleSelectClass = async (cls: any) => {
     setSelectedClass(cls);
@@ -54,8 +55,9 @@ export default function ReportsScreen() {
     setGroupMode(false);
     setLoading(true);
     try {
-      const data = await getChildren({ classroom: cls.id });
-      setChildrenList(data);
+      const response = await getChildren({ classroom: cls.id });
+      const data = response?.results || response || [];
+      setChildrenList(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error("❌ Error loading class children:", err.message);
     } finally {
@@ -70,8 +72,9 @@ export default function ReportsScreen() {
     setGroupMode(false);
     setLoading(true);
     try {
-      const data = await getChildren({ club: club.id });
-      setChildrenList(data);
+      const response = await getChildren({ club: club.id });
+      const data = response?.results || response || [];
+      setChildrenList(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error("❌ Error loading club children:", err.message);
     } finally {
@@ -94,52 +97,41 @@ export default function ReportsScreen() {
   ];
 
   // ------------------------------------------------------------------------
+  // ✅ Initial load - fetch all required data once
   useEffect(() => {
     (async () => {
       try {
-        if (classes.length === 0) await fetchClasses();
-        if (clubs.length === 0) await fetchClubs();
+        await Promise.all([fetchClasses(), fetchClubs(), fetchChildren()]);
+        setIsInitialized(true);
       } catch (e) {
-        console.error("❌ Error loading classes/clubs:", e.message);
+        console.error("❌ Error loading initial data:", e.message);
       }
     })();
   }, []);
-  // ✅ Auto-fetch first class children on first mount
-  // ✅ Initial setup: fetch data and select first class by default
+
+  // ✅ When classes are loaded, auto-select first class and fetch its children (only once)
   useEffect(() => {
     (async () => {
-      try {
-        setLoading(true);
+      if (isInitialized && Array.isArray(classes) && classes.length > 0) {
+        const firstClass = classes[0];
+        setSelectedClass(firstClass);
+        setFilterType("class");
+        setShowClassDropdown(false);
 
-        // 1️⃣ Always ensure data is loaded first
-        if (classes.length === 0) await fetchClasses();
-        if (clubs.length === 0) await fetchClubs();
-
-        // 2️⃣ Get the updated class list from store AFTER fetching
-        const updatedClasses = useAppStore.getState().data.classList;
-        const firstClass = updatedClasses.length > 0 ? updatedClasses[0] : null;
-
-        // 3️⃣ If we have a class, set it as selected and fetch its children
-        if (firstClass) {
-          setSelectedClass(firstClass);
-          setFilterType("class");
-          setShowClassDropdown(false);
-
+        try {
+          setLoading(true);
           const data = await getChildren({ classroom: firstClass.id });
-          setChildrenList(data);
-
-          console.log("✅ Default selected class:", firstClass.name);
-          console.log("✅ Loaded children:", data.length);
-        } else {
-          console.log("⚠️ No classes available yet.");
+          setChildrenList(Array.isArray(data) ? data : []);
+          console.log("✅ Auto-selected class:", firstClass.name);
+        } catch (err: any) {
+          console.error("❌ Error loading class children:", err.message);
+          setChildrenList([]);
+        } finally {
+          setLoading(false);
         }
-      } catch (err: any) {
-        console.error("❌ Error loading initial data:", err.message || err);
-      } finally {
-        setLoading(false);
       }
     })();
-  }, []);
+  }, [isInitialized]);
 
   useEffect(() => {
     if (selectedClass) loadReportsForClass(selectedClass.id);
@@ -164,17 +156,20 @@ export default function ReportsScreen() {
 
   const loadReportsForClass = async (classId: number) => {
     try {
-      const data = await getReports();
+      const response = await getReports();
+      const data = response?.results || response || [];
       const existingMap: Record<number, boolean> = {};
       const idMap: Record<number, number> = {};
 
-      data.forEach((r: any) => {
-        const child = children.find((c) => c.id === r.child);
-        if (child && child.classroom === classId) {
-          existingMap[r.child] = true;
-          idMap[r.child] = r.id;
-        }
-      });
+      if (Array.isArray(data)) {
+        data.forEach((r: any) => {
+          const child = children.find((c) => c.id === r.child);
+          if (child && child.classroom === classId) {
+            existingMap[r.child] = true;
+            idMap[r.child] = r.id;
+          }
+        });
+      }
 
       setExistingReports(existingMap);
       setReportsMap(idMap);
@@ -316,16 +311,18 @@ export default function ReportsScreen() {
                 // Fetch default list based on selection
                 try {
                   setLoading(true);
-                  if (btn.key === "class" && classes.length > 0) {
+                  if (btn.key === "class" && Array.isArray(classes) && classes.length > 0) {
                     const firstClass = classes[0];
                     setSelectedClass(firstClass);
-                    const data = await getChildren({ classroom: firstClass.id });
-                    setChildrenList(data);
-                  } else if (btn.key === "club" && clubs.length > 0) {
+                    const response = await getChildren({ classroom: firstClass.id });
+                    const data = response?.results || response || [];
+                    setChildrenList(Array.isArray(data) ? data : []);
+                  } else if (btn.key === "club" && Array.isArray(clubs) && clubs.length > 0) {
                     const firstClub = clubs[0];
                     setSelectedClub(firstClub);
-                    const data = await getChildren({ club: firstClub.id });
-                    setChildrenList(data);
+                    const response = await getChildren({ club: firstClub.id });
+                    const data = response?.results || response || [];
+                    setChildrenList(Array.isArray(data) ? data : []);
                   }
                 } catch (e: any) {
                   console.error("❌ Error fetching children by filter:", e.message);
@@ -398,30 +395,32 @@ export default function ReportsScreen() {
 
             {showClassDropdown && (
               <ScrollView style={{ marginTop: 6, maxHeight: 160 }}>
-                {classes.map((cls: any) => (
-                  <TouchableOpacity
-                    key={cls.id}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      handleSelectClass(cls);
-                      setShowClassDropdown(false);
-                    }}
-                    style={{
-                      paddingVertical: 8,
-                      borderBottomWidth: 0.5,
-                      borderColor: "#E5E7EB",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: selectedClass?.id === cls.id ? colors.accent : colors.textDark,
-                        fontWeight: selectedClass?.id === cls.id ? "600" : "400",
-                      }}
-                    >
-                      {cls.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {Array.isArray(classes)
+                  ? classes.map((cls: any) => (
+                      <TouchableOpacity
+                        key={cls.id}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          handleSelectClass(cls);
+                          setShowClassDropdown(false);
+                        }}
+                        style={{
+                          paddingVertical: 8,
+                          borderBottomWidth: 0.5,
+                          borderColor: "#E5E7EB",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: selectedClass?.id === cls.id ? colors.accent : colors.textDark,
+                            fontWeight: selectedClass?.id === cls.id ? "600" : "400",
+                          }}
+                        >
+                          {cls.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  : null}
               </ScrollView>
             )}
           </View>
@@ -465,30 +464,32 @@ export default function ReportsScreen() {
                 keyboardShouldPersistTaps="handled" // ✅ let taps pass through
                 nestedScrollEnabled={true}
               >
-                {clubs.map((club: any) => (
-                  <TouchableOpacity
-                    key={club.id}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      handleSelectClub(club);
-                      setShowClubDropdown(false);
-                    }}
-                    style={{
-                      paddingVertical: 8,
-                      borderBottomWidth: 0.5,
-                      borderColor: "#E5E7EB",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: selectedClub?.id === club.id ? colors.accent : colors.textDark,
-                        fontWeight: selectedClub?.id === club.id ? "600" : "400",
-                      }}
-                    >
-                      {club.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {Array.isArray(clubs)
+                  ? clubs.map((club: any) => (
+                      <TouchableOpacity
+                        key={club.id}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          handleSelectClub(club);
+                          setShowClubDropdown(false);
+                        }}
+                        style={{
+                          paddingVertical: 8,
+                          borderBottomWidth: 0.5,
+                          borderColor: "#E5E7EB",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: selectedClub?.id === club.id ? colors.accent : colors.textDark,
+                            fontWeight: selectedClub?.id === club.id ? "600" : "400",
+                          }}
+                        >
+                          {club.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  : null}
               </ScrollView>
             )}
           </View>

@@ -17,13 +17,24 @@ async function getAuthHeaders() {
  * Fetch all children or filter by classroom or club
  */
 export async function getChildren(filter: { classroom?: number; club?: number } = {}) {
-  const params: any = {};
+  try {
+    const params: any = {};
 
-  if (filter.classroom) params.classroom = filter.classroom;
-  else if (filter.club) params.club = filter.club;
+    if (filter.classroom) params.classroom = filter.classroom;
+    else if (filter.club) params.club = filter.club;
 
-  const res = await api.get(API_ENDPOINTS.CHILDREN, { params });
-  return res.data;
+    console.log("🔄 [API] getChildren called with filter:", filter);
+    console.log("🔄 [API] Fetching from:", API_ENDPOINTS.CHILDREN, "with params:", params);
+    const res = await api.get(API_ENDPOINTS.CHILDREN, { params });
+    console.log("✅ [API] getChildren response status:", res.status);
+    console.log("✅ [API] getChildren data:", res.data);
+    console.log("✅ [API] getChildren count:", Array.isArray(res.data) ? res.data.length : "NOT ARRAY");
+    return res.data;
+  } catch (err: any) {
+    console.error("❌ [API] Error fetching children:", err.message);
+    console.error("❌ [API] Error response:", err.response?.data);
+    throw err;
+  }
 }
 
 

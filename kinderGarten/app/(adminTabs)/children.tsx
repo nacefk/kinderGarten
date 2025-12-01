@@ -54,17 +54,41 @@ export default function ChildrenScreen() {
   const [filterType, setFilterType] = useState<"class" | "club" | "none">("none");
 
   const { data, actions } = useAppStore();
-  const { clubList: clubs, classList: classes } = data;
+  const { clubList: clubs, classList: classes, childrenList: storeChildren } = data;
   const { fetchChildren, fetchClasses, fetchClubs } = actions;
+
+  // ✅ Debug: Log store data changes
+  useEffect(() => {
+    console.log("🎯 [COMPONENT] Store data updated:", {
+      classesCount: Array.isArray(classes) ? classes.length : "NOT ARRAY",
+      classes: classes,
+      clubsCount: Array.isArray(clubs) ? clubs.length : "NOT ARRAY",
+      childrenCount: Array.isArray(storeChildren) ? storeChildren.length : "NOT ARRAY",
+    });
+  }, [classes, clubs, storeChildren]);
+
+  // ✅ Sync store children to local state
+  useEffect(() => {
+    if (Array.isArray(storeChildren) && storeChildren.length > 0) {
+      setChildren(storeChildren);
+    }
+  }, [storeChildren]);
 
   // ------------------- INIT -------------------
   useEffect(() => {
     (async () => {
+      console.log("🚀 [COMPONENT] Initializing children screen...");
       setLoading(true);
       try {
+        console.log(
+          "🚀 [COMPONENT] Calling Promise.all with fetchChildren, fetchClasses, fetchClubs"
+        );
         await Promise.all([fetchChildren(), fetchClasses(), fetchClubs()]);
+        console.log("✅ [COMPONENT] All initial fetches completed");
       } catch (e) {
-        console.error("❌ Error initializing data:", e.message);
+        console.error("❌ [COMPONENT] Error initializing data:", e.message);
+        // Set safe defaults to prevent crashes
+        setChildren([]);
       } finally {
         setLoading(false);
       }
@@ -78,13 +102,14 @@ export default function ChildrenScreen() {
     setLoading(true);
     try {
       await createClass(newClassName.trim());
+      // ✅ Fetch updated class list - filter effect will auto-update when classes changes
       await fetchClasses();
       setNewClassName("");
       setShowAddClass(false);
       Alert.alert("Succès", "Classe ajoutée !");
     } catch (e: any) {
       console.error("❌ Error creating class:", e.message);
-      Alert.alert("Erreur", "Impossible d’ajouter la classe.");
+      Alert.alert("Erreur", "Impossible d'ajouter la classe.");
     } finally {
       setLoading(false);
     }
@@ -216,31 +241,44 @@ export default function ChildrenScreen() {
   // ------------------- FILTERS -------------------
   useEffect(() => {
     (async () => {
+      console.log("🔄 [COMPONENT] Filter effect triggered with:", { selectedClass, selectedClub });
       setLoading(true);
       try {
         let params: any = {};
         if (selectedClass && !selectedClub) {
           const cls = classes.find((c) => c.name === selectedClass);
+          console.log("🔄 [COMPONENT] Looking for class:", selectedClass, "Found:", cls);
           if (cls) params.classroom = cls.id;
         } else if (selectedClub && !selectedClass) {
           const club = clubs.find((c) => c.name === selectedClub);
+          console.log("🔄 [COMPONENT] Looking for club:", selectedClub, "Found:", club);
           if (club) params.club = club.id;
         }
+        console.log("🔄 [COMPONENT] Fetching children with params:", params);
         const data = await getChildren(Object.keys(params).length ? params : undefined);
-        setChildren(data);
+        console.log(
+          "✅ [COMPONENT] Children fetched:",
+          Array.isArray(data) ? data.length : "NOT ARRAY"
+        );
+        // ✅ Defensive: ensure data is an array
+        setChildren(Array.isArray(data) ? data : []);
       } catch (e: any) {
-        console.error("❌ Error filtering children:", e.message);
+        console.error("❌ [COMPONENT] Error filtering children:", e.message);
+        setChildren([]); // ✅ Set safe default on error
       } finally {
         setLoading(false);
       }
     })();
-  }, [selectedClass, selectedClub]);
+  }, [selectedClass, selectedClub, classes, clubs]);
 
-  const filteredChildren = useMemo(
-    () =>
-      children.filter((child: any) => child.name.toLowerCase().includes(searchQuery.toLowerCase())),
-    [children, searchQuery]
-  );
+  // ✅ Defensive: ensure children is an array before filtering
+  const filteredChildren = useMemo(() => {
+    if (!Array.isArray(children)) return [];
+    return children.filter(
+      (child: any) =>
+        child && child.name && child.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [children, searchQuery]);
 
   if (loading)
     return (
@@ -394,66 +432,105 @@ export default function ChildrenScreen() {
           {/* 🏫 Class Chips */}
           {filterType === "class" && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {classes.map((cls: any) => (
-                <TouchableOpacity
-                  key={cls.id}
-                  onPress={() => setSelectedClass((prev) => (prev === cls.name ? null : cls.name))}
-                  onLongPress={() => handleDeleteClass(cls)}
-                  activeOpacity={0.8}
-                  style={{
-                    backgroundColor:
-                      selectedClass === cls.name ? colors.accent : colors.cardBackground,
-                    borderRadius: 12,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderWidth: 1,
-                    borderColor: colors.accent,
-                    marginRight: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: selectedClass === cls.name ? "#fff" : colors.textDark,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {cls.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {Array.isArray(classes) ? (
+                <>
+                  {console.log(
+                    "✅ [RENDER] Class chips rendering with",
+                    classes.length,
+                    "classes:",
+                    classes
+                  )}
+                  {classes.map((cls: any) => (
+                    <TouchableOpacity
+                      key={cls.id}
+                      onPress={() => {
+                        console.log("🎯 [INTERACTION] Class chip clicked:", cls.name);
+                        console.log("🎯 [INTERACTION] Current selectedClass:", selectedClass);
+                        console.log(
+                          "🎯 [INTERACTION] Will toggle to:",
+                          selectedClass === cls.name ? null : cls.name
+                        );
+                        setSelectedClass((prev) => {
+                          const newValue = prev === cls.name ? null : cls.name;
+                          console.log(
+                            "🎯 [STATE UPDATE] selectedClass updated from",
+                            prev,
+                            "to",
+                            newValue
+                          );
+                          return newValue;
+                        });
+                      }}
+                      onLongPress={() => {
+                        console.log("🗑️ [INTERACTION] Delete class long-pressed:", cls.name);
+                        handleDeleteClass(cls);
+                      }}
+                      activeOpacity={0.8}
+                      style={{
+                        backgroundColor:
+                          selectedClass === cls.name ? colors.accent : colors.cardBackground,
+                        borderRadius: 12,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderWidth: 1,
+                        borderColor: colors.accent,
+                        marginRight: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: selectedClass === cls.name ? "#fff" : colors.textDark,
+                          fontWeight: "500",
+                        }}
+                      >
+                        {cls.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              ) : (
+                <>
+                  {console.log("❌ [RENDER] Classes is NOT an array:", typeof classes, classes)}
+                  <Text style={{ color: colors.textLight }}>Aucune classe disponible</Text>
+                </>
+              )}
             </ScrollView>
           )}
 
           {/* 🎵 Club Chips */}
           {filterType === "club" && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {clubs.map((club: any) => (
-                <TouchableOpacity
-                  key={club.id}
-                  onPress={() => setSelectedClub((prev) => (prev === club.name ? null : club.name))}
-                  onLongPress={() => handleDeleteClub(club)}
-                  activeOpacity={0.8}
-                  style={{
-                    backgroundColor:
-                      selectedClub === club.name ? colors.accent : colors.cardBackground,
-                    borderRadius: 12,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderWidth: 1,
-                    borderColor: colors.accent,
-                    marginRight: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: selectedClub === club.name ? "#fff" : colors.textDark,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {club.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {Array.isArray(clubs)
+                ? clubs.map((club: any) => (
+                    <TouchableOpacity
+                      key={club.id}
+                      onPress={() =>
+                        setSelectedClub((prev) => (prev === club.name ? null : club.name))
+                      }
+                      onLongPress={() => handleDeleteClub(club)}
+                      activeOpacity={0.8}
+                      style={{
+                        backgroundColor:
+                          selectedClub === club.name ? colors.accent : colors.cardBackground,
+                        borderRadius: 12,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderWidth: 1,
+                        borderColor: colors.accent,
+                        marginRight: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: selectedClub === club.name ? "#fff" : colors.textDark,
+                          fontWeight: "500",
+                        }}
+                      >
+                        {club.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                : null}
             </ScrollView>
           )}
         </View>
@@ -746,32 +823,34 @@ export default function ChildrenScreen() {
 
             {/* Class Selector */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5">
-              {classes.map((cls: any) => (
-                <TouchableOpacity
-                  key={cls.id}
-                  onPress={() => setChildClass(cls.name)}
-                  activeOpacity={0.8}
-                  style={{
-                    backgroundColor:
-                      childClass === cls.name ? colors.accent : colors.cardBackground,
-                    borderRadius: 12,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderWidth: 1,
-                    borderColor: colors.accent,
-                    marginRight: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: childClass === cls.name ? "#fff" : colors.textDark,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {cls.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {Array.isArray(classes)
+                ? classes.map((cls: any) => (
+                    <TouchableOpacity
+                      key={cls.id}
+                      onPress={() => setChildClass(cls.name)}
+                      activeOpacity={0.8}
+                      style={{
+                        backgroundColor:
+                          childClass === cls.name ? colors.accent : colors.cardBackground,
+                        borderRadius: 12,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderWidth: 1,
+                        borderColor: colors.accent,
+                        marginRight: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: childClass === cls.name ? "#fff" : colors.textDark,
+                          fontWeight: "500",
+                        }}
+                      >
+                        {cls.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                : null}
             </ScrollView>
 
             {/* Mobile App Access */}
