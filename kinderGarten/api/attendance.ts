@@ -10,8 +10,18 @@ export async function getAttendanceSummary() {
 
 /** Pending extra-hours (for admin) */
 export async function getPendingExtraHours() {
-  const response = await withRetry(() => api.get(API_ENDPOINTS.ATTENDANCE_EXTRA));
-  return response.data;
+  try {
+    const response = await withRetry(() => api.get(API_ENDPOINTS.ATTENDANCE_EXTRA));
+    return response.data;
+  } catch (error: any) {
+    // If 403 Forbidden, return empty array instead of crashing
+    if (error.response?.status === 403) {
+      console.warn("⚠️ Permission denied for attendance/extra - returning empty array");
+      return { results: [] };
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** Save attendance (presence screen) */

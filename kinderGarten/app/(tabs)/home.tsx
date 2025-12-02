@@ -8,8 +8,9 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Modal,
 } from "react-native";
-import { Bell, LogOut } from "lucide-react-native";
+import { Bell, LogOut, Globe } from "lucide-react-native";
 import colors from "@/config/colors";
 import Card from "@/components/Card";
 import { router } from "expo-router";
@@ -20,9 +21,11 @@ import { getPlans } from "@/api/planning";
 import { getPendingExtraHours, requestExtraHour } from "@/api/attendance";
 import { API_ENDPOINTS } from "@/config/api";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 export default function Home() {
   const { logout } = useAuthStore();
+  const { language, setLanguage } = useLanguageStore();
 
   const [profile, setProfile] = useState<any>(null);
   const [dailySummary, setDailySummary] = useState<any>(null);
@@ -31,6 +34,7 @@ export default function Home() {
   const [extraHours, setExtraHours] = useState<any>({ status: "none", baseEndTime: "17:00" });
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
 
   // 🔹 Load all home data
   useEffect(() => {
@@ -40,18 +44,21 @@ export default function Home() {
 
         // 1️⃣ Get authenticated child profile
         const child = await getMyChild();
-        const className = child.classroom;
+        const classroomId = child.classroom?.id || child.classroom;
+        const classroomName = child.classroom?.name || `Classroom ${classroomId}`;
         const childId = child.id;
 
         // 2️⃣ Fetch parallel data
         const [reports, plans, pendingExtra] = await Promise.all([
           getReports(childId),
-          getPlans({ class_name: className }),
+          getPlans({ classroom: classroomId }),
           getPendingExtraHours(),
         ]);
 
         // 3️⃣ Fetch calendar events
-        const eventsRes = await api.get(API_ENDPOINTS.PLANNING_EVENTS);
+        const eventsRes = await api.get(API_ENDPOINTS.PLANNING_EVENTS, {
+          params: { classroom: classroomId },
+        });
 
         // 4️⃣ Set local state
         setProfile({
@@ -59,7 +66,7 @@ export default function Home() {
           name: child.name,
           avatar: child.avatar,
           present: child.attendanceStatus === "present" || child.present === true,
-          className,
+          className: classroomName,
         });
 
         setDailySummary(reports.length ? reports[0] : null);
@@ -69,7 +76,7 @@ export default function Home() {
             : { status: "none" }
         );
 
-        buildTimeline(plans, eventsRes.data, className);
+        buildTimeline(plans, eventsRes.data?.results || eventsRes.data, classroomName);
       } catch (err: any) {
         console.error("❌ Error fetching home data:", err.response?.data || err.message);
         Alert.alert("Error", "Unable to load data. Please try again.");
@@ -281,6 +288,9 @@ export default function Home() {
         </View>
 
         <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => setShowLanguageModal(true)} className="mr-4">
+            <Globe color={colors.textDark} size={28} />
+          </TouchableOpacity>
           <TouchableOpacity className="mr-4">
             <Bell color={colors.textDark} size={28} />
           </TouchableOpacity>
@@ -406,6 +416,60 @@ export default function Home() {
           )}
         </Card>
       </ScrollView>
+
+      {/* Language Modal */}
+      <Modal visible={showLanguageModal} transparent animationType="fade">
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <View
+            className="w-full rounded-2xl p-6"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
+            <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
+              Select Language
+            </Text>
+
+            {["en", "fr", "ar"].map((lang) => (
+              <TouchableOpacity
+                key={lang}
+                onPress={() => {
+                  setLanguage(lang as "en" | "fr" | "ar");
+                  setShowLanguageModal(false);
+                }}
+                className="py-3 px-4 rounded-xl mb-2 flex-row items-center"
+                style={{
+                  backgroundColor: language === lang ? colors.accent : "#F3F4F6",
+                }}
+              >
+                <Globe
+                  color={language === lang ? "#FFF" : colors.textDark}
+                  size={20}
+                  style={{ marginRight: 12 }}
+                />
+                <Text
+                  style={{
+                    color: language === lang ? "#FFF" : colors.textDark,
+                    fontWeight: language === lang ? "600" : "400",
+                    fontSize: 16,
+                  }}
+                >
+                  {lang === "en" ? "🇬🇧 English" : lang === "fr" ? "🇫🇷 Français" : "🇸🇦 العربية"}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              onPress={() => setShowLanguageModal(false)}
+              className="py-3 rounded-xl mt-4"
+              style={{ backgroundColor: colors.accent }}
+            >
+              <Text className="text-center text-white font-semibold">Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

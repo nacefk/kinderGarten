@@ -26,7 +26,8 @@ import {
   updatePlan,
   deletePlan,
 } from "@/api/planning";
-import { getClassrooms } from "@/api/children";
+import { getClassrooms, getMyChild } from "@/api/children";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // ---------- TYPES ----------
 interface ClassItem {
@@ -53,12 +54,14 @@ interface PlanActivity {
 // ---------- COMPONENT ----------
 export default function CalendarScreen() {
   const { language } = useLanguageStore();
+  const { userRole } = useAuthStore();
   const t = (key: string) => getTranslation(language, key);
   const [activeTab, setActiveTab] = useState<"events" | "plan">("events");
   const [calendarEvents, setCalendarEvents] = useState<EventItem[]>([]);
   const [weeklyPlans, setWeeklyPlans] = useState<Record<string, any>>({});
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+  const [isParent, setIsParent] = useState(userRole === "parent");
 
   // Days of week translations
   const daysOfWeek =
@@ -72,48 +75,73 @@ export default function CalendarScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const classList = await getClassrooms();
-        setClasses(classList);
-        if (classList.length) {
-          setSelectedClass(classList[0]);
-          await fetchData(classList[0].id);
+        if (isParent) {
+          // Parent: Fetch their child and get the classroom
+          const child = await getMyChild();
+          if (child && child.classroom) {
+            const classroom: ClassItem = {
+              id: child.classroom.id || child.classroom,
+              name: child.classroom.name || `Class ${child.classroom.id}`,
+            };
+            setClasses([classroom]);
+            setSelectedClass(classroom);
+            await fetchData(classroom.id);
+          }
+        } else {
+          // Admin: Load all classrooms
+          const classList = await getClassrooms();
+          setClasses(classList);
+          if (classList.length) {
+            setSelectedClass(classList[0]);
+            await fetchData(classList[0].id);
+          }
         }
       } catch (e) {
+        console.error("❌ Error loading calendar:", e);
         Alert.alert("Erreur", "Impossible de charger les classes.");
       }
     })();
   }, []);
 
-  // Refresh classes when screen comes into focus
+  // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       (async () => {
         try {
-          const classList = await getClassrooms();
-          setClasses(classList);
-          if (classList.length && selectedClass) {
-            // Check if selected class still exists
+          if (!isParent && selectedClass) {
+            // Admin: refresh all classes and data
+            const classList = await getClassrooms();
+            setClasses(classList);
             const classExists = classList.find((c: any) => c.id === selectedClass.id);
             if (!classExists) {
               // If deleted, select the first available class
               setSelectedClass(classList[0]);
               await fetchData(classList[0].id);
+            } else {
+              // Refresh current class data
+              await fetchData(selectedClass.id);
             }
+          } else if (isParent && selectedClass) {
+            // Parent: just refresh the data for their child's class
+            await fetchData(selectedClass.id);
           }
         } catch (e) {
-          // Silently fail
+          console.error("❌ Focus effect error:", e);
         }
       })();
-    }, [selectedClass])
+    }, [selectedClass, isParent])
   );
   // ---------- FETCH DATA ----------
 
   const fetchData = async (classId?: number) => {
     try {
+      console.log("📡 Fetching events for classroom:", classId);
       const [eventsData, plansData] = await Promise.all([
-        getEvents(classId ? { class_name: classId } : undefined),
-        getPlans(classId ? { class_name: classId } : undefined),
+        getEvents(classId ? { classroom: classId } : undefined),
+        getPlans(classId ? { classroom: classId } : undefined),
       ]);
+      console.log("✅ Events fetched:", eventsData.length, "events");
+      console.log("✅ Plans fetched:", plansData.length, "plans");
       setCalendarEvents(eventsData);
 
       const ALL_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -164,13 +192,53 @@ export default function CalendarScreen() {
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newDate, setNewDate] = useState(new Date());
-  const [showPicker, setShowPicker] = useState(false);
+  const [showPicker, setShowPicker] = useState<"date" | "time" | false>(false);
 
   const openEditEvent = (event: EventItem) => {
     setEditingEvent(event);
     setNewTitle(event.title);
     setNewDescription(event.description || "");
     setNewDate(new Date(event.date));
+
+    // Try to find and set the event's class
+    let eventClass: ClassItem | null = null;
+
+    // Case 1: event has classroom_detail property (from API)
+    if ((event as any).classroom_detail) {
+      const detail = (event as any).classroom_detail;
+      eventClass = classes.find((c) => c.id === detail.id) || (detail as ClassItem);
+    }
+    // Case 2: class_name is an object with id and name
+    else if (
+      event.class_name &&
+      typeof event.class_name === "object" &&
+      "id" in event.class_name &&
+      "name" in event.class_name
+    ) {
+      eventClass = event.class_name as ClassItem;
+    }
+    // Case 3: class_name is an object with name property, search by name
+    else if (
+      event.class_name &&
+      typeof event.class_name === "object" &&
+      "name" in event.class_name
+    ) {
+      const className = (event.class_name as any).name;
+      eventClass = classes.find((c) => c.name === className) || null;
+    }
+    // Case 4: class_name might be an object with just id, find by id
+    else if (event.class_name && typeof event.class_name === "object" && "id" in event.class_name) {
+      const classId = (event.class_name as any).id;
+      eventClass = classes.find((c) => c.id === classId) || null;
+    }
+    // Case 5: event might have a classroom_id property directly
+    else if ((event as any).classroom_id) {
+      eventClass = classes.find((c) => c.id === (event as any).classroom_id) || null;
+    }
+
+    if (eventClass) {
+      setSelectedEventClass(eventClass);
+    }
     setShowEventModal(true);
   };
 
@@ -184,12 +252,21 @@ export default function CalendarScreen() {
       return;
     }
 
-    const payload = {
+    if (!selectedEventClass) {
+      Alert.alert("Classe manquante", "Veuillez sélectionner une classe ou 'Tous'.");
+      return;
+    }
+
+    const payload: any = {
       title: newTitle.trim(),
       date: newDate.toISOString(),
       description: newDescription.trim(),
-      class_name: selectedClass.id,
     };
+
+    // Only send classroom_id if not editing and not "all classes"
+    if (!editingEvent && selectedEventClass.id !== -1) {
+      payload.classroom_id = selectedEventClass.id;
+    }
 
     try {
       if (editingEvent) await updateEvent(editingEvent.id, payload);
@@ -201,6 +278,8 @@ export default function CalendarScreen() {
       setNewTitle("");
       setNewDescription("");
       setNewDate(new Date());
+      setSelectedEventClass(null);
+      setShowClassPicker(false);
       await fetchData(selectedClass.id);
     } catch (e) {
       console.error(e);
@@ -231,6 +310,9 @@ export default function CalendarScreen() {
   };
 
   // ---------- PLAN MODAL ----------
+  const [showClassPicker, setShowClassPicker] = useState(false);
+  const [selectedEventClass, setSelectedEventClass] = useState<ClassItem | null>(null);
+
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PlanActivity | null>(null);
   const [newPlanDay, setNewPlanDay] = useState("Lundi");
@@ -261,7 +343,7 @@ export default function CalendarScreen() {
       day: newPlanDay,
       class_name: selectedClass.id,
     };
-try {
+    try {
       let newItem;
       if (editingPlan?.id) {
         newItem = await updatePlan(editingPlan.id, payload);
@@ -457,31 +539,43 @@ try {
             <Text className="text-xl font-semibold" style={{ color: colors.textDark }}>
               {t("calendar.event_list")}
             </Text>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => {
-                setEditingEvent(null);
-                setShowEventModal(true);
-              }}
-              style={{
-                backgroundColor: colors.accent,
-                borderRadius: 14,
-                paddingHorizontal: 14,
-                paddingVertical: 8,
-              }}
-            >
-              <Ionicons name="add" size={20} color="#fff" />
-            </TouchableOpacity>
+            {!isParent && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setEditingEvent(null);
+                  setSelectedEventClass(null);
+                  setShowClassPicker(false);
+                  setShowEventModal(true);
+                }}
+                style={{
+                  backgroundColor: colors.accent,
+                  borderRadius: 14,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                }}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
           </View>
 
-          <FlatList
-            data={[...calendarEvents].sort(
-              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-            )}
-            renderItem={renderEvent}
-            keyExtractor={(item) => item.id.toString()}
-            showsVerticalScrollIndicator={false}
-          />
+          {calendarEvents.length > 0 ? (
+            <FlatList
+              data={[...calendarEvents].sort(
+                (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+              )}
+              renderItem={renderEvent}
+              keyExtractor={(item) => item.id.toString()}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center px-5">
+              <Text className="text-center text-lg" style={{ color: colors.textLight }}>
+                {t("calendar.no_activities")}
+              </Text>
+            </View>
+          )}
         </>
       ) : (
         <>
@@ -490,7 +584,7 @@ try {
               {t("calendar.planning")} — {selectedClass?.name}
             </Text>
 
-            {classes.length > 1 && (
+            {!isParent && classes.length > 1 && (
               <TouchableOpacity
                 onPress={() => {
                   const index = classes.findIndex((c) => c.id === selectedClass?.id);
@@ -545,6 +639,96 @@ try {
                 borderColor: "#E5E7EB",
               }}
             />
+
+            {/* 🏫 CLASS PICKER */}
+            {!isParent && (
+              <>
+                <TouchableOpacity
+                  onPress={() => setShowClassPicker(!showClassPicker)}
+                  className="rounded-xl px-4 py-3 mb-3 flex-row items-center justify-between"
+                  style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+                >
+                  <Text style={{ color: colors.text }}>
+                    {selectedEventClass?.name || "Sélectionner une classe"}
+                  </Text>
+                  <Ionicons
+                    name={showClassPicker ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={colors.textLight}
+                  />
+                </TouchableOpacity>
+
+                {showClassPicker && (
+                  <View
+                    className="mb-3 rounded-xl"
+                    style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedEventClass(null);
+                        setShowClassPicker(false);
+                      }}
+                      className="px-4 py-3 border-b"
+                      style={{ borderBottomColor: "#E5E7EB" }}
+                    >
+                      <Text
+                        style={{
+                          color: colors.text,
+                          fontWeight: !selectedEventClass ? "600" : "400",
+                        }}
+                      >
+                        Sélectionner une classe
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedEventClass({ id: -1, name: "Tous" });
+                        setShowClassPicker(false);
+                      }}
+                      className="px-4 py-3 border-b"
+                      style={{ borderBottomColor: "#E5E7EB" }}
+                    >
+                      <Text
+                        style={{
+                          color: colors.text,
+                          fontWeight: selectedEventClass?.id === -1 ? "600" : "400",
+                        }}
+                      >
+                        Tous
+                      </Text>
+                    </TouchableOpacity>
+                    {classes.map((cls) => (
+                      <TouchableOpacity
+                        key={cls.id}
+                        onPress={() => {
+                          setSelectedEventClass(cls);
+                          setShowClassPicker(false);
+                        }}
+                        className="px-4 py-3 border-b"
+                        style={{ borderBottomColor: "#E5E7EB" }}
+                      >
+                        <Text
+                          style={{
+                            color: colors.text,
+                            fontWeight: selectedEventClass?.id === cls.id ? "600" : "400",
+                          }}
+                        >
+                          {cls.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </>
+            )}
+            {isParent && (
+              <View
+                className="rounded-xl px-4 py-3 mb-3"
+                style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+              >
+                <Text style={{ color: colors.text }}>{selectedClass?.name}</Text>
+              </View>
+            )}
 
             {/* 📅 DATE PICKER */}
             <TouchableOpacity
@@ -611,7 +795,11 @@ try {
 
               <View className="flex-row ml-auto">
                 <TouchableOpacity
-                  onPress={() => setShowEventModal(false)}
+                  onPress={() => {
+                    setShowEventModal(false);
+                    setSelectedEventClass(null);
+                    setShowClassPicker(false);
+                  }}
                   className="rounded-xl py-3 px-5 mr-2"
                   style={{ backgroundColor: "#F3F4F6" }}
                 >

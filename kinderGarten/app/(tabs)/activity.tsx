@@ -69,20 +69,20 @@ export default function Activity() {
         if (!child || !child.id) {
           throw new Error("Child data not found");
         }
-const classId = child.classroom;
+        const classId = child.classroom?.id || child.classroom;
         const childId = child.id;
-// 2️⃣ Fetch plans, events, and reports concurrently with error boundaries
+        // 2️⃣ Fetch plans, events, and reports concurrently with error boundaries
         let plansData = [];
         let eventsData = [];
         let reportsData = [];
 
         try {
           [plansData, eventsData, reportsData] = await Promise.all([
-            getPlans({ class_name: classId }).catch((err) => {
+            getPlans({ classroom: classId }).catch((err) => {
               console.warn("⚠️ Error loading plans:", err.message);
               return [];
             }),
-            getEvents().catch((err) => {
+            getEvents({ classroom: classId }).catch((err) => {
               console.warn("⚠️ Error loading events:", err.message);
               return [];
             }),
@@ -95,7 +95,7 @@ const classId = child.classroom;
           console.error("❌ Error fetching activity data:", err);
         }
 
-// 3️⃣ Group class plans by day with safety checks
+        // 3️⃣ Group class plans by day with safety checks
         const grouped: Record<string, any[]> = {};
         if (Array.isArray(plansData)) {
           plansData.forEach((plan: any) => {

@@ -2,7 +2,7 @@ export type Language = "en" | "fr" | "ar";
 
 export const translations: Record<Language, Record<string, string>> = {
   en: {
-    // Dashboard
+    // Dashboard (Admin)
     "dashboard.logout": "Logout",
     "dashboard.presence_today": "Today's Attendance",
     "dashboard.manage_presence": "Manage daily children attendance.",
@@ -13,7 +13,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.approve": "Approve",
     "dashboard.reject": "Reject",
 
-    // Calendar
+    // Calendar (Admin)
     "calendar.events": "Events",
     "calendar.weekly_plan": "Weekly Plan",
     "calendar.event_list": "Event List",
@@ -31,8 +31,11 @@ export const translations: Record<Language, Record<string, string>> = {
     "tabs.reports": "Reports",
     "tabs.calendar": "Calendar",
     "tabs.chat": "Chat",
+    "tabs.home": "Home",
+    "tabs.activity": "Activity",
+    "tabs.profile": "Profile",
 
-    // Children Screen
+    // Children Screen (Admin)
     "children.title": "Children Management",
     "children.search_placeholder": "Search a child...",
     "children.filter_all": "All",
@@ -56,7 +59,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Chat Screen
     "chat.send_message": "Send a message...",
 
-    // Reports Screen
+    // Reports Screen (Admin)
     "reports.title": "Child Report",
     "reports.filter_by": "Filter By 🧠",
     "reports.class": "Class 🏫",
@@ -83,6 +86,39 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.report_saved": "Report saved ✅",
     "reports.error_saving": "Unable to save report.",
 
+    // Parent - Home Screen
+    "home.welcome": "Welcome",
+    "home.today_activity": "Today's Activity",
+    "home.current_activity": "current activity",
+    "home.upcoming": "Upcoming",
+    "home.class": "Class",
+    "home.no_current_activity": "No current activity",
+    "home.no_upcoming_activity": "No upcoming activity",
+
+    // Parent - Activity Screen
+    "activity.today": "Today",
+    "activity.this_week": "This Week",
+    "activity.upcoming": "Upcoming",
+    "activity.program_today": "Today's Schedule",
+    "activity.photos_videos": "Photos & Videos",
+    "activity.no_activity": "No activity recorded today.",
+    "activity.no_media": "No media available.",
+    "activity.upcoming_events": "Upcoming Events",
+    "activity.no_events": "No upcoming events.",
+    "activity.loading": "Loading activities...",
+
+    // Parent - Profile Screen
+    "profile.my_profile": "My Profile",
+    "profile.child_info": "Child Information",
+    "profile.birthdate": "Birthdate",
+    "profile.class": "Class",
+    "profile.settings": "Settings",
+    "profile.language": "Language",
+    "profile.notifications": "Notifications",
+    "profile.about": "About",
+    "profile.logout": "Logout",
+    "profile.confirm_logout": "Are you sure you want to logout?",
+
     // Common
     "common.club": "Club",
     "common.class": "Class",
@@ -96,9 +132,10 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.settings": "Settings",
     "common.no_class": "No class",
     "common.error": "Error",
+    "common.loading": "Loading...",
   },
   fr: {
-    // Dashboard
+    // Dashboard (Admin)
     "dashboard.logout": "Déconnexion",
     "dashboard.presence_today": "Présence du Jour",
     "dashboard.manage_presence": "Gérez la présence quotidienne des enfants.",
@@ -109,7 +146,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.approve": "Approuver",
     "dashboard.reject": "Rejeter",
 
-    // Calendar
+    // Calendar (Admin)
     "calendar.events": "Événements",
     "calendar.weekly_plan": "Planning Hebdomadaire",
     "calendar.event_list": "Liste des Événements",
@@ -127,8 +164,11 @@ export const translations: Record<Language, Record<string, string>> = {
     "tabs.reports": "Rapports",
     "tabs.calendar": "Calendrier",
     "tabs.chat": "Messagerie",
+    "tabs.home": "Accueil",
+    "tabs.activity": "Activité",
+    "tabs.profile": "Profil",
 
-    // Children Screen
+    // Children Screen (Admin)
     "children.title": "Gestion des Enfants",
     "children.search_placeholder": "Rechercher un enfant...",
     "children.filter_all": "Tous",
@@ -152,7 +192,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Chat Screen
     "chat.send_message": "Écrire un message...",
 
-    // Reports Screen
+    // Reports Screen (Admin)
     "reports.title": "Rapport par Enfant",
     "reports.filter_by": "Filtrer par 🧠",
     "reports.class": "Classe 🏫",
@@ -179,6 +219,39 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.report_saved": "Rapport enregistré ✅",
     "reports.error_saving": "Impossible d'enregistrer le rapport.",
 
+    // Parent - Home Screen
+    "home.welcome": "Bienvenue",
+    "home.today_activity": "Activité d'Aujourd'hui",
+    "home.current_activity": "activité en cours",
+    "home.upcoming": "À Venir",
+    "home.class": "Classe",
+    "home.no_current_activity": "Aucune activité en cours",
+    "home.no_upcoming_activity": "Aucune activité à venir",
+
+    // Parent - Activity Screen
+    "activity.today": "Aujourd'hui",
+    "activity.this_week": "Cette Semaine",
+    "activity.upcoming": "À Venir",
+    "activity.program_today": "Programme d'Aujourd'hui",
+    "activity.photos_videos": "Photos & Vidéos",
+    "activity.no_activity": "Aucune activité enregistrée aujourd'hui.",
+    "activity.no_media": "Aucun média disponible.",
+    "activity.upcoming_events": "Événements à Venir",
+    "activity.no_events": "Aucun événement à venir.",
+    "activity.loading": "Chargement des activités...",
+
+    // Parent - Profile Screen
+    "profile.my_profile": "Mon Profil",
+    "profile.child_info": "Informations de l'Enfant",
+    "profile.birthdate": "Date de Naissance",
+    "profile.class": "Classe",
+    "profile.settings": "Paramètres",
+    "profile.language": "Langue",
+    "profile.notifications": "Notifications",
+    "profile.about": "À Propos",
+    "profile.logout": "Déconnexion",
+    "profile.confirm_logout": "Êtes-vous sûr de vouloir vous déconnecter ?",
+
     // Common
     "common.club": "Club",
     "common.class": "Classe",
@@ -192,9 +265,10 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.settings": "Paramètres",
     "common.no_class": "Aucune classe",
     "common.error": "Erreur",
+    "common.loading": "Chargement...",
   },
   ar: {
-    // Dashboard
+    // Dashboard (Admin)
     "dashboard.logout": "تسجيل الخروج",
     "dashboard.presence_today": "حضور اليوم",
     "dashboard.manage_presence": "إدارة حضور الأطفال اليومي.",
@@ -205,7 +279,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.approve": "الموافقة",
     "dashboard.reject": "الرفض",
 
-    // Calendar
+    // Calendar (Admin)
     "calendar.events": "الأحداث",
     "calendar.weekly_plan": "الخطة الأسبوعية",
     "calendar.event_list": "قائمة الأحداث",
@@ -223,8 +297,11 @@ export const translations: Record<Language, Record<string, string>> = {
     "tabs.reports": "التقارير",
     "tabs.calendar": "التقويم",
     "tabs.chat": "الدردشة",
+    "tabs.home": "الرئيسية",
+    "tabs.activity": "النشاط",
+    "tabs.profile": "الملف الشخصي",
 
-    // Children Screen
+    // Children Screen (Admin)
     "children.title": "إدارة الأطفال",
     "children.search_placeholder": "البحث عن طفل...",
     "children.filter_all": "الكل",
@@ -248,7 +325,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Chat Screen
     "chat.send_message": "اكتب رسالة...",
 
-    // Reports Screen
+    // Reports Screen (Admin)
     "reports.title": "تقرير الطفل",
     "reports.filter_by": "فرز حسب 🧠",
     "reports.class": "الفصل 🏫",
@@ -275,6 +352,39 @@ export const translations: Record<Language, Record<string, string>> = {
     "reports.report_saved": "تم حفظ التقرير ✅",
     "reports.error_saving": "لا يمكن حفظ التقرير.",
 
+    // Parent - Home Screen
+    "home.welcome": "أهلا وسهلا",
+    "home.today_activity": "نشاط اليوم",
+    "home.current_activity": "النشاط الحالي",
+    "home.upcoming": "القادم",
+    "home.class": "الفصل",
+    "home.no_current_activity": "لا يوجد نشاط حالي",
+    "home.no_upcoming_activity": "لا يوجد نشاط قادم",
+
+    // Parent - Activity Screen
+    "activity.today": "اليوم",
+    "activity.this_week": "هذا الأسبوع",
+    "activity.upcoming": "القادم",
+    "activity.program_today": "برنامج اليوم",
+    "activity.photos_videos": "الصور والفيديوهات",
+    "activity.no_activity": "لم يتم تسجيل أي نشاط اليوم.",
+    "activity.no_media": "لا توجد وسائط متاحة.",
+    "activity.upcoming_events": "الأحداث القادمة",
+    "activity.no_events": "لا توجد أحداث قادمة.",
+    "activity.loading": "جاري تحميل الأنشطة...",
+
+    // Parent - Profile Screen
+    "profile.my_profile": "ملفي الشخصي",
+    "profile.child_info": "معلومات الطفل",
+    "profile.birthdate": "تاريخ الميلاد",
+    "profile.class": "الفصل",
+    "profile.settings": "الإعدادات",
+    "profile.language": "اللغة",
+    "profile.notifications": "الإخطارات",
+    "profile.about": "حول",
+    "profile.logout": "تسجيل الخروج",
+    "profile.confirm_logout": "هل أنت متأكد من رغبتك في تسجيل الخروج؟",
+
     // Common
     "common.club": "النادي",
     "common.class": "الفصل",
@@ -288,6 +398,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.settings": "الإعدادات",
     "common.no_class": "لا فصل",
     "common.error": "خطأ",
+    "common.loading": "جاري التحميل...",
   },
 };
 

@@ -5,23 +5,36 @@ import { API_ENDPOINTS } from "@/config/api";
 
 /**
  * Fetch all events
- * @param filter - Filter by classroom_id or class_name (for backward compatibility)
+ * @param filter - Filter by classroom (classroom ID)
  */
-export async function getEvents(filter?: { classroom_id?: number; class_name?: number | string }) {
-  // Map class_name to classroom_id for backend
+export async function getEvents(filter?: { classroom?: number }) {
   const params: any = {};
-  if (filter?.classroom_id) params.classroom_id = filter.classroom_id;
-  if (filter?.class_name) params.classroom_id = typeof filter.class_name === 'string' ? parseInt(filter.class_name) : filter.class_name;
+  if (filter?.classroom) params.classroom = filter.classroom;
 
+  console.log("🔍 getEvents called with params:", params);
   const res = await api.get(API_ENDPOINTS.PLANNING_EVENTS, {
     params: Object.keys(params).length ? params : {},
   });
+  console.log("📊 getEvents response:", res.data);
+
+  let results = res.data?.results || res.data || [];
+
+  // Frontend filtering if backend doesn't support it
+  if (filter?.classroom) {
+    results = results.filter((event: any) => {
+      const eventClassId = event.classroom_detail?.id || event.classroom_id;
+      return eventClassId === filter.classroom;
+    });
+    console.log("✅ Filtered events for classroom", filter.classroom, ":", results.length, "events");
+  }
+
   // ✅ Extract results array from paginated response
-  return res.data?.results || res.data || [];
+  return results;
 }
 
 /**
  * Create a new event
+ * If classroom_id is -1 (all classes), don't send classroom_id
  * Supports both classroom_id and class_name for backward compatibility
  */
 export async function createEvent({
@@ -34,34 +47,35 @@ export async function createEvent({
   title: string;
   date: string;
   description?: string;
-  classroom_id?: number;
+  classroom_id?: number | null;
   class_name?: number | string;
 }) {
-  // Use classroom_id if provided, otherwise convert class_name
   let final_classroom_id = classroom_id;
-  if (!final_classroom_id && class_name) {
+  if (final_classroom_id === undefined && class_name) {
     final_classroom_id = typeof class_name === 'string' ? parseInt(class_name) : class_name;
   }
 
-  if (!final_classroom_id) {
-    throw new Error("classroom_id or class_name is required");
-  }
-
-  const res = await api.post(API_ENDPOINTS.PLANNING_EVENTS, {
+  const payload: any = {
     title,
     date: date || new Date().toISOString().split('T')[0],
     description: description || "",
-    classroom_id: final_classroom_id,
-  });
+  };
+
+  // Only send classroom_id if it's not -1 (all classes)
+  if (final_classroom_id && final_classroom_id !== -1) {
+    payload.classroom_id = final_classroom_id;
+  }
+
+  const res = await api.post(API_ENDPOINTS.PLANNING_EVENTS, payload);
   return res.data;
 }
 
 /**
  * Update an event
+ * Send the classroom_id when updating
  * Maps class_name to classroom_id for backward compatibility
  */
 export async function updateEvent(id: string, data: any) {
-  // Prepare update data with proper field names
   let classroom_id_val = data.classroom_id;
   if (!classroom_id_val && data.class_name) {
     classroom_id_val = typeof data.class_name === 'string' ? parseInt(data.class_name) : data.class_name;
@@ -73,11 +87,12 @@ export async function updateEvent(id: string, data: any) {
     description: data.description || "",
   };
 
-  if (classroom_id_val) {
+  // Send classroom_id only if it's not -1 (all classes)
+  if (classroom_id_val && classroom_id_val !== -1) {
     updateData.classroom_id = classroom_id_val;
   }
 
-  const res = await api.put(`${API_ENDPOINTS.PLANNING_EVENTS}${id}/`, updateData);
+  const res = await api.patch(`${API_ENDPOINTS.PLANNING_EVENTS}${id}/`, updateData);
   return res.data;
 }
 
@@ -93,13 +108,11 @@ export async function deleteEvent(id: string) {
 
 /**
  * Fetch all weekly plans
- * @param filter - Filter by classroom_id or class_name (for backward compatibility)
+ * @param filter - Filter by classroom (classroom ID)
  */
-export async function getPlans(filter?: { classroom_id?: number; class_name?: number | string }) {
-  // Map class_name to classroom_id for backend
+export async function getPlans(filter?: { classroom?: number }) {
   const params: any = {};
-  if (filter?.classroom_id) params.classroom_id = filter.classroom_id;
-  if (filter?.class_name) params.classroom_id = typeof filter.class_name === 'string' ? parseInt(filter.class_name) : filter.class_name;
+  if (filter?.classroom) params.classroom = filter.classroom;
 
   const res = await api.get(API_ENDPOINTS.PLANNING_PLANS, {
     params: Object.keys(params).length ? params : {},
