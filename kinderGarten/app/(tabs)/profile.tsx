@@ -77,9 +77,7 @@ export default function Profile() {
       try {
         setLoading(true);
         const data = await getMyChild();
-        console.log("✅ Profil chargé:", data);
-
-        const fullProfile = {
+const fullProfile = {
           id: data?.id,
           name: data?.name || "N/D",
           avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",

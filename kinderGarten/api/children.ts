@@ -23,12 +23,9 @@ export async function getChildren(filter: { classroom?: number; club?: number } 
     if (filter.classroom) params.classroom = filter.classroom;
     else if (filter.club) params.club = filter.club;
 
-    console.log("🔄 [API] getChildren called with filter:", filter);
-    console.log("🔄 [API] Fetching from:", API_ENDPOINTS.CHILDREN, "with params:", params);
     const res = await api.get(API_ENDPOINTS.CHILDREN, { params });
-    console.log("✅ [API] getChildren response status:", res.status);
-    console.log("✅ [API] getChildren data:", res.data);
-    console.log("✅ [API] getChildren count:", Array.isArray(res.data) ? res.data.length : "NOT ARRAY");
+
+
     return res.data;
   } catch (err: any) {
     console.error("❌ [API] Error fetching children:", err.message);
@@ -36,7 +33,6 @@ export async function getChildren(filter: { classroom?: number; club?: number } 
     throw err;
   }
 }
-
 
 /**
  * Fetch a single child by ID
@@ -78,7 +74,6 @@ export async function createChild({
 
   return res.data;
 }
-
 
 /**
  * Update an existing child (PATCH = partial update)
@@ -151,11 +146,9 @@ export async function createClub(name: string) {
  */
 export async function deleteClass(id: number) {
   try {
-    console.log("🗑️ [API] Deleting class with ID:", id);
-    console.log("🗑️ [API] DELETE endpoint:", `${API_ENDPOINTS.CHILDREN_CLASSES}${id}/`);
+
     const res = await api.delete(`${API_ENDPOINTS.CHILDREN_CLASSES}${id}/`);
-    console.log("✅ [API] Class deleted successfully:", res.data);
-    return res.data;
+return res.data;
   } catch (e: any) {
     console.error("❌ [API] Error deleting class - ID:", id);
     console.error("❌ [API] Error status:", e.response?.status);
@@ -184,7 +177,7 @@ export async function getMyChild() {
   try {
     const res = await api.get(API_ENDPOINTS.CHILDREN_ME);
     console.log("✅ /me/ response:", res.data);
-    return res.data;
+return res.data;
   } catch (err: any) {
     console.error("❌ getMyChild error:", err.response?.data || err.message);
     throw err;

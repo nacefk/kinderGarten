@@ -203,7 +203,6 @@ export default function Profile() {
       setLoading(true);
       try {
         const data = await getChildById(childId);
-        console.log("data", data);
         const filled = {
           id: data?.id || "",
           name: data?.name || "",

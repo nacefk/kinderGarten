@@ -41,9 +41,6 @@ export default function PresenceScreen() {
       const res = await axios.get(API_BASE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      console.log("📥 Attendance loaded:", res.data);
-
       // Convert list into { childId: status }
       const map: Record<number, PresenceStatus> = {};
       res.data.forEach((record: any) => {
@@ -98,16 +95,12 @@ export default function PresenceScreen() {
         })),
       };
 
-      console.log("📤 Sending attendance payload:", JSON.stringify(payload, null, 2));
-
       const res = await axios.post(`${API_BASE}update/`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-
-      console.log("✅ Response:", res.data);
       Alert.alert("Succès ✅", "Les présences ont été enregistrées avec succès.");
     } catch (error: any) {
       console.error("❌ Error saving attendance:", error.response?.data || error.message);

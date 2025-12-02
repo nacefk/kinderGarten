@@ -69,15 +69,9 @@ export default function Activity() {
         if (!child || !child.id) {
           throw new Error("Child data not found");
         }
-
-        console.log("🔍 Child loaded:", child.name);
-
-        const classId = child.classroom;
+const classId = child.classroom;
         const childId = child.id;
-
-        console.log("✅ Child:", child.name, "| Class id:", classId);
-
-        // 2️⃣ Fetch plans, events, and reports concurrently with error boundaries
+// 2️⃣ Fetch plans, events, and reports concurrently with error boundaries
         let plansData = [];
         let eventsData = [];
         let reportsData = [];
@@ -101,11 +95,7 @@ export default function Activity() {
           console.error("❌ Error fetching activity data:", err);
         }
 
-        console.log("📅 Plans fetched:", plansData.length);
-        console.log("📅 Events fetched:", eventsData.length);
-        console.log("📅 Reports fetched:", reportsData.length);
-
-        // 3️⃣ Group class plans by day with safety checks
+// 3️⃣ Group class plans by day with safety checks
         const grouped: Record<string, any[]> = {};
         if (Array.isArray(plansData)) {
           plansData.forEach((plan: any) => {

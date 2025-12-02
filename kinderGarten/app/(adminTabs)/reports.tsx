@@ -126,8 +126,7 @@ export default function ReportsScreen() {
           setLoading(true);
           const data = await getChildren({ classroom: firstClass.id });
           setChildrenList(Array.isArray(data) ? data : []);
-          console.log("✅ Auto-selected class:", firstClass.name);
-        } catch (err: any) {
+} catch (err: any) {
           console.error("❌ Error loading class children:", err.message);
           setChildrenList([]);
         } finally {
@@ -212,9 +211,7 @@ export default function ReportsScreen() {
       const newReports: Record<number, number> = {};
 
       for (const child of selectedChildren) {
-        console.log("👶 Child ID sent:", child.id);
-
-        const created = await createDailyReport({
+const created = await createDailyReport({
           child: child.id, // ✅ Pass numeric ID, not FormData
           meal,
           nap,

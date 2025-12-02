@@ -21,7 +21,7 @@ export async function login(username: string, password: string, tenant: string) 
 
     console.log("✅ Login successful");
 
-    const { access, refresh, role } = res.data;
+const { access, refresh, role } = res.data;
 
     if (!access || !refresh) {
       throw new Error("Missing tokens in login response");
@@ -46,7 +46,7 @@ export async function login(username: string, password: string, tenant: string) 
         child = children?.[0] || null;
         if (child) {
           console.log("✅ Child profile loaded:", child.name);
-        } else {
+} else {
           console.warn("⚠️ No child linked to this account yet.");
         }
       } catch (e: any) {

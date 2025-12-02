@@ -238,10 +238,7 @@ export default function CalendarScreen() {
       day: newPlanDay,
       class_name: selectedClass.id,
     };
-
-    console.log("📦 Payload sent to backend:", payload);
-
-    try {
+try {
       let newItem;
       if (editingPlan?.id) {
         newItem = await updatePlan(editingPlan.id, payload);
