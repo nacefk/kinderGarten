@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useFocusEffect } from "@react-navigation/native";
 import colors from "@/config/colors";
 import HeaderBar from "@/components/Header";
 import { useLanguageStore } from "@/store/useLanguageStore";
@@ -78,11 +79,33 @@ export default function CalendarScreen() {
           await fetchData(classList[0].id);
         }
       } catch (e) {
-        console.error(e);
         Alert.alert("Erreur", "Impossible de charger les classes.");
       }
     })();
   }, []);
+
+  // Refresh classes when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      (async () => {
+        try {
+          const classList = await getClassrooms();
+          setClasses(classList);
+          if (classList.length && selectedClass) {
+            // Check if selected class still exists
+            const classExists = classList.find((c: any) => c.id === selectedClass.id);
+            if (!classExists) {
+              // If deleted, select the first available class
+              setSelectedClass(classList[0]);
+              await fetchData(classList[0].id);
+            }
+          }
+        } catch (e) {
+          // Silently fail
+        }
+      })();
+    }, [selectedClass])
+  );
   // ---------- FETCH DATA ----------
 
   const fetchData = async (classId?: number) => {
