@@ -17,8 +17,12 @@ import HeaderBar from "@/components/Header";
 import { createDailyReport, getReportById, getReports } from "@/api/report";
 import * as ImagePicker from "expo-image-picker";
 import { getChildren } from "@/api/children";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 export default function ReportsScreen() {
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
   const {
     classList: classes,
     childrenList: children,
@@ -200,7 +204,7 @@ export default function ReportsScreen() {
   // ------------------------------------------------------------------------
   const handleSubmit = async () => {
     if (behavior.trim() === "" || meal.trim() === "") {
-      Alert.alert("Champs manquants", "Veuillez remplir tous les champs principaux.");
+      Alert.alert(t("reports.missing_fields"), t("reports.fill_required_fields"));
       return;
     }
 
@@ -226,7 +230,7 @@ export default function ReportsScreen() {
       setReportsMap((prev) => ({ ...prev, ...newReports }));
       await loadReportsForClass(selectedClass.id);
 
-      Alert.alert("Rapport enregistré ✅");
+      Alert.alert(t("reports.report_saved"));
       setShowModal(false);
       setSelectedChildren([]);
       setGroupMode(false);
@@ -234,7 +238,7 @@ export default function ReportsScreen() {
       resetForm();
     } catch (error: any) {
       console.error("❌ Error creating report:", error.response?.data || error.message);
-      Alert.alert("Erreur", "Impossible d'enregistrer le rapport.");
+      Alert.alert(t("common.error"), t("reports.error_saving"));
     }
   };
 
@@ -282,19 +286,19 @@ export default function ReportsScreen() {
       style={{ backgroundColor: colors.background }}
       showsVerticalScrollIndicator={false}
     >
-      <HeaderBar title="Rapport par Enfant" showBack={true} />
+      <HeaderBar title={t("reports.title")} showBack={true} />
 
       {/* Step 1: Class selection */}
       {/* 🧩 Filter by Class OR Club */}
       <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
         <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
-          Filtrer par 🧠
+          {t("reports.filter_by")}
         </Text>
         {/* Filter Type Selector */}
         <View className="flex-row justify-center mb-5">
           {[
-            { key: "class", label: "Classe 🏫", icon: "school-outline" },
-            { key: "club", label: "Club 🎨", icon: "musical-notes-outline" },
+            { key: "class", label: t("reports.class"), icon: "school-outline" },
+            { key: "club", label: t("reports.club"), icon: "musical-notes-outline" },
           ].map((btn) => (
             <TouchableOpacity
               key={btn.key}
@@ -362,41 +366,42 @@ export default function ReportsScreen() {
 
         {/* 🏫 CLASS DROPDOWN */}
         {filterType === "class" && (
-          <View
-            style={{
-              backgroundColor: "#F8F8F8",
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: colors.accent,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              marginBottom: 10,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => setShowClassDropdown((prev) => !prev)}
-              className="flex-row justify-between items-center"
-              activeOpacity={0.8}
-            >
-              <Text
+          <>
+            {Array.isArray(classes) && classes.length > 0 ? (
+              <View
                 style={{
-                  color: selectedClass ? colors.textDark : colors.textLight,
-                  fontWeight: "500",
+                  backgroundColor: "#F8F8F8",
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.accent,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  marginBottom: 10,
                 }}
               >
-                {selectedClass ? selectedClass.name : "Sélectionner une classe"}
-              </Text>
-              <Ionicons
-                name={showClassDropdown ? "chevron-up-outline" : "chevron-down-outline"}
-                size={18}
-                color={colors.textDark}
-              />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowClassDropdown((prev) => !prev)}
+                  className="flex-row justify-between items-center"
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={{
+                      color: selectedClass ? colors.textDark : colors.textLight,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {selectedClass ? selectedClass.name : t("reports.select_class")}
+                  </Text>
+                  <Ionicons
+                    name={showClassDropdown ? "chevron-up-outline" : "chevron-down-outline"}
+                    size={18}
+                    color={colors.textDark}
+                  />
+                </TouchableOpacity>
 
-            {showClassDropdown && (
-              <ScrollView style={{ marginTop: 6, maxHeight: 160 }}>
-                {Array.isArray(classes)
-                  ? classes.map((cls: any) => (
+                {showClassDropdown && (
+                  <ScrollView style={{ marginTop: 6, maxHeight: 160 }}>
+                    {classes.map((cls: any) => (
                       <TouchableOpacity
                         key={cls.id}
                         activeOpacity={0.8}
@@ -419,53 +424,78 @@ export default function ReportsScreen() {
                           {cls.name}
                         </Text>
                       </TouchableOpacity>
-                    ))
-                  : null}
-              </ScrollView>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            ) : (
+              <View
+                style={{
+                  backgroundColor: "#FEF3C7",
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: "#FBBF24",
+                  paddingHorizontal: 12,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#D97706",
+                    fontWeight: "500",
+                    fontSize: 14,
+                  }}
+                >
+                  {t("reports.no_class_available")}
+                </Text>
+              </View>
             )}
-          </View>
+          </>
         )}
 
         {/* 🎨 CLUB DROPDOWN */}
         {filterType === "club" && (
-          <View
-            style={{
-              backgroundColor: "#F8F8F8",
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: colors.accent,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => setShowClubDropdown((prev) => !prev)}
-              className="flex-row justify-between items-center"
-              activeOpacity={0.8}
-            >
-              <Text
+          <>
+            {Array.isArray(clubs) && clubs.length > 0 ? (
+              <View
                 style={{
-                  color: selectedClub ? colors.textDark : colors.textLight,
-                  fontWeight: "500",
+                  backgroundColor: "#F8F8F8",
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.accent,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
                 }}
               >
-                {selectedClub ? selectedClub.name : "Sélectionner un club"}
-              </Text>
-              <Ionicons
-                name={showClubDropdown ? "chevron-up-outline" : "chevron-down-outline"}
-                size={18}
-                color={colors.textDark}
-              />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowClubDropdown((prev) => !prev)}
+                  className="flex-row justify-between items-center"
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={{
+                      color: selectedClub ? colors.textDark : colors.textLight,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {selectedClub ? selectedClub.name : t("reports.select_club")}
+                  </Text>
+                  <Ionicons
+                    name={showClubDropdown ? "chevron-up-outline" : "chevron-down-outline"}
+                    size={18}
+                    color={colors.textDark}
+                  />
+                </TouchableOpacity>
 
-            {showClubDropdown && (
-              <ScrollView
-                style={{ marginTop: 6, maxHeight: 160 }}
-                keyboardShouldPersistTaps="handled" // ✅ let taps pass through
-                nestedScrollEnabled={true}
-              >
-                {Array.isArray(clubs)
-                  ? clubs.map((club: any) => (
+                {showClubDropdown && (
+                  <ScrollView
+                    style={{ marginTop: 6, maxHeight: 160 }}
+                    keyboardShouldPersistTaps="handled"
+                    nestedScrollEnabled={true}
+                  >
+                    {clubs.map((club: any) => (
                       <TouchableOpacity
                         key={club.id}
                         activeOpacity={0.8}
@@ -488,11 +518,34 @@ export default function ReportsScreen() {
                           {club.name}
                         </Text>
                       </TouchableOpacity>
-                    ))
-                  : null}
-              </ScrollView>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            ) : (
+              <View
+                style={{
+                  backgroundColor: "#FEF3C7",
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: "#FBBF24",
+                  paddingHorizontal: 12,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#D97706",
+                    fontWeight: "500",
+                    fontSize: 14,
+                  }}
+                >
+                  {t("reports.no_club_available")}
+                </Text>
+              </View>
             )}
-          </View>
+          </>
         )}
       </View>
 
@@ -502,7 +555,7 @@ export default function ReportsScreen() {
       ) : selectedClass || selectedClub ? (
         <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
           {filteredChildren.length === 0 ? (
-            <Text style={{ color: colors.textLight }}>Aucun enfant trouvé pour cette classe.</Text>
+            <Text style={{ color: colors.textLight }}>{t("reports.no_children_found")}</Text>
           ) : (
             <>
               <TouchableOpacity
@@ -525,7 +578,7 @@ export default function ReportsScreen() {
                   className="font-medium"
                   style={{ color: groupMode ? "#fff" : colors.textDark, textAlign: "center" }}
                 >
-                  {groupMode ? "Mode Groupe Activé ✅" : "Créer un rapport groupé 🧒🧒"}
+                  {groupMode ? t("reports.group_mode_active") : t("reports.create_group_report")}
                 </Text>
               </TouchableOpacity>
 
@@ -580,8 +633,9 @@ export default function ReportsScreen() {
                   }}
                 >
                   <Text className="text-white font-medium">
-                    Créer le rapport pour {selectedChildren.length} enfant
-                    {selectedChildren.length > 1 ? "s" : ""}
+                    {selectedChildren.length === 1
+                      ? `${t("reports.meal")} ${selectedChildren.length} ${t("common.child").toLowerCase()}`
+                      : `${t("reports.meal")} ${selectedChildren.length} ${t("common.child").toLowerCase()}s`}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -607,12 +661,17 @@ export default function ReportsScreen() {
           {/* Form fields */}
           {[
             {
-              label: "Repas 🍽️",
+              label: t("reports.meal"),
               value: meal,
               setter: setMeal,
-              placeholder: "Pâtes : a bien mangé",
+              placeholder: t("reports.meal_placeholder"),
             },
-            { label: "Sieste 💤", value: nap, setter: setNap, placeholder: "13h00 - 14h30" },
+            {
+              label: t("reports.nap"),
+              value: nap,
+              setter: setNap,
+              placeholder: t("reports.nap_placeholder"),
+            },
           ].map((field, i) => (
             <View
               key={i}
@@ -641,7 +700,7 @@ export default function ReportsScreen() {
           {/* Behavior */}
           <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
-              Comportement / Santé 💬
+              {t("reports.behavior")}
             </Text>
             <View className="flex-row flex-wrap">
               {behaviorOptions.map((option) => (
@@ -668,12 +727,12 @@ export default function ReportsScreen() {
           {/* Notes */}
           <View className="rounded-2xl p-5 mb-8" style={{ backgroundColor: colors.cardBackground }}>
             <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
-              Notes 📝
+              {t("reports.notes")}
             </Text>
             <TextInput
               multiline
               numberOfLines={4}
-              placeholder="Message pour les parents..."
+              placeholder={t("reports.notes_placeholder")}
               placeholderTextColor={colors.textLight}
               className="rounded-xl px-4 py-3 text-base"
               style={{
@@ -699,7 +758,7 @@ export default function ReportsScreen() {
           >
             <Ionicons name="image-outline" size={22} color={colors.accent} />
             <Text style={{ color: colors.textDark, marginTop: 4 }}>
-              {media ? "Changer le média" : "Ajouter une photo / vidéo 📸"}
+              {mediaList.length > 0 ? t("reports.change_media") : t("reports.add_media")}
             </Text>
           </TouchableOpacity>
 
@@ -734,7 +793,9 @@ export default function ReportsScreen() {
           >
             <View className="flex-row items-center">
               <Ionicons name="save-outline" size={20} color="#fff" />
-              <Text className="text-white text-base ml-2 font-medium">Enregistrer</Text>
+              <Text className="text-white text-base ml-2 font-medium">
+                {t("reports.save_report")}
+              </Text>
             </View>
           </TouchableOpacity>
         </ScrollView>

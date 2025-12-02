@@ -6,11 +6,14 @@ import {
   ScrollView,
   StatusBar,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LogOut } from "lucide-react-native";
 import colors from "@/config/colors";
 import { useRouter } from "expo-router";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation, Language } from "@/config/translations";
 import {
   getAttendanceSummary,
   getPendingExtraHours,
@@ -28,10 +31,15 @@ type ExtraHour = {
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { language, setLanguage } = useLanguageStore();
   const [presence, setPresence] = useState({ present: 0, absent: 0 });
   const [extraHours, setExtraHours] = useState<ExtraHour[]>([]);
   const [loadingPresence, setLoadingPresence] = useState(true);
   const [loadingExtra, setLoadingExtra] = useState(true);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+
+  const t = (key: string) => getTranslation(language, key);
+  const languages: Language[] = ["en", "fr", "ar"];
 
   const handleApprove = async (id: number) => {
     try {
@@ -114,6 +122,9 @@ export default function DashboardScreen() {
       >
         <View className="flex-row items-center" />
         <View className="flex-1" />
+        <TouchableOpacity onPress={() => setShowLanguageModal(true)} className="p-1 mr-3">
+          <Ionicons name="globe-outline" size={28} color={colors.textDark} />
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace("/login")} className="p-1">
           <LogOut color={colors.textDark} size={28} />
         </TouchableOpacity>
@@ -134,13 +145,13 @@ export default function DashboardScreen() {
       >
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            Présence du Jour
+            {t("dashboard.presence_today")}
           </Text>
           <Ionicons name="people-outline" size={22} color={colors.accent} />
         </View>
 
         <Text className="text-sm mb-3" style={{ color: colors.text }}>
-          Gérez la présence quotidienne des enfants.
+          {t("dashboard.manage_presence")}
         </Text>
 
         {loadingPresence ? (
@@ -151,13 +162,13 @@ export default function DashboardScreen() {
               <Text className="text-3xl font-bold" style={{ color: colors.accent }}>
                 {presence.present}
               </Text>
-              <Text style={{ color: colors.textLight }}>Présents</Text>
+              <Text style={{ color: colors.textLight }}>{t("dashboard.present")}</Text>
             </View>
             <View>
               <Text className="text-3xl font-bold" style={{ color: "#E53935" }}>
                 {presence.absent}
               </Text>
-              <Text style={{ color: colors.textLight }}>Absents</Text>
+              <Text style={{ color: colors.textLight }}>{t("dashboard.absent")}</Text>
             </View>
           </View>
         )}
@@ -176,7 +187,7 @@ export default function DashboardScreen() {
       >
         <View className="flex-row items-center justify-between mb-2">
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            Heures Supplémentaires
+            {t("dashboard.extra_hours")}
           </Text>
           <Ionicons name="time-outline" size={22} color={colors.accent} />
         </View>
@@ -185,7 +196,7 @@ export default function DashboardScreen() {
           <ActivityIndicator color={colors.accent} size="small" />
         ) : !Array.isArray(extraHours) || extraHours.length === 0 ? (
           <Text style={{ color: colors.textLight, textAlign: "center", marginTop: 10 }}>
-            Aucune demande pour le moment.
+            {t("dashboard.no_requests")}
           </Text>
         ) : (
           extraHours.map((req) => (
@@ -227,6 +238,61 @@ export default function DashboardScreen() {
           ))
         )}
       </View>
+
+      {/* Language Selection Modal */}
+      <Modal visible={showLanguageModal} animationType="fade" transparent>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <View
+            className="w-full rounded-2xl p-6"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
+            <Text className="text-xl font-bold mb-6 text-center" style={{ color: colors.textDark }}>
+              {t("common.language")}
+            </Text>
+
+            {languages.map((lang) => (
+              <TouchableOpacity
+                key={lang}
+                onPress={() => {
+                  setLanguage(lang);
+                  setShowLanguageModal(false);
+                }}
+                className="flex-row items-center p-4 mb-2 rounded-xl"
+                style={{
+                  backgroundColor: language === lang ? colors.accent : colors.background,
+                }}
+              >
+                <Ionicons
+                  name="globe-outline"
+                  size={20}
+                  color={language === lang ? "#FFF" : colors.textDark}
+                />
+                <Text
+                  style={{
+                    marginLeft: 12,
+                    fontWeight: "600",
+                    fontSize: 16,
+                    color: language === lang ? "#FFF" : colors.textDark,
+                  }}
+                >
+                  {lang === "en" ? "English" : lang === "fr" ? "Français" : "العربية"}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              onPress={() => setShowLanguageModal(false)}
+              className="rounded-xl py-3 px-5 mt-4"
+              style={{ backgroundColor: colors.accent }}
+            >
+              <Text className="text-white font-medium text-center">{t("common.cancel")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }

@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import colors from "@/config/colors";
 import HeaderBar from "@/components/Header";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 import {
   getEvents,
   createEvent,
@@ -49,12 +51,21 @@ interface PlanActivity {
 
 // ---------- COMPONENT ----------
 export default function CalendarScreen() {
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
   const [activeTab, setActiveTab] = useState<"events" | "plan">("events");
   const [calendarEvents, setCalendarEvents] = useState<EventItem[]>([]);
   const [weeklyPlans, setWeeklyPlans] = useState<Record<string, any>>({});
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
-  const daysOfWeek = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+  // Days of week translations
+  const daysOfWeek =
+    language === "en"
+      ? ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+      : language === "ar"
+        ? ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"]
+        : ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
   // ---------- INITIAL LOAD ----------
   useEffect(() => {
@@ -388,7 +399,7 @@ export default function CalendarScreen() {
           ))
         ) : (
           <Text className="text-sm" style={{ color: colors.textLight }}>
-            Aucune activité prévue.
+            {t("calendar.no_activities")}
           </Text>
         )}
       </View>
@@ -414,7 +425,7 @@ export default function CalendarScreen() {
               className="text-base font-semibold"
               style={{ color: activeTab === tab ? "#fff" : colors.textDark }}
             >
-              {tab === "events" ? "Événements" : "Planning Hebdomadaire"}
+              {tab === "events" ? t("calendar.events") : t("calendar.weekly_plan")}
             </Text>
           </TouchableOpacity>
         ))}
@@ -424,7 +435,7 @@ export default function CalendarScreen() {
         <>
           <View className="flex-row items-center justify-between mb-4 px-5">
             <Text className="text-xl font-semibold" style={{ color: colors.textDark }}>
-              Liste des Événements
+              {t("calendar.event_list")}
             </Text>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -456,7 +467,7 @@ export default function CalendarScreen() {
         <>
           <View className="flex-row justify-between items-center mb-4 flex-wrap px-5">
             <Text className="text-l font-semibold" style={{ color: colors.textDark }}>
-              Planning — {selectedClass?.name}
+              {t("calendar.planning")} — {selectedClass?.name}
             </Text>
 
             {classes.length > 1 && (
@@ -474,7 +485,7 @@ export default function CalendarScreen() {
                   paddingVertical: 6,
                 }}
               >
-                <Text className="text-white text-sm font-medium">Changer de classe</Text>
+                <Text className="text-white text-sm font-medium">{t("calendar.change_class")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -497,7 +508,7 @@ export default function CalendarScreen() {
             style={{ backgroundColor: colors.cardBackground }}
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
-              {editingEvent ? "Modifier l'Événement" : "Nouvel Événement"}
+              {editingEvent ? t("calendar.edit_event") : t("calendar.new_event")}
             </Text>
 
             {/* 🏷️ Title */}
@@ -574,7 +585,7 @@ export default function CalendarScreen() {
                   className="rounded-xl py-3 px-5"
                   style={{ backgroundColor: "#FEE2E2" }}
                 >
-                  <Text style={{ color: "#B91C1C", fontWeight: "500" }}>Supprimer</Text>
+                  <Text style={{ color: "#B91C1C", fontWeight: "500" }}>{t("common.delete")}</Text>
                 </TouchableOpacity>
               )}
 
@@ -584,7 +595,7 @@ export default function CalendarScreen() {
                   className="rounded-xl py-3 px-5 mr-2"
                   style={{ backgroundColor: "#F3F4F6" }}
                 >
-                  <Text style={{ color: colors.text }}>Annuler</Text>
+                  <Text style={{ color: colors.text }}>{t("common.cancel")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -593,7 +604,7 @@ export default function CalendarScreen() {
                   style={{ backgroundColor: colors.accent }}
                 >
                   <Text className="text-white font-medium">
-                    {editingEvent ? "Modifier" : "Ajouter"}
+                    {editingEvent ? t("common.edit") : t("common.add")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -613,7 +624,9 @@ export default function CalendarScreen() {
             style={{ backgroundColor: colors.cardBackground }}
           >
             <Text className="text-lg font-semibold mb-4" style={{ color: colors.textDark }}>
-              {editingPlan ? "Modifier l'Activité" : `Nouvelle Activité (${newPlanDay})`}
+              {editingPlan
+                ? t("calendar.edit_activity")
+                : `${t("calendar.new_activity")} (${newPlanDay})`}
             </Text>
 
             <TextInput
@@ -658,7 +671,7 @@ export default function CalendarScreen() {
                       textAlign: "center",
                     }}
                   >
-                    Supprimer
+                    {t("common.delete")}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -668,7 +681,9 @@ export default function CalendarScreen() {
                 className="flex-1 rounded-xl py-3 mx-1"
                 style={{ backgroundColor: "#F3F4F6" }}
               >
-                <Text style={{ color: colors.text, textAlign: "center" }}>Annuler</Text>
+                <Text style={{ color: colors.text, textAlign: "center" }}>
+                  {t("common.cancel")}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -677,7 +692,7 @@ export default function CalendarScreen() {
                 style={{ backgroundColor: colors.accent }}
               >
                 <Text className="text-white font-medium text-center">
-                  {editingPlan ? "Modifier" : "Ajouter"}
+                  {editingPlan ? t("common.edit") : t("common.add")}
                 </Text>
               </TouchableOpacity>
             </View>

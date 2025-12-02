@@ -29,9 +29,13 @@ import { createChild } from "@/api/children";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAppStore } from "@/store/useAppStore";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 export default function ChildrenScreen() {
   const router = useRouter();
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
 
   // ------------------- STATE -------------------
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,7 +59,8 @@ export default function ChildrenScreen() {
 
   const { data, actions } = useAppStore();
   const { clubList: clubs, classList: classes, childrenList: storeChildren } = data;
-  const { fetchChildren, fetchClasses, fetchClubs } = actions;
+  const { fetchChildren, fetchClasses, fetchClubs, removeClassFromStore, removeClubFromStore } =
+    actions;
 
   // ✅ Debug: Log store data changes
   useEffect(() => {
@@ -114,7 +119,7 @@ export default function ChildrenScreen() {
       setLoading(false);
     }
   };
-  // 🧹 Delete class
+  // 🧹 Delete class - NOT YET SUPPORTED (backend missing detail endpoint)
   const handleDeleteClass = (cls: any) => {
     Alert.alert("Supprimer la classe", `Voulez-vous vraiment supprimer la classe "${cls.name}" ?`, [
       { text: "Annuler", style: "cancel" },
@@ -123,12 +128,23 @@ export default function ChildrenScreen() {
         style: "destructive",
         onPress: async () => {
           try {
+            console.log("🧹 [COMPONENT] Starting delete for class:", cls);
+            setLoading(true);
             await deleteClass(cls.id);
-            await fetchClasses(); // refresh
+            console.log("✅ [COMPONENT] Delete successful, removing from store...");
+            // ✅ Remove from store immediately
+            removeClassFromStore(cls.id);
+            console.log("✅ [COMPONENT] Store updated, refetching from backend...");
+            // 🔄 Verify deletion by refetching
+            await fetchClasses();
+            console.log("✅ [COMPONENT] Backend verified, classes refreshed");
             Alert.alert("Supprimée ✅", "La classe a été supprimée.");
           } catch (e: any) {
-            console.error("❌ Error deleting class:", e.message);
-            Alert.alert("Erreur", "Impossible de supprimer la classe.");
+            console.error("❌ [COMPONENT] Error deleting class:", e.message);
+            console.error("❌ [COMPONENT] Full error:", e);
+            Alert.alert("Erreur", `Impossible de supprimer la classe: ${e.message}`);
+          } finally {
+            setLoading(false);
           }
         },
       },
@@ -144,12 +160,22 @@ export default function ChildrenScreen() {
         style: "destructive",
         onPress: async () => {
           try {
+            console.log("🧹 [COMPONENT] Starting delete for club:", club);
+            setLoading(true);
             await deleteClub(club.id);
+            console.log("✅ [COMPONENT] Delete successful, removing from store...");
+            // ✅ Remove from store immediately
+            removeClubFromStore(club.id);
+            console.log("✅ [COMPONENT] Store updated, refetching from backend...");
+            // 🔄 Verify deletion by refetching
             await fetchClubs();
+            console.log("✅ [COMPONENT] Backend verified, clubs refreshed");
             Alert.alert("Supprimé ✅", "Le club a été supprimé.");
           } catch (e: any) {
             console.error("❌ Error deleting club:", e.message);
             Alert.alert("Erreur", "Impossible de supprimer le club.");
+          } finally {
+            setLoading(false);
           }
         },
       },
@@ -357,7 +383,7 @@ export default function ChildrenScreen() {
   // ------------------- UI -------------------
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
-      <HeaderBar title="Gestion des Enfants" showBack={true} />
+      <HeaderBar title={t("children.title")} showBack={true} />
 
       {/* Search & Filters */}
       <View className="px-5 mt-3">
@@ -374,7 +400,7 @@ export default function ChildrenScreen() {
           <Ionicons name="search-outline" size={20} color={colors.textLight} />
           <TextInput
             className="flex-1 ml-2 text-base p-0"
-            placeholder="Rechercher un enfant..."
+            placeholder={t("children.search_placeholder")}
             placeholderTextColor={colors.textLight}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -387,9 +413,9 @@ export default function ChildrenScreen() {
           {/* 🔘 Filter Type Toggle */}
           <View className="flex-row justify-center mb-4">
             {[
-              { key: "none", label: "Tous", icon: "people-outline" },
-              { key: "class", label: "Classe", icon: "school-outline" },
-              { key: "club", label: "Club", icon: "musical-notes-outline" },
+              { key: "none", label: t("children.filter_all"), icon: "people-outline" },
+              { key: "class", label: t("children.filter_class"), icon: "school-outline" },
+              { key: "club", label: t("children.filter_club"), icon: "musical-notes-outline" },
             ].map((btn) => (
               <TouchableOpacity
                 key={btn.key}
@@ -431,15 +457,9 @@ export default function ChildrenScreen() {
 
           {/* 🏫 Class Chips */}
           {filterType === "class" && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {Array.isArray(classes) ? (
-                <>
-                  {console.log(
-                    "✅ [RENDER] Class chips rendering with",
-                    classes.length,
-                    "classes:",
-                    classes
-                  )}
+            <>
+              {Array.isArray(classes) && classes.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   {classes.map((cls: any) => (
                     <TouchableOpacity
                       key={cls.id}
@@ -487,21 +507,32 @@ export default function ChildrenScreen() {
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </>
+                </ScrollView>
               ) : (
-                <>
-                  {console.log("❌ [RENDER] Classes is NOT an array:", typeof classes, classes)}
-                  <Text style={{ color: colors.textLight }}>Aucune classe disponible</Text>
-                </>
+                <View
+                  style={{ paddingVertical: 40, alignItems: "center", justifyContent: "center" }}
+                >
+                  <Ionicons name="school-outline" size={48} color={colors.textLight} />
+                  <Text
+                    className="text-center mt-3 text-base font-medium"
+                    style={{ color: colors.textLight }}
+                  >
+                    {t("children.no_class_available")}
+                  </Text>
+                  <Text className="text-center mt-1 text-sm" style={{ color: colors.textLight }}>
+                    {t("children.create_class_to_start")}
+                  </Text>
+                </View>
               )}
-            </ScrollView>
+            </>
           )}
 
           {/* 🎵 Club Chips */}
           {filterType === "club" && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {Array.isArray(clubs)
-                ? clubs.map((club: any) => (
+            <>
+              {Array.isArray(clubs) && clubs.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {clubs.map((club: any) => (
                     <TouchableOpacity
                       key={club.id}
                       onPress={() =>
@@ -529,9 +560,25 @@ export default function ChildrenScreen() {
                         {club.name}
                       </Text>
                     </TouchableOpacity>
-                  ))
-                : null}
-            </ScrollView>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View
+                  style={{ paddingVertical: 40, alignItems: "center", justifyContent: "center" }}
+                >
+                  <Ionicons name="musical-notes-outline" size={48} color={colors.textLight} />
+                  <Text
+                    className="text-center mt-3 text-base font-medium"
+                    style={{ color: colors.textLight }}
+                  >
+                    {t("children.no_club_available")}
+                  </Text>
+                  <Text className="text-center mt-1 text-sm" style={{ color: colors.textLight }}>
+                    {t("children.create_club_to_start")}
+                  </Text>
+                </View>
+              )}
+            </>
           )}
         </View>
       </View>
@@ -545,54 +592,79 @@ export default function ChildrenScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <Text className="text-center mt-10 text-base" style={{ color: colors.textLight }}>
-              Aucun enfant trouvé.
+              {t("children.no_child_found")}
             </Text>
           }
         />
       </View>
 
-      {/* Floating Buttons */}
-      <View className="absolute bottom-8 right-8 items-end">
+      {/* Floating Buttons - Rectangle with Circular Sides */}
+      <View className="absolute bottom-8 right-8 gap-2">
+        {/* Add Club Button */}
         <TouchableOpacity
           onPress={() => setShowAddClub(true)}
-          className="w-14 h-14 rounded-full items-center justify-center mb-3"
           style={{
-            backgroundColor: colors.accentLight,
+            backgroundColor: colors.accent,
+            borderRadius: 50,
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
             shadowColor: "#000",
             shadowOpacity: 0.2,
             elevation: 5,
           }}
         >
-          <Ionicons name="musical-notes-outline" size={26} color={colors.textDark} />
+          <Ionicons name="add-circle-outline" size={20} color="#FFF" />
+          <Text style={{ color: "#FFF", fontWeight: "600", fontSize: 14 }}>{t("common.club")}</Text>
         </TouchableOpacity>
 
+        {/* Add Class Button */}
         <TouchableOpacity
           onPress={() => setShowAddClass(true)}
-          className="w-14 h-14 rounded-full items-center justify-center mb-3"
           style={{
-            backgroundColor: colors.accentLight,
+            backgroundColor: "#3B82F6",
+            borderRadius: 50,
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
             shadowColor: "#000",
             shadowOpacity: 0.2,
             elevation: 5,
           }}
         >
-          <Ionicons name="add-outline" size={26} color={colors.textDark} />
+          <Ionicons name="add-circle-outline" size={20} color="#FFF" />
+          <Text style={{ color: "#FFF", fontWeight: "600", fontSize: 14 }}>
+            {t("common.class")}
+          </Text>
         </TouchableOpacity>
 
+        {/* Add Child Button */}
         <TouchableOpacity
           onPress={() => {
             setShowAddChild(true);
             resetChildForm();
           }}
-          className="w-14 h-14 rounded-full items-center justify-center"
           style={{
-            backgroundColor: colors.accent,
+            backgroundColor: "#10B981",
+            borderRadius: 50,
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
             shadowColor: "#000",
             shadowOpacity: 0.2,
             elevation: 5,
           }}
         >
-          <Ionicons name="person-add-outline" size={26} color="#FFF" />
+          <Ionicons name="add-circle-outline" size={20} color="#FFF" />
+          <Text style={{ color: "#FFF", fontWeight: "600", fontSize: 14 }}>
+            {t("common.child")}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -607,10 +679,10 @@ export default function ChildrenScreen() {
             style={{ backgroundColor: colors.cardBackground }}
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
-              Nouvelle Classe
+              {t("children.new_class")}
             </Text>
             <TextInput
-              placeholder="Nom de la classe"
+              placeholder={t("children.class_name_placeholder")}
               placeholderTextColor={colors.textLight}
               value={newClassName}
               onChangeText={setNewClassName}
@@ -628,14 +700,14 @@ export default function ChildrenScreen() {
                 className="px-5 py-3 mr-2 rounded-xl"
                 style={{ backgroundColor: "#E5E7EB" }}
               >
-                <Text style={{ color: colors.textDark }}>Annuler</Text>
+                <Text style={{ color: colors.textDark }}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleAddClass}
                 className="px-5 py-3 rounded-xl"
                 style={{ backgroundColor: colors.accent }}
               >
-                <Text className="text-white font-semibold">Ajouter</Text>
+                <Text className="text-white font-semibold">{t("common.add")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -653,10 +725,10 @@ export default function ChildrenScreen() {
             style={{ backgroundColor: colors.cardBackground }}
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
-              Nouveau Club
+              {t("children.new_club")}
             </Text>
             <TextInput
-              placeholder="Nom du club"
+              placeholder={t("children.club_name_placeholder")}
               placeholderTextColor={colors.textLight}
               value={newClubName}
               onChangeText={setNewClubName}
@@ -674,14 +746,14 @@ export default function ChildrenScreen() {
                 className="px-5 py-3 mr-2 rounded-xl"
                 style={{ backgroundColor: "#E5E7EB" }}
               >
-                <Text style={{ color: colors.textDark }}>Annuler</Text>
+                <Text style={{ color: colors.textDark }}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleAddClub}
                 className="px-5 py-3 rounded-xl"
                 style={{ backgroundColor: colors.accent }}
               >
-                <Text className="text-white font-semibold">Ajouter</Text>
+                <Text className="text-white font-semibold">{t("common.add")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -699,12 +771,12 @@ export default function ChildrenScreen() {
             style={{ backgroundColor: colors.cardBackground }}
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
-              Nouvel Enfant
+              {t("children.new_child")}
             </Text>
 
             {/* Name */}
             <TextInput
-              placeholder="Nom de l'enfant"
+              placeholder={t("children.child_name_placeholder")}
               placeholderTextColor={colors.textLight}
               value={childName}
               onChangeText={setChildName}
@@ -732,7 +804,9 @@ export default function ChildrenScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={{ color: colors.textDark }}>
-                  {childBirthdate ? childBirthdate.toLocaleDateString() : "Date de naissance"}
+                  {childBirthdate
+                    ? childBirthdate.toLocaleDateString()
+                    : t("children.birthdate_placeholder")}
                 </Text>
               </TouchableOpacity>
 
@@ -808,7 +882,7 @@ export default function ChildrenScreen() {
 
             {/* Parent */}
             <TextInput
-              placeholder="Nom du parent"
+              placeholder={t("children.parent_name_placeholder")}
               placeholderTextColor={colors.textLight}
               value={childParent}
               onChangeText={setChildParent}
@@ -863,7 +937,7 @@ export default function ChildrenScreen() {
               }}
             >
               <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 14.5 }}>
-                Accès à l’application mobile
+                {t("children.mobile_app_access")}
               </Text>
 
               <TouchableOpacity
@@ -901,14 +975,14 @@ export default function ChildrenScreen() {
                 className="px-5 py-3 mr-2 rounded-xl"
                 style={{ backgroundColor: "#E5E7EB" }}
               >
-                <Text style={{ color: colors.textDark }}>Annuler</Text>
+                <Text style={{ color: colors.textDark }}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleAddChild}
                 className="px-5 py-3 rounded-xl"
                 style={{ backgroundColor: colors.accent }}
               >
-                <Text className="text-white font-semibold">Ajouter</Text>
+                <Text className="text-white font-semibold">{t("common.add")}</Text>
               </TouchableOpacity>
             </View>
           </View>

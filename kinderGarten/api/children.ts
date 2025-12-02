@@ -97,7 +97,8 @@ export async function updateChild(id: number | string, payload: Record<string, a
  */
 export async function getClassrooms() {
   const res = await api.get(API_ENDPOINTS.CHILDREN_CLASSES);
-  return res.data;
+  // ✅ Extract results array from paginated response
+  return res.data?.results || res.data || [];
 }
 /**
  * Upload child avatar (multipart/form-data)
@@ -150,10 +151,16 @@ export async function createClub(name: string) {
  */
 export async function deleteClass(id: number) {
   try {
+    console.log("🗑️ [API] Deleting class with ID:", id);
+    console.log("🗑️ [API] DELETE endpoint:", `${API_ENDPOINTS.CHILDREN_CLASSES}${id}/`);
     const res = await api.delete(`${API_ENDPOINTS.CHILDREN_CLASSES}${id}/`);
+    console.log("✅ [API] Class deleted successfully:", res.data);
     return res.data;
   } catch (e: any) {
-    console.error("❌ Error deleting class:", e.response?.data || e.message);
+    console.error("❌ [API] Error deleting class - ID:", id);
+    console.error("❌ [API] Error status:", e.response?.status);
+    console.error("❌ [API] Error response:", e.response?.data);
+    console.error("❌ [API] Error message:", e.message);
     throw e;
   }
 }

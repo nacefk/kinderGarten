@@ -2,9 +2,13 @@ import { Tabs, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 export default function AdminLayout() {
   const { isAuthenticated, userRole } = useAuthStore();
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
 
   // ✅ Route protection: ensure user is authenticated and is admin
   if (!isAuthenticated || userRole !== "admin") {
@@ -22,7 +26,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: "Dashboard",
+          title: t("tabs.dashboard"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="speedometer-outline" size={size} color={color} />
           ),
@@ -33,7 +37,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="children"
         options={{
-          title: "Children",
+          title: t("tabs.children"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-outline" size={size} color={color} />
           ),
@@ -44,7 +48,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="reports"
         options={{
-          title: "Reports",
+          title: t("tabs.reports"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="clipboard-outline" size={size} color={color} />
           ),
@@ -55,7 +59,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
-          title: "Calendar",
+          title: t("tabs.calendar"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
@@ -66,7 +70,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="chatList"
         options={{
-          title: "Chat",
+          title: t("tabs.chat"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),

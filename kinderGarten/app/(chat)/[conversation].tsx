@@ -13,6 +13,8 @@ import { useLocalSearchParams, Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ChevronLeft, Send } from "lucide-react-native";
 import colors from "@/config/colors";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 type Message = {
   id: string;
@@ -23,6 +25,8 @@ type Message = {
 
 export default function ConversationScreen() {
   const { id, name, avatar } = useLocalSearchParams();
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -136,7 +140,7 @@ export default function ConversationScreen() {
             <TextInput
               value={input}
               onChangeText={setInput}
-              placeholder="Écrire un message..."
+              placeholder={t("chat.send_message")}
               className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-gray-800"
               style={{
                 minHeight: 42, // ensures visibility

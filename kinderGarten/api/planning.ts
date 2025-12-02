@@ -16,7 +16,8 @@ export async function getEvents(filter?: { classroom_id?: number; class_name?: n
   const res = await api.get(API_ENDPOINTS.PLANNING_EVENTS, {
     params: Object.keys(params).length ? params : {},
   });
-  return res.data;
+  // ✅ Extract results array from paginated response
+  return res.data?.results || res.data || [];
 }
 
 /**
@@ -103,7 +104,8 @@ export async function getPlans(filter?: { classroom_id?: number; class_name?: nu
   const res = await api.get(API_ENDPOINTS.PLANNING_PLANS, {
     params: Object.keys(params).length ? params : {},
   });
-  return res.data;
+  // ✅ Extract results array from paginated response
+  return res.data?.results || res.data || [];
 }
 
 /**
