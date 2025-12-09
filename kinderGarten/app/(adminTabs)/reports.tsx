@@ -59,8 +59,7 @@ export default function ReportsScreen() {
     setGroupMode(false);
     setLoading(true);
     try {
-      const response = await getChildren({ classroom: cls.id });
-      const data = response?.results || response || [];
+      const data = await getChildren({ classroom: cls.id });
       setChildrenList(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error("❌ Error loading class children:", err.message);
@@ -76,8 +75,7 @@ export default function ReportsScreen() {
     setGroupMode(false);
     setLoading(true);
     try {
-      const response = await getChildren({ club: club.id });
-      const data = response?.results || response || [];
+      const data = await getChildren({ club: club.id });
       setChildrenList(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error("❌ Error loading club children:", err.message);
@@ -126,7 +124,7 @@ export default function ReportsScreen() {
           setLoading(true);
           const data = await getChildren({ classroom: firstClass.id });
           setChildrenList(Array.isArray(data) ? data : []);
-} catch (err: any) {
+        } catch (err: any) {
           console.error("❌ Error loading class children:", err.message);
           setChildrenList([]);
         } finally {
@@ -159,8 +157,7 @@ export default function ReportsScreen() {
 
   const loadReportsForClass = async (classId: number) => {
     try {
-      const response = await getReports();
-      const data = response?.results || response || [];
+      const data = await getReports();
       const existingMap: Record<number, boolean> = {};
       const idMap: Record<number, number> = {};
 
@@ -211,7 +208,7 @@ export default function ReportsScreen() {
       const newReports: Record<number, number> = {};
 
       for (const child of selectedChildren) {
-const created = await createDailyReport({
+        const created = await createDailyReport({
           child: child.id, // ✅ Pass numeric ID, not FormData
           meal,
           nap,
@@ -315,14 +312,12 @@ const created = await createDailyReport({
                   if (btn.key === "class" && Array.isArray(classes) && classes.length > 0) {
                     const firstClass = classes[0];
                     setSelectedClass(firstClass);
-                    const response = await getChildren({ classroom: firstClass.id });
-                    const data = response?.results || response || [];
+                    const data = await getChildren({ classroom: firstClass.id });
                     setChildrenList(Array.isArray(data) ? data : []);
                   } else if (btn.key === "club" && Array.isArray(clubs) && clubs.length > 0) {
                     const firstClub = clubs[0];
                     setSelectedClub(firstClub);
-                    const response = await getChildren({ club: firstClub.id });
-                    const data = response?.results || response || [];
+                    const data = await getChildren({ club: firstClub.id });
                     setChildrenList(Array.isArray(data) ? data : []);
                   }
                 } catch (e: any) {

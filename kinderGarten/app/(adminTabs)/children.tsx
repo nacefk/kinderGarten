@@ -79,6 +79,14 @@ export default function ChildrenScreen() {
     }
   }, [storeChildren]);
 
+  // ✅ Auto-select first class when classes load
+  useEffect(() => {
+    if (Array.isArray(classes) && classes.length > 0 && !selectedClass && !selectedClub) {
+      console.log("🎯 [COMPONENT] Auto-selecting first class:", classes[0].name);
+      setSelectedClass(classes[0].name);
+    }
+  }, [classes]);
+
   // ------------------- INIT -------------------
   useEffect(() => {
     (async () => {
@@ -268,23 +276,36 @@ export default function ChildrenScreen() {
   useEffect(() => {
     (async () => {
       console.log("🔄 [COMPONENT] Filter effect triggered with:", { selectedClass, selectedClub });
+      console.log("🔄 [COMPONENT] Available classes:", classes);
       setLoading(true);
       try {
         let params: any = {};
         if (selectedClass && !selectedClub) {
           const cls = classes.find((c) => c.name === selectedClass);
-          console.log("🔄 [COMPONENT] Looking for class:", selectedClass, "Found:", cls);
-          if (cls) params.classroom = cls.id;
+          console.log("🔄 [COMPONENT] Looking for class:", selectedClass);
+          console.log("🔄 [COMPONENT] Classes array:", classes);
+          console.log("🔄 [COMPONENT] Found class:", cls);
+          if (cls) {
+            params.classroom = cls.id;
+            console.log("🔄 [COMPONENT] Using classroom ID:", cls.id);
+          } else {
+            console.warn("⚠️ [COMPONENT] Class not found, using no filter");
+          }
         } else if (selectedClub && !selectedClass) {
           const club = clubs.find((c) => c.name === selectedClub);
           console.log("🔄 [COMPONENT] Looking for club:", selectedClub, "Found:", club);
           if (club) params.club = club.id;
         }
-        console.log("🔄 [COMPONENT] Fetching children with params:", params);
+        console.log("🔄 [COMPONENT] Final params:", params);
+        console.log(
+          "🔄 [COMPONENT] Calling getChildren with:",
+          Object.keys(params).length ? params : undefined
+        );
         const data = await getChildren(Object.keys(params).length ? params : undefined);
         console.log(
           "✅ [COMPONENT] Children fetched:",
-          Array.isArray(data) ? data.length : "NOT ARRAY"
+          Array.isArray(data) ? `${data.length} items` : "NOT ARRAY",
+          data
         );
         // ✅ Defensive: ensure data is an array
         setChildren(Array.isArray(data) ? data : []);

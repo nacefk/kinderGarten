@@ -22,11 +22,10 @@ export const useAppStore = create((set, get) => ({
     fetchChildren: async (filters = {}) => {
       try {
         // filters can be { classroom: id } or { club: id }
-        const response = await getChildren(filters);
-        // ✅ Extract the 'results' array from paginated response
-        const data = response?.results || response || [];
+        const data = await getChildren(filters);
+        // ✅ getChildren already returns the array, no need to extract again
         set((state) => ({
-          data: { ...state.data, childrenList: data },
+          data: { ...state.data, childrenList: Array.isArray(data) ? data : [] },
         }));
       } catch (err) {
         console.error("❌ fetchChildren:", err);
@@ -38,14 +37,12 @@ export const useAppStore = create((set, get) => ({
       console.log("📦 [STORE] fetchClasses() called");
       try {
         console.log("📦 [STORE] Calling getClasses() API...");
-        const response = await getClasses();
-        console.log("📦 [STORE] getClasses() returned:", response);
-        // ✅ Extract the 'results' array from paginated response
-        const data = response?.results || response || [];
-        console.log("📦 [STORE] Extracted data array with", Array.isArray(data) ? data.length : 0, "classes");
+        const data = await getClasses();
+        console.log("📦 [STORE] getClasses() returned:", data);
+        console.log("📦 [STORE] Data array with", Array.isArray(data) ? data.length : 0, "classes");
         set((state) => {
           const newState = {
-            data: { ...state.data, classList: data },
+            data: { ...state.data, classList: Array.isArray(data) ? data : [] },
           };
           console.log("📦 [STORE] New state classList:", newState.data.classList);
           return newState;
@@ -59,11 +56,9 @@ export const useAppStore = create((set, get) => ({
     // 🎨 Fetch all clubs
     fetchClubs: async () => {
       try {
-        const response = await getClubs();
-        // ✅ Extract the 'results' array from paginated response
-        const data = response?.results || response || [];
-        set((state) => ({
-          data: { ...state.data, clubList: data },
+        const data = await getClubs();
+        set((state: any) => ({
+          data: { ...state.data, clubList: Array.isArray(data) ? data : [] },
         }));
       } catch (err) {
         console.error("❌ fetchClubs:", err);

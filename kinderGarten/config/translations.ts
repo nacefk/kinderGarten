@@ -159,7 +159,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "calendar.edit_activity": "Modifier l'Activité",
 
     // Navigation Tabs
-    "tabs.dashboard": "Tableau de Bord",
+    "tabs.dashboard": "Tableau",
     "tabs.children": "Enfants",
     "tabs.reports": "Rapports",
     "tabs.calendar": "Calendrier",

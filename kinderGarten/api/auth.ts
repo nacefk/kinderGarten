@@ -12,14 +12,25 @@ export async function login(username: string, password: string, tenant: string) 
       timestamp: new Date().toISOString(),
     });
 
+    const loginPayload = { username, password, tenant };
+    const loginURL = `${API_CONFIG.baseURL}${API_ENDPOINTS.AUTH_LOGIN}`;
+    
+    console.log("📤 Login URL:", loginURL);
+    console.log("📤 Login Payload:", JSON.stringify(loginPayload, null, 2));
+
     // ✅ Call login endpoint
     const res = await axios.post(
-      `${API_CONFIG.baseURL}${API_ENDPOINTS.AUTH_LOGIN}`,
-      { username, password, tenant },
-      { timeout: API_CONFIG.timeout }
+      loginURL,
+      loginPayload,
+      { 
+        timeout: API_CONFIG.timeout,
+        headers: {
+          "Content-Type": "application/json",
+        }
+      }
     );
 
-    console.log("✅ Login successful");
+    console.log("✅ Login successful, response:", res.data);
 
 const { access, refresh, role } = res.data;
 
@@ -64,6 +75,7 @@ const { access, refresh, role } = res.data;
       status: error.response?.status,
       statusText: error.response?.statusText,
       url: error.config?.url,
+      requestData: error.config?.data,
       details: error.response?.data,
       code: error.code,
     });

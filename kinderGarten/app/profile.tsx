@@ -208,6 +208,8 @@ export default function Profile() {
           name: data?.name || "",
           avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
           hasMobileApp: data?.has_mobile_app || false,
+          username: data?.username || "",
+          password: data?.password || "",
           birthdate: data?.birthdate || "",
           gender: data?.gender || "",
           className: data?.classroom_name || "",
@@ -517,6 +519,64 @@ export default function Profile() {
                 </Text>
               )}
             </View>
+
+            {/* 🔐 Mobile App Credentials */}
+            {profile.hasMobileApp && (profile.username || profile.password) && (
+              <View
+                className="p-4 rounded-xl mb-5"
+                style={{
+                  backgroundColor: "#F0F9FF",
+                  borderWidth: 1,
+                  borderColor: colors.accent,
+                }}
+              >
+                <Text style={{ color: colors.accent, fontWeight: "600", marginBottom: 8 }}>
+                  🔐 Identifiants de connexion
+                </Text>
+                {profile.username && (
+                  <View className="mb-3">
+                    <Text style={{ color: colors.textLight, fontSize: 12 }}>Nom d'utilisateur</Text>
+                    <View
+                      className="flex-row items-center justify-between px-3 py-2 rounded-lg mt-1"
+                      style={{ backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E5E7EB" }}
+                    >
+                      <Text style={{ color: colors.textDark, fontWeight: "500" }}>
+                        {profile.username}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          // Copy to clipboard
+                          alert("Copié: " + profile.username);
+                        }}
+                      >
+                        <Text style={{ color: colors.accent, fontSize: 12 }}>📋 Copier</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                {profile.password && (
+                  <View>
+                    <Text style={{ color: colors.textLight, fontSize: 12 }}>Mot de passe</Text>
+                    <View
+                      className="flex-row items-center justify-between px-3 py-2 rounded-lg mt-1"
+                      style={{ backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E5E7EB" }}
+                    >
+                      <Text style={{ color: colors.textDark, fontWeight: "500" }}>
+                        {profile.password}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          // Copy to clipboard
+                          alert("Copié: " + profile.password);
+                        }}
+                      >
+                        <Text style={{ color: colors.accent, fontSize: 12 }}>📋 Copier</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
 
             {/* 🎵 Clubs */}
             <View>

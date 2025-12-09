@@ -25,8 +25,9 @@ export async function getChildren(filter: { classroom?: number; club?: number } 
 
     const res = await api.get(API_ENDPOINTS.CHILDREN, { params });
 
-
-    return res.data;
+    console.log("🔍 getChildren response:", res.data);
+    // ✅ Extract results array from paginated response
+    return res.data?.results || res.data || [];
   } catch (err: any) {
     console.error("❌ [API] Error fetching children:", err.message);
     console.error("❌ [API] Error response:", err.response?.data);
@@ -128,7 +129,8 @@ export async function deleteChild(id: number) {
 export async function getClubs() {
   try {
     const res = await api.get(API_ENDPOINTS.CHILDREN_CLUBS);
-    return res.data;
+    // ✅ Extract results array from paginated response
+    return res.data?.results || res.data || [];
   } catch (e: any) {
     console.error("❌ Error fetching clubs:", e.response?.data || e.message);
     throw e;

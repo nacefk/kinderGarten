@@ -63,7 +63,8 @@ export async function getReports(childId?: number) {
 
   try {
     const res = await api.get(API_ENDPOINTS.REPORTS, { params });
-    return res.data;
+    // ✅ Extract results array from paginated response
+    return res.data?.results || res.data || [];
   } catch (error: any) {
     console.error("❌ Error fetching reports:", error.response?.data || error.message);
     throw error;
