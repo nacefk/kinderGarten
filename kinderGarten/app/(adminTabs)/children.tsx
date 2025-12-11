@@ -82,8 +82,9 @@ export default function ChildrenScreen() {
   // ✅ Auto-select first class when classes load
   useEffect(() => {
     if (Array.isArray(classes) && classes.length > 0 && !selectedClass && !selectedClub) {
-      console.log("🎯 [COMPONENT] Auto-selecting first class:", classes[0].name);
-      setSelectedClass(classes[0].name);
+      console.log("🎯 [COMPONENT] Initializing with no filter (show all children)");
+      // Don't auto-select a class - let admins see all children first
+      // setSelectedClass(classes[0].name);
     }
   }, [classes]);
 

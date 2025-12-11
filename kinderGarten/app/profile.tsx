@@ -125,11 +125,12 @@ export default function Profile() {
         emergency_contact_name: profile.emergencyContact?.name,
         emergency_contact_relation: profile.emergencyContact?.relation,
         emergency_contact_phone: profile.emergencyContact?.phone,
+        authorized_pickups: profile.authorizedPickups || [],
         responsible_name: profile.classInfo?.responsibleName,
         responsible_phone: profile.classInfo?.responsiblePhone,
         teacher_name: profile.classInfo?.teacherName,
         clubs: profile.clubs || [],
-        has_mobile_app: profile.hasMobileApp,
+        has_mobile_app: profile.hasMobileApp === true,
       };
       console.log("payload:", payload);
       await updateChild(childId, payload);
@@ -137,8 +138,11 @@ export default function Profile() {
       // Re-fetch updated data from the backend
       const refreshed = await getChildById(childId);
 
+      const { has_mobile_app, ...restRefreshed } = refreshed;
+
       setProfile({
-        ...refreshed,
+        ...restRefreshed,
+        hasMobileApp: has_mobile_app === true,
         className: refreshed.classroom_name || "",
         club_details: refreshed.club_details || [],
         clubs: refreshed.clubs || [],
@@ -207,13 +211,13 @@ export default function Profile() {
           id: data?.id || "",
           name: data?.name || "",
           avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
-          hasMobileApp: data?.has_mobile_app || false,
+          hasMobileApp: data?.has_mobile_app === true,
           username: data?.username || "",
           password: data?.password || "",
           birthdate: data?.birthdate || "",
           gender: data?.gender || "",
           className: data?.classroom_name || "",
-          parent_name: data?.parent_name || "",
+          parent_name: data?.parent_user?.first_name || data?.parent_name || "",
           allergies: data?.allergies || "",
           conditions: data?.conditions || "",
           medication: data?.medication || "",
@@ -228,12 +232,15 @@ export default function Profile() {
             relation: data?.emergency_contact_relation || "",
             phone: data?.emergency_contact_phone || "",
           },
+          authorizedPickups: data?.authorized_pickups || [],
           classInfo: {
             teacherName: data?.teacher_name || "",
             classroomName: data?.classroom_name || "",
             responsibleName: data?.responsible_name || "",
             responsiblePhone: data?.responsible_phone || "",
           },
+          parent_username: data?.parent_user?.username,
+          parent_email: data?.parent_user?.email,
         };
         setProfile(filled);
       } catch (e: any) {
@@ -826,6 +833,55 @@ export default function Profile() {
             )}
           </Card>
 
+          {/* 🚗 Personnes autorisées */}
+          <Card title="Personnes autorisées à récupérer l'enfant">
+            {profile?.authorizedPickups?.length > 0 ? (
+              profile.authorizedPickups.map((person: any, index: number) => (
+                <View key={index} className="mb-3">
+                  {renderRow(`👤 Nom ${index + 1}`, "", person.name, isEditing, (v) => {
+                    const updated = [...profile.authorizedPickups];
+                    updated[index] = { ...updated[index], name: v };
+                    updateField("authorizedPickups", updated);
+                  })}
+                  {renderRow(
+                    `📞 Téléphone ${index + 1}`,
+                    "",
+                    person.phone,
+                    isEditing,
+                    (v) => {
+                      const updated = [...profile.authorizedPickups];
+                      updated[index] = { ...updated[index], phone: v };
+                      updateField("authorizedPickups", updated);
+                    },
+                    handlePhoneCall
+                  )}
+                  {renderRow(`👥 Relation ${index + 1}`, "", person.relation, isEditing, (v) => {
+                    const updated = [...profile.authorizedPickups];
+                    updated[index] = { ...updated[index], relation: v };
+                    updateField("authorizedPickups", updated);
+                  })}
+                </View>
+              ))
+            ) : (
+              <Text style={{ color: colors.text }}>Aucune personne autorisée</Text>
+            )}
+
+            {isEditing && (
+              <TouchableOpacity
+                onPress={() => {
+                  const updated = [
+                    ...(profile.authorizedPickups || []),
+                    { name: "", phone: "", relation: "" },
+                  ];
+                  updateField("authorizedPickups", updated);
+                }}
+                className="mt-3 self-end"
+              >
+                <Text style={{ color: colors.accent, fontWeight: "600" }}>+ Ajouter</Text>
+              </TouchableOpacity>
+            )}
+          </Card>
+
           {/* 🎓 Informations sur la classe */}
           <Card title="Informations sur la classe">
             {renderRow(
@@ -858,6 +914,76 @@ export default function Profile() {
               handlePhoneCall
             )}
           </Card>
+
+          {/* 🔐 Identifiants d'accès parent */}
+          {profile?.parent_username && (
+            <Card title="🔐 Identifiants d'accès parent">
+              <View
+                style={{
+                  padding: 16,
+                  backgroundColor: "#F0F9FF",
+                  borderLeftWidth: 4,
+                  borderLeftColor: colors.accent,
+                  borderRadius: 8,
+                  marginBottom: 12,
+                }}
+              >
+                <Text style={{ color: colors.textDark, fontWeight: "600", marginBottom: 12 }}>
+                  Compte parent créé automatiquement
+                </Text>
+
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ color: colors.text, marginBottom: 4 }}>👤 Nom:</Text>
+                  <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 15 }}>
+                    {profile?.parent_name || "—"}
+                  </Text>
+                </View>
+
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ color: colors.text, marginBottom: 4 }}>📧 Email:</Text>
+                  <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 15 }}>
+                    {profile?.parent_email || "—"}
+                  </Text>
+                </View>
+
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ color: colors.text, marginBottom: 4 }}>👤 Identifiant:</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 15, flex: 1 }}>
+                      {profile?.parent_username || "—"}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (profile?.parent_username) {
+                          Alert.alert("✅ Copié", `Identifiant copié: ${profile.parent_username}`);
+                        }
+                      }}
+                    >
+                      <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 13 }}>
+                        Copier
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View
+                  style={{
+                    marginTop: 12,
+                    padding: 12,
+                    backgroundColor: "#FEF3C7",
+                    borderLeftWidth: 3,
+                    borderLeftColor: "#F59E0B",
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text style={{ color: "#92400E", fontSize: 12, lineHeight: 18 }}>
+                    ℹ️ Ces identifiants permettent au parent d'accéder à l'application mobile pour
+                    suivre le profil de son enfant.
+                  </Text>
+                </View>
+              </View>
+            </Card>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

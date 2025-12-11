@@ -77,34 +77,46 @@ export default function Profile() {
       try {
         setLoading(true);
         const data = await getMyChild();
-const fullProfile = {
+        console.log("🧒 Full Child Data from API:", JSON.stringify(data, null, 2));
+        console.log("🔍 All Available Keys:", Object.keys(data || {}));
+        console.log("📱 has_mobile_app:", data?.has_mobile_app);
+        console.log("👤 parent_user:", data?.parent_user);
+        console.log("👨‍👩‍👧 parent_name:", data?.parent_name);
+        
+        const fullProfile = {
           id: data?.id,
-          name: data?.name || "N/D",
-          avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
-          group: data?.classroom_name || "Classe inconnue",
-          birthdate: data?.birthdate || "2020-01-01",
-          age: getAge(data?.birthdate || "2020-01-01"),
-          weight: data?.weight || "N/D",
-          height: data?.height || "N/D",
-          gender: data?.gender || "Fille",
-          allergies: data?.allergies || "Aucune",
-          conditions: data?.conditions || "Aucune",
-          medication: data?.medication || "N/D",
-          doctor: data?.doctor || "N/D",
+          name: data?.name,
+          avatar: data?.avatar,
+          group: data?.classroom_name,
+          birthdate: data?.birthdate,
+          age: getAge(data?.birthdate),
+          weight: data?.weight,
+          height: data?.height,
+          gender: data?.gender,
+          allergies: data?.allergies,
+          conditions: data?.conditions,
+          medication: data?.medication,
+          doctor: data?.doctor,
           emergencyContact: {
-            name: data?.emergency_contact_name || "N/D",
-            relation: data?.emergency_contact_relation || "N/D",
-            phone: data?.emergency_contact_phone || "N/D",
+            name: data?.emergency_contact_name,
+            relation: data?.emergency_contact_relation,
+            phone: data?.emergency_contact_phone,
           },
-          authorizedPickups: data?.authorized_pickups || [],
+          authorizedPickups: data?.authorized_pickups,
+          hasMobileApp: data?.has_mobile_app === true,
+          parent_username: data?.parent_user?.username,
+          parent_password: data?.parent_user?.password,
+          parent_name: data?.parent_user?.first_name || data?.parent_name,
+          parent_email: data?.parent_user?.email,
           classInfo: {
-            teacherName: data?.teacher_name || "Inconnu",
-            classroomName: data?.classroom_name || "N/D",
-            responsibleName: data?.responsible_name || "N/D",
-            responsiblePhone: data?.responsible_phone || "",
+            teacherName: data?.teacher_name,
+            classroomName: data?.classroom_name,
+            responsibleName: data?.responsible_name,
+            responsiblePhone: data?.responsible_phone,
           },
         };
 
+        console.log("✅ Full Profile State:", JSON.stringify(fullProfile, null, 2));
         setProfile(fullProfile);
       } catch (error: any) {
         console.error("❌ Erreur de chargement:", error.response?.data || error.message);
@@ -177,7 +189,7 @@ const fullProfile = {
 
   /** 📞 Appel téléphonique */
   const handlePhoneCall = useCallback((phone: string) => {
-    if (!phone || phone === "N/D") return;
+    if (!phone) return;
     const sanitized = phone.replace(/[^+\d]/g, "");
     const url = `tel:${sanitized}`;
     Linking.canOpenURL(url)
@@ -433,7 +445,7 @@ const fullProfile = {
                 onPress={() => {
                   const updated = [
                     ...(profile.authorizedPickups || []),
-                    { name: "Nouveau", phone: "N/D", relation: "N/D" },
+                    { name: "", phone: "", relation: "" },
                   ];
                   updateField("authorizedPickups", updated);
                 }}
@@ -515,7 +527,7 @@ function renderRow(
             className="border-b border-gray-300 text-right"
             style={{ color: colors.textDark, minWidth: 100 }}
           />
-        ) : isPhoneField && value && value !== "N/D" ? (
+        ) : isPhoneField && value ? (
           <TouchableOpacity onPress={() => onPressPhone && onPressPhone(value)}>
             <Text
               style={{
@@ -530,12 +542,12 @@ function renderRow(
         ) : (
           <Text
             style={{
-              color: colors.textDark,
+              color: value ? colors.textDark : colors.textLight,
               textAlign: "right",
               flexWrap: "wrap",
             }}
           >
-            {value}
+            {value || "—"}
           </Text>
         )}
       </View>
