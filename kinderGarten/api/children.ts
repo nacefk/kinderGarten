@@ -187,3 +187,29 @@ return res.data;
     throw err;
   }
 }
+
+/**
+ * Enable mobile app access for a child
+ */
+export async function enableMobileApp(childId: number | string) {
+  try {
+    const res = await api.post(`${API_ENDPOINTS.CHILDREN}${childId}/enable-mobile-app/`);
+    return res.data;
+  } catch (err: any) {
+    console.error("❌ Error enabling mobile app:", err.response?.data || err.message);
+    throw err;
+  }
+}
+
+/**
+ * Disable mobile app access for a child
+ */
+export async function disableMobileApp(childId: number | string) {
+  try {
+    const res = await api.post(`${API_ENDPOINTS.CHILDREN}${childId}/disable-mobile-app/`);
+    return res.data;
+  } catch (err: any) {
+    console.error("❌ Error disabling mobile app:", err.response?.data || err.message);
+    throw err;
+  }
+}

@@ -1,6 +1,6 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Check, ChevronLeft, Pencil, ChevronDown, Eye, EyeOff } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Alert,
   Linking,
@@ -19,7 +19,14 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import colors from "../config/colors";
 import Card from "../components/Card";
 import Row from "../components/Row";
-import { getChildById, getClassrooms, getClubs, updateChild } from "@/api/children";
+import {
+  getChildById,
+  getClassrooms,
+  getClubs,
+  updateChild,
+  enableMobileApp,
+  disableMobileApp,
+} from "@/api/children";
 import * as ImagePicker from "expo-image-picker";
 import { uploadAvatar } from "@/api/children";
 
@@ -269,6 +276,60 @@ export default function Profile() {
     setProfile((prev: any) => ({ ...prev, [key]: value }));
   };
 
+  /** 🔄 Refresh profile data from server */
+  const refreshProfile = useCallback(async () => {
+    if (!childId) return;
+    try {
+      const data = await getChildById(childId);
+      const filled = {
+        id: data?.id || "",
+        name: data?.name || "",
+        avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
+        hasMobileApp: data?.has_mobile_app === true,
+        username: data?.username || "",
+        password: data?.password || "",
+        birthdate: data?.birthdate || "",
+        gender: data?.gender || "",
+        className: data?.classroom_name || "",
+        parent_name: data?.parent_user?.first_name || data?.parent_name || "",
+        allergies: data?.allergies || "",
+        conditions: data?.conditions || "",
+        medication: data?.medication || "",
+        doctor: data?.doctor || "",
+        weight: data?.weight || "",
+        height: data?.height || "",
+        nextPaymentDate: data?.next_payment_date || "",
+        clubs: data?.clubs || [],
+        club_details: data?.club_details || [],
+        emergencyContact: {
+          name: data?.emergency_contact_name || "",
+          relation: data?.emergency_contact_relation || "",
+          phone: data?.emergency_contact_phone || "",
+        },
+        authorizedPickups: data?.authorized_pickups || [],
+        classInfo: {
+          teacherName: data?.teacher_name || "",
+          classroomName: data?.classroom_name || "",
+          responsibleName: data?.responsible_name || "",
+          responsiblePhone: data?.responsible_phone || "",
+        },
+        parent_username: data?.parent_user?.username,
+        parent_email: data?.parent_user?.email,
+        parent_credentials: data?.parent_credentials,
+      };
+      setProfile(filled);
+    } catch (error) {
+      console.error("❌ Error refreshing profile:", error);
+    }
+  }, [childId]);
+
+  /** Auto-refresh when screen comes into focus */
+  useFocusEffect(
+    useCallback(() => {
+      refreshProfile();
+    }, [refreshProfile])
+  );
+
   const handlePhoneCall = (phone: string) => {
     if (!phone) return;
     const sanitized = phone.replace(/[^+\d]/g, "");
@@ -457,6 +518,7 @@ export default function Profile() {
                 </View>
               )}
             </View>
+
             {/* 📱 Mobile App Access */}
             <View
               className="flex-row justify-between items-center mb-5 px-4 py-2.5 rounded-xl"
@@ -467,43 +529,54 @@ export default function Profile() {
               }}
             >
               <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 14.5 }}>
-                Accès à l’application mobile
+                Accès à l'application mobile
               </Text>
 
               {isEditing ? (
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  onPress={async () => {
+                  onPress={() => {
                     const newValue = !profile.hasMobileApp;
-                    updateField("hasMobileApp", newValue);
+                    const action = newValue ? "activer" : "désactiver";
 
-                    if (!profile.hasMobileApp && newValue) {
-                      try {
-                        const res = await fetch(
-                          `http://YOUR_API_URL/api/children/${childId}/generate_credentials/`,
-                          {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                          }
-                        );
-                        const data = await res.json();
+                    Alert.alert(
+                      `Confirmer: ${newValue ? "Activer" : "Désactiver"}`,
+                      `Êtes-vous sûr de vouloir ${action} l'accès à l'application mobile?`,
+                      [
+                        { text: "Annuler", style: "cancel" },
+                        {
+                          text: "Confirmer",
+                          onPress: async () => {
+                            try {
+                              setLoading(true);
+                              // Call API endpoint
+                              if (newValue) {
+                                await enableMobileApp(childId);
+                              } else {
+                                await disableMobileApp(childId);
+                              }
 
-                        if (res.ok) {
-                          Alert.alert(
-                            "✅ Accès activé",
-                            `Identifiants générés :\n👤 ${data.username}\n🔑 ${data.password}`
-                          );
-                        } else {
-                          Alert.alert(
-                            "Erreur",
-                            data.detail || "Impossible de générer les identifiants."
-                          );
-                        }
-                      } catch (err: any) {
-                        console.error("❌ Error generating credentials:", err.message);
-                        Alert.alert("Erreur", "Impossible de générer les identifiants.");
-                      }
-                    }
+                              // Update local state
+                              updateField("hasMobileApp", newValue);
+
+                              // Show success
+                              Alert.alert(
+                                "✅ Succès",
+                                `L'accès à l'application mobile a été ${newValue ? "activé" : "désactivé"}.`
+                              );
+                            } catch (error: any) {
+                              console.error("❌ Error toggling mobile app:", error);
+                              Alert.alert(
+                                "❌ Erreur",
+                                `Impossible de ${action} l'accès: ${error.response?.data?.message || error.message}`
+                              );
+                            } finally {
+                              setLoading(false);
+                            }
+                          },
+                        },
+                      ]
+                    );
                   }}
                   style={{
                     width: 46,
