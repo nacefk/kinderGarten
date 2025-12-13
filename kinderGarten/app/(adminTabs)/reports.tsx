@@ -30,9 +30,7 @@ export default function ReportsScreen() {
   } = useAppStore((state) => state.data);
   const { fetchClasses, fetchChildren, fetchClubs } = useAppStore((state) => state.actions);
 
-  const [selectedClass, setSelectedClass] = useState<any | null>(
-    Array.isArray(classes) && classes.length > 0 ? classes[0] : null
-  );
+  const [selectedClass, setSelectedClass] = useState<any | null>(null);
   const [selectedChildren, setSelectedChildren] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [groupMode, setGroupMode] = useState(false);
@@ -42,7 +40,7 @@ export default function ReportsScreen() {
   const [media, setMedia] = useState<any | null>(null);
   const [meal, setMeal] = useState("");
   const [nap, setNap] = useState("");
-  const [behavior, setBehavior] = useState("");
+  const [behavior, setBehavior] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [mediaList, setMediaList] = useState<any[]>([]);
   const [selectedClub, setSelectedClub] = useState<any | null>(null);
@@ -111,28 +109,68 @@ export default function ReportsScreen() {
     })();
   }, []);
 
-  // ✅ When classes are loaded, auto-select first class and fetch its children (only once)
+  // ✅ When classes are loaded, find first class with students and fetch its children
   useEffect(() => {
     (async () => {
       if (isInitialized && Array.isArray(classes) && classes.length > 0) {
-        const firstClass = classes[0];
-        setSelectedClass(firstClass);
-        setFilterType("class");
-        setShowClassDropdown(false);
+        let classToSelect = null;
+        let childrenData = [];
 
-        try {
-          setLoading(true);
-          const data = await getChildren({ classroom: firstClass.id });
-          setChildrenList(Array.isArray(data) ? data : []);
-        } catch (err: any) {
-          console.error("❌ Error loading class children:", err.message);
-          setChildrenList([]);
-        } finally {
-          setLoading(false);
+        // Try each class to find one with students
+        for (const cls of classes) {
+          try {
+            const data = await getChildren({ classroom: cls.id });
+
+            if (Array.isArray(data) && data.length > 0) {
+              classToSelect = cls;
+              childrenData = data;
+
+              break;
+            }
+          } catch (err: any) {
+            console.error("❌ Error checking class:", cls.name, err.message);
+          }
+        }
+
+        // If no class has students, use the first class anyway
+        if (!classToSelect) {
+          classToSelect = classes[0];
+          console.log(
+            "📚 [Reports] No class with students found, using first class:",
+            classToSelect.name
+          );
+        }
+
+        if (!selectedClass || selectedClass.id !== classToSelect.id) {
+          console.log("📚 [Reports] Setting selected class to:", classToSelect.name);
+          setSelectedClass(classToSelect);
+          setFilterType("class");
+          setShowClassDropdown(false);
+
+          try {
+            setLoading(true);
+            // Only fetch if we haven't already
+            if (!childrenData.length) {
+              console.log("📚 [Reports] Fetching children for classroom ID:", classToSelect.id);
+              childrenData = await getChildren({ classroom: classToSelect.id });
+            }
+
+            console.log(
+              "📚 [Reports] Setting childrenList with",
+              Array.isArray(childrenData) ? childrenData.length : 0,
+              "children"
+            );
+            setChildrenList(Array.isArray(childrenData) ? childrenData : []);
+          } catch (err: any) {
+            console.error("❌ Error loading children:", err.message);
+            setChildrenList([]);
+          } finally {
+            setLoading(false);
+          }
         }
       }
     })();
-  }, [isInitialized]);
+  }, [isInitialized, classes]);
 
   useEffect(() => {
     if (selectedClass) loadReportsForClass(selectedClass.id);
@@ -179,27 +217,36 @@ export default function ReportsScreen() {
   };
 
   const filteredChildren = useMemo(() => {
-    return childrenList.filter((c) => {
-      const matchClass = selectedClass ? c.classroom === selectedClass.id : true;
-      const matchClub =
-        selectedClub && Array.isArray(c.clubs) ? c.clubs.includes(selectedClub.id) : true;
+    console.log(
+      "🔍 [filteredChildren] childrenList:",
+      childrenList?.length || 0,
+      "filterType:",
+      filterType
+    );
 
-      if (filterType === "class") return matchClass;
-      if (filterType === "club") return matchClub;
-      return true;
-    });
-  }, [selectedClass, selectedClub, childrenList, filterType]);
+    if (filterType === "club") {
+      return childrenList.filter((c) => {
+        const matchClub =
+          selectedClub && Array.isArray(c.clubs) ? c.clubs.includes(selectedClub.id) : true;
+        return matchClub;
+      });
+    }
+
+    // For class filter, children are already fetched for the selected classroom
+    // So we can return them as-is
+    return childrenList;
+  }, [selectedClub, childrenList, filterType]);
 
   const resetForm = () => {
     setMeal("");
     setNap("");
-    setBehavior("");
+    setBehavior([]);
     setNotes("");
   };
 
   // ------------------------------------------------------------------------
   const handleSubmit = async () => {
-    if (behavior.trim() === "" || meal.trim() === "") {
+    if (behavior.length === 0 || meal.trim() === "") {
       Alert.alert(t("reports.missing_fields"), t("reports.fill_required_fields"));
       return;
     }
@@ -208,13 +255,23 @@ export default function ReportsScreen() {
       const newReports: Record<number, number> = {};
 
       for (const child of selectedChildren) {
+        console.log("📝 [handleSubmit] Creating report for child:", {
+          childId: child.id,
+          childName: child.name,
+          meal: meal || "EMPTY",
+          nap: nap || "EMPTY",
+          behavior: behavior.length > 0 ? behavior.join(", ") : "EMPTY",
+          notes: notes || "EMPTY",
+          mediaCount: mediaList.length,
+        });
+
         const created = await createDailyReport({
-          child: child.id, // ✅ Pass numeric ID, not FormData
+          child: child.id,
           meal,
           nap,
-          behavior,
+          behavior: behavior.join(", "),
           notes,
-          mediaFiles: mediaList, // ✅ Send plain array of files
+          mediaFiles: mediaList,
         });
 
         newReports[child.id] = created.id;
@@ -231,7 +288,10 @@ export default function ReportsScreen() {
       setMediaList([]);
       resetForm();
     } catch (error: any) {
-      console.error("❌ Error creating report:", error.response?.data || error.message);
+      console.error("❌ [handleSubmit] Error creating report:", error);
+      console.error("❌ [handleSubmit] Error status:", error.response?.status);
+      console.error("❌ [handleSubmit] Error data:", error.response?.data);
+      console.error("❌ [handleSubmit] Error message:", error.message);
       Alert.alert(t("common.error"), t("reports.error_saving"));
     }
   };
@@ -258,7 +318,7 @@ export default function ReportsScreen() {
         const report = await getReportById(reportId);
         setMeal(report.meal || "");
         setNap(report.nap || "");
-        setBehavior(report.behavior || "");
+        setBehavior(report.behavior ? report.behavior.split(", ").filter((b: string) => b) : []);
         setNotes(report.notes || "");
       } catch (err: any) {
         console.error("❌ Error loading report:", err.response?.data || err.message);
@@ -695,24 +755,41 @@ export default function ReportsScreen() {
               {t("reports.behavior")}
             </Text>
             <View className="flex-row flex-wrap">
-              {behaviorOptions.map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  onPress={() => setBehavior(option)}
-                  style={{
-                    backgroundColor: behavior === option ? colors.accent : "#F3F4F6",
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 10,
-                    marginRight: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <Text style={{ color: behavior === option ? "#fff" : colors.textDark }}>
-                    {option}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {behaviorOptions.map((option) => {
+                const isSelected = behavior.includes(option);
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    onPress={() => {
+                      if (isSelected) {
+                        setBehavior(behavior.filter((b) => b !== option));
+                      } else {
+                        setBehavior([...behavior, option]);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: isSelected ? colors.accent : "#F3F4F6",
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: 10,
+                      marginRight: 8,
+                      marginBottom: 8,
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
+                  >
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color="#fff"
+                        style={{ marginRight: 4 }}
+                      />
+                    )}
+                    <Text style={{ color: isSelected ? "#fff" : colors.textDark }}>{option}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 

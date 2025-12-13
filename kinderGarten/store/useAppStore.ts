@@ -34,20 +34,18 @@ export const useAppStore = create((set, get) => ({
 
     // 🏫 Fetch all classes
     fetchClasses: async () => {
-      console.log("📦 [STORE] fetchClasses() called");
+
       try {
-        console.log("📦 [STORE] Calling getClasses() API...");
+
         const data = await getClasses();
-        console.log("📦 [STORE] getClasses() returned:", data);
-        console.log("📦 [STORE] Data array with", Array.isArray(data) ? data.length : 0, "classes");
+
         set((state) => {
           const newState = {
             data: { ...state.data, classList: Array.isArray(data) ? data : [] },
           };
-          console.log("📦 [STORE] New state classList:", newState.data.classList);
           return newState;
         });
-        console.log("✅ [STORE] classList updated successfully");
+
       } catch (err) {
         console.error("❌ [STORE] fetchClasses error:", err);
       }
@@ -67,26 +65,22 @@ export const useAppStore = create((set, get) => ({
 
     // 🗑️ Remove class from store immediately after deletion
     removeClassFromStore: (classId: number) => {
-      console.log("🗑️ [STORE] Removing class with ID:", classId);
       set((state) => ({
         data: {
           ...state.data,
           classList: state.data.classList.filter((cls: any) => cls.id !== classId),
         },
       }));
-      console.log("✅ [STORE] Class removed from store");
     },
 
     // 🗑️ Remove club from store immediately after deletion
     removeClubFromStore: (clubId: number) => {
-      console.log("🗑️ [STORE] Removing club with ID:", clubId);
       set((state) => ({
         data: {
           ...state.data,
           clubList: state.data.clubList.filter((club: any) => club.id !== clubId),
         },
       }));
-      console.log("✅ [STORE] Club removed from store");
     },
   },
 }));

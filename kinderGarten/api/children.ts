@@ -25,9 +25,11 @@ export async function getChildren(filter: { classroom?: number; club?: number } 
 
     const res = await api.get(API_ENDPOINTS.CHILDREN, { params });
 
-    console.log("🔍 getChildren response:", res.data);
+
+
     // ✅ Extract results array from paginated response
-    return res.data?.results || res.data || [];
+    const result = res.data?.results || res.data || [];
+    return result;
   } catch (err: any) {
     console.error("❌ [API] Error fetching children:", err.message);
     console.error("❌ [API] Error response:", err.response?.data);

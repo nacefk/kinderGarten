@@ -9,26 +9,44 @@ export async function createDailyReport(data: any) {
   const formData = new FormData();
 
   // Required fields
-  formData.append("child", String(Number(data.child)));
-  formData.append("date", data.date || new Date().toISOString().split('T')[0]);
+  const childId = String(Number(data.child));
+  const date = data.date || new Date().toISOString().split('T')[0];
 
-  // Map frontend fields to backend schema
-  // Frontend: meal -> Backend: eating
-  formData.append("eating", data.meal || data.eating || "");
+  // Get the values from either frontend or backend field names
+  const meal = data.meal || data.eating || "";
+  const nap = data.nap || data.sleeping || "";
+  const behavior = data.behavior || data.mood || "";
+  const activities = data.activities || "";
+  const notes = data.notes || "";
 
-  // Frontend: nap -> Backend: sleeping
-  formData.append("sleeping", data.nap || data.sleeping || "");
+  // Send using the backend's expected field names
+  formData.append("child", childId);
+  formData.append("date", date);
+  formData.append("meal", meal);
+  formData.append("nap", nap);
+  formData.append("behavior", behavior);
+  formData.append("activities", activities);
+  formData.append("notes", notes);
 
-  // Frontend: behavior -> Backend: mood
-  formData.append("mood", data.behavior || data.mood || "neutral");
-
-  // Activities field
-  formData.append("activities", data.activities || "");
-
-  formData.append("notes", data.notes || "");
+  console.log("📤 [createDailyReport] FormData content:", {
+    child: childId,
+    date,
+    meal,
+    nap,
+    behavior,
+    activities,
+    notes,
+    mediaFilesCount: data.mediaFiles?.length || 0,
+  });
 
   if (data.mediaFiles && data.mediaFiles.length > 0) {
+    console.log("📤 [createDailyReport] Processing media files...");
     data.mediaFiles.forEach((file: any, index: number) => {
+      console.log(`📤 [createDailyReport] File ${index}:`, {
+        name: file.name,
+        uri: file.uri,
+        type: file.type,
+      });
       const type = file.type?.includes("video") ? "video/mp4" : "image/jpeg";
       const name = file.name || `media_${index}.${type.split("/")[1]}`;
 
@@ -41,15 +59,20 @@ export async function createDailyReport(data: any) {
   }
 
   try {
+    console.log("📤 [createDailyReport] Posting to:", API_ENDPOINTS.REPORTS);
     const res = await api.post(API_ENDPOINTS.REPORTS, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
 
+    console.log("✅ [createDailyReport] Success:", res.data);
     return res.data;
   } catch (error: any) {
-    console.error("❌ Error creating report:", error.response?.data || error.message);
+    console.error("❌ [createDailyReport] Full error object:", error);
+    console.error("❌ [createDailyReport] Error status:", error.response?.status);
+    console.error("❌ [createDailyReport] Error data:", error.response?.data);
+    console.error("❌ [createDailyReport] Error message:", error.message);
     throw error;
   }
 }

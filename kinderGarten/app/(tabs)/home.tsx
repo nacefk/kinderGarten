@@ -9,7 +9,9 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  RefreshControl,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Bell, LogOut, Globe } from "lucide-react-native";
 import colors from "@/config/colors";
 import Card from "@/components/Card";
@@ -34,59 +36,88 @@ export default function Home() {
   const [extraHours, setExtraHours] = useState<any>({ status: "none", baseEndTime: "17:00" });
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
 
-  // 🔹 Load all home data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
+  // 🔹 Function to load all home data
+  const loadData = useCallback(async () => {
+    try {
+      // 1️⃣ Get authenticated child profile
+      const child = await getMyChild();
+      const classroomId = child.classroom?.id || child.classroom;
+      const classroomName = child.classroom?.name || `Classroom ${classroomId}`;
+      const childId = child.id;
 
-        // 1️⃣ Get authenticated child profile
-        const child = await getMyChild();
-        const classroomId = child.classroom?.id || child.classroom;
-        const classroomName = child.classroom?.name || `Classroom ${classroomId}`;
-        const childId = child.id;
+      // 2️⃣ Fetch parallel data
+      const [reports, plans, pendingExtra] = await Promise.all([
+        getReports(childId),
+        getPlans({ classroom: classroomId }),
+        getPendingExtraHours(),
+      ]);
 
-        // 2️⃣ Fetch parallel data
-        const [reports, plans, pendingExtra] = await Promise.all([
-          getReports(childId),
-          getPlans({ classroom: classroomId }),
-          getPendingExtraHours(),
-        ]);
+      // 3️⃣ Fetch calendar events
+      const eventsRes = await api.get(API_ENDPOINTS.PLANNING_EVENTS, {
+        params: { classroom: classroomId },
+      });
 
-        // 3️⃣ Fetch calendar events
-        const eventsRes = await api.get(API_ENDPOINTS.PLANNING_EVENTS, {
-          params: { classroom: classroomId },
+      // 4️⃣ Set local state
+      setProfile({
+        id: childId,
+        name: child.name,
+        avatar: child.avatar,
+        present: child.attendanceStatus === "present" || child.present === true,
+        className: classroomName,
+      });
+
+      setDailySummary(reports.length ? reports[0] : null);
+
+      // 📊 Log mood and meals data
+      if (reports.length > 0) {
+        const latestReport = reports[0];
+        console.log("📊 [Home] Latest Report Data:", {
+          reportId: latestReport.id,
+          childName: latestReport.child_name || "Unknown",
+          date: latestReport.date,
+          mood: latestReport.mood || latestReport.behavior || "N/A",
+          eating: latestReport.eating || latestReport.meal || "N/A",
+          sleeping: latestReport.sleeping || latestReport.nap || "N/A",
+          notes: latestReport.notes || "No notes",
+          activities: latestReport.activities || "No activities",
+          mediaCount: latestReport.media_files?.length || 0,
         });
-
-        // 4️⃣ Set local state
-        setProfile({
-          id: childId,
-          name: child.name,
-          avatar: child.avatar,
-          present: child.attendanceStatus === "present" || child.present === true,
-          className: classroomName,
-        });
-
-        setDailySummary(reports.length ? reports[0] : null);
-        setExtraHours(
-          Array.isArray(pendingExtra) && pendingExtra.length > 0
-            ? pendingExtra[0]
-            : { status: "none" }
-        );
-
-        buildTimeline(plans, eventsRes.data?.results || eventsRes.data, classroomName);
-      } catch (err: any) {
-        console.error("❌ Error fetching home data:", err.response?.data || err.message);
-        Alert.alert("Error", "Unable to load data. Please try again.");
-      } finally {
-        setLoading(false);
+      } else {
+        console.log("📊 [Home] No reports available for this child");
       }
-    };
+      setExtraHours(
+        Array.isArray(pendingExtra) && pendingExtra.length > 0
+          ? pendingExtra[0]
+          : { status: "none" }
+      );
 
-    loadData();
+      buildTimeline(plans, eventsRes.data?.results || eventsRes.data, classroomName);
+    } catch (err: any) {
+      console.error(`❌ Error fetching home data: ${err.response?.data || err.message}`);
+      Alert.alert("Error", "Unable to load data. Please try again.");
+    }
   }, []);
+
+  // 🔹 Load all home data - runs when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        setLoading(true);
+        await loadData();
+        setLoading(false);
+      })();
+    }, [loadData])
+  );
+
+  // 🔹 Handle pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, [loadData]);
 
   // 🔹 Build today's timeline & upcoming activity
   const buildTimeline = useCallback((plans: any, events: any[], className: string) => {
@@ -305,27 +336,51 @@ export default function Home() {
         className="flex-1 px-5"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
+        }
       >
         {/* Daily Summary */}
         <Card title="Mood & Meals">
           {dailySummary ? (
             <>
-              <Text style={{ color: colors.text }}>
-                Mood : <Text style={{ fontWeight: "600" }}>{dailySummary.behavior || "—"}</Text>
-              </Text>
-              <Text style={{ color: colors.text }}>
-                Meal : <Text style={{ fontWeight: "600" }}>{dailySummary.meal || "—"}</Text>
-              </Text>
+              <View style={{ marginBottom: 8 }}>
+                <Text style={{ color: colors.textLight, fontSize: 12 }}>Mood</Text>
+                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
+                  {dailySummary.mood || dailySummary.behavior || "—"}
+                </Text>
+              </View>
+
+              <View style={{ marginBottom: 8 }}>
+                <Text style={{ color: colors.textLight, fontSize: 12 }}>Meal</Text>
+                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
+                  {dailySummary.eating || dailySummary.meal || "—"}
+                </Text>
+              </View>
+
+              {(dailySummary.sleeping || dailySummary.nap) && (
+                <View style={{ marginBottom: 8 }}>
+                  <Text style={{ color: colors.textLight, fontSize: 12 }}>Sleep</Text>
+                  <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
+                    {dailySummary.sleeping || dailySummary.nap}
+                  </Text>
+                </View>
+              )}
+
               {dailySummary.notes && (
-                <Text
+                <View
                   style={{
-                    color: colors.textLight,
-                    marginTop: 4,
-                    fontStyle: "italic",
+                    marginTop: 12,
+                    paddingTop: 12,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.accentLight,
                   }}
                 >
-                  &quot;{dailySummary.notes}&quot;
-                </Text>
+                  <Text style={{ color: colors.textLight, fontSize: 12 }}>Notes</Text>
+                  <Text style={{ color: colors.text, marginTop: 4 }}>
+                    &quot;{dailySummary.notes}&quot;
+                  </Text>
+                </View>
               )}
             </>
           ) : (
