@@ -101,3 +101,58 @@ export async function getReportById(reportId: number) {
   const res = await api.get(`${API_ENDPOINTS.REPORTS}${reportId}/`);
   return res.data;
 }
+
+/**
+ * 🔹 Update an existing daily report
+ */
+export async function updateDailyReport(reportId: number, data: any) {
+  const formData = new FormData();
+
+  // Get the values
+  const meal = data.meal || data.eating || "";
+  const nap = data.nap || data.sleeping || "";
+  const behavior = data.behavior || data.mood || "";
+  const activities = data.activities || "";
+  const notes = data.notes || "";
+
+  // Send using the backend's expected field names
+  formData.append("meal", meal);
+  formData.append("nap", nap);
+  formData.append("behavior", behavior);
+  formData.append("activities", activities);
+  formData.append("notes", notes);
+
+  console.log("📤 [updateDailyReport] Updating report:", {
+    reportId,
+    meal,
+    nap,
+    behavior,
+    activities,
+    notes,
+    mediaFilesCount: data.mediaFiles?.length || 0,
+  });
+
+  if (data.mediaFiles && data.mediaFiles.length > 0) {
+    console.log("📤 [updateDailyReport] Processing media files...");
+    data.mediaFiles.forEach((file: any, index: number) => {
+      const type = file.type?.includes("video") ? "video/mp4" : "image/jpeg";
+      formData.append("media_files", {
+        uri: file.uri,
+        name: file.name || `media_${index}.jpeg`,
+        type,
+      } as any);
+    });
+  }
+
+  try {
+    const res = await api.patch(`${API_ENDPOINTS.REPORTS}${reportId}/`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  } catch (error: any) {
+    console.error("❌ Error updating report:", error.response?.data || error.message);
+    throw error;
+  }
+}

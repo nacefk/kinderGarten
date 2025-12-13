@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
-import { createDailyReport, getReportById, getReports } from "@/api/report";
+import { createDailyReport, updateDailyReport, getReportById, getReports } from "@/api/report";
 import * as ImagePicker from "expo-image-picker";
 import { getChildren } from "@/api/children";
 import { useLanguageStore } from "@/store/useLanguageStore";
@@ -175,7 +175,7 @@ export default function ReportsScreen() {
 
   useEffect(() => {
     if (selectedClass) loadReportsForClass(selectedClass.id);
-  }, [selectedClass]);
+  }, [selectedClass, children]);
 
   const pickMedia = async () => {
     try {
@@ -200,16 +200,28 @@ export default function ReportsScreen() {
       const existingMap: Record<number, boolean> = {};
       const idMap: Record<number, number> = {};
 
+      console.log("📋 [loadReportsForClass] Reports from API:", data);
+      console.log(
+        "📋 [loadReportsForClass] Looking for reports matching childrenList ids:",
+        childrenList.map((c) => c.id)
+      );
+
       if (Array.isArray(data)) {
         data.forEach((r: any) => {
-          const child = children.find((c) => c.id === r.child);
-          if (child && child.classroom === classId) {
+          // Check if this report's child is in our current childrenList
+          const childExists = childrenList.some((c) => c.id === r.child);
+
+          if (childExists) {
             existingMap[r.child] = true;
             idMap[r.child] = r.id;
+            console.log(
+              `📋 [loadReportsForClass] Found report for child ${r.child}: reportId=${r.id}`
+            );
           }
         });
       }
 
+      console.log("📋 [loadReportsForClass] Final maps:", { existingMap, idMap });
       setExistingReports(existingMap);
       setReportsMap(idMap);
     } catch (error: any) {
@@ -256,26 +268,48 @@ export default function ReportsScreen() {
       const newReports: Record<number, number> = {};
 
       for (const child of selectedChildren) {
-        console.log("📝 [handleSubmit] Creating report for child:", {
-          childId: child.id,
-          childName: child.name,
-          meal: meal || "EMPTY",
-          nap: nap || "EMPTY",
-          behavior: behavior.length > 0 ? behavior.join(", ") : "EMPTY",
-          notes: notes || "EMPTY",
-          mediaCount: mediaList.length,
-        });
+        const reportId = reportsMap[child.id];
 
-        const created = await createDailyReport({
-          child: child.id,
-          meal,
-          nap,
-          behavior: behavior.join(", "),
-          notes,
-          mediaFiles: mediaList,
-        });
+        if (reportId) {
+          // Update existing report
+          console.log("📝 [handleSubmit] Updating existing report for child:", {
+            reportId,
+            childId: child.id,
+            childName: child.name,
+          });
 
-        newReports[child.id] = created.id;
+          await updateDailyReport(reportId, {
+            meal,
+            nap,
+            behavior: behavior.join(", "),
+            notes,
+            mediaFiles: mediaList,
+          });
+
+          newReports[child.id] = reportId;
+        } else {
+          // Create new report
+          console.log("📝 [handleSubmit] Creating new report for child:", {
+            childId: child.id,
+            childName: child.name,
+            meal: meal || "EMPTY",
+            nap: nap || "EMPTY",
+            behavior: behavior.length > 0 ? behavior.join(", ") : "EMPTY",
+            notes: notes || "EMPTY",
+            mediaCount: mediaList.length,
+          });
+
+          const created = await createDailyReport({
+            child: child.id,
+            meal,
+            nap,
+            behavior: behavior.join(", "),
+            notes,
+            mediaFiles: mediaList,
+          });
+
+          newReports[child.id] = created.id;
+        }
       }
 
       // ✅ Update local state after saving
@@ -313,14 +347,21 @@ export default function ReportsScreen() {
     const reportId = reportsMap[child.id];
     setSelectedChildren([child]);
 
+    console.log("👤 [handleChildSelect] Selected child:", child.id);
+    console.log("📋 [handleChildSelect] reportsMap:", reportsMap);
+    console.log("📋 [handleChildSelect] reportId found:", reportId);
+
     if (reportId) {
       setLoading(true);
       try {
         const report = await getReportById(reportId);
+        console.log("📋 [handleChildSelect] Loaded report:", report);
         setMeal(report.meal || "");
         setNap(report.nap || "");
         setBehavior(report.behavior ? report.behavior.split(", ").filter((b: string) => b) : []);
         setNotes(report.notes || "");
+        // Load existing media files
+        setMediaList(Array.isArray(report.media_files) ? report.media_files : []);
       } catch (err: any) {
         console.error("❌ Error loading report:", err.response?.data || err.message);
         resetForm();
@@ -329,7 +370,7 @@ export default function ReportsScreen() {
         setShowModal(true);
       }
     } else {
-      resetForm();
+      // Don't reset form - preserve user's previous input
       setShowModal(true);
     }
   };
@@ -837,7 +878,7 @@ export default function ReportsScreen() {
               {mediaList.map((item, index) => (
                 <Image
                   key={index}
-                  source={{ uri: item.uri }}
+                  source={{ uri: item.uri || item.file }}
                   style={{
                     width: 100,
                     height: 100,
