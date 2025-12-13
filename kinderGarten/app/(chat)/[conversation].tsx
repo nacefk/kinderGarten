@@ -59,7 +59,10 @@ export default function ConversationScreen() {
         options={{
           title: name as string,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 10 }}>
+            <TouchableOpacity
+              onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/chat"))}
+              style={{ paddingRight: 10 }}
+            >
               <Ionicons name="arrow-back" size={22} color={colors.accent} />
             </TouchableOpacity>
           ),
@@ -84,7 +87,10 @@ export default function ConversationScreen() {
         >
           {" "}
           <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <TouchableOpacity
+              onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/chat"))}
+              className="mr-3"
+            >
               <ChevronLeft color="#374151" size={28} />
             </TouchableOpacity>
           </View>

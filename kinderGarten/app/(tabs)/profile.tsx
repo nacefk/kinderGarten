@@ -233,7 +233,10 @@ export default function Profile() {
         style={{ backgroundColor: colors.accentLight }}
       >
         <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <TouchableOpacity
+            onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/home"))}
+            className="mr-3"
+          >
             <ChevronLeft color={colors.textDark} size={28} />
           </TouchableOpacity>
         </View>

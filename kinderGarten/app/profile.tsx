@@ -394,7 +394,10 @@ export default function Profile() {
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
       >
-        <TouchableOpacity onPress={() => router.back()} className="mr-3">
+        <TouchableOpacity
+          onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/home"))}
+          className="mr-3"
+        >
           <ChevronLeft color={colors.textDark} size={28} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => (isEditing ? saveProfile() : setIsEditing(true))}>

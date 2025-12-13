@@ -86,7 +86,9 @@ export default function Chat() {
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
         style={{ backgroundColor: colors.accentLight }}
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/home"))}
+        >
           <ChevronLeft color="#374151" size={28} />
         </TouchableOpacity>
         <Text className="text-lg font-semibold text-gray-800">Discussion avec l’Admin</Text>

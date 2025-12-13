@@ -2,7 +2,8 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft } from "lucide-react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation, usePathname } from "expo-router";
+import { useAuthStore } from "@/store/useAuthStore";
 import colors from "@/config/colors";
 
 interface HeaderBarProps {
@@ -13,10 +14,23 @@ interface HeaderBarProps {
 
 export default function HeaderBar({ title, showBack = false, onBackPress }: HeaderBarProps) {
   const router = useRouter();
+  const navigation = useNavigation();
+  const pathname = usePathname();
+  const { userRole } = useAuthStore();
+
+  // Determine if we're in admin section
+  const isAdminScreen = pathname?.includes("adminTabs");
 
   const handleBack = () => {
-    if (onBackPress) onBackPress();
-    else router.back();
+    if (onBackPress) {
+      onBackPress();
+    } else if (navigation.canGoBack?.()) {
+      router.back();
+    } else {
+      // Navigate to appropriate home based on user role
+      const fallbackRoute = isAdminScreen ? "/(adminTabs)/dashboard" : "/(tabs)/home";
+      router.push(fallbackRoute);
+    }
   };
 
   return (

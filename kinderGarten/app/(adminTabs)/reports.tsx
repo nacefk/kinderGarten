@@ -11,6 +11,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
@@ -698,7 +699,7 @@ export default function ReportsScreen() {
 
       {/* Modal */}
       <Modal visible={showModal} animationType="slide" onRequestClose={() => setShowModal(false)}>
-        <ScrollView className="flex-1 px-5 pt-4" style={{ backgroundColor: colors.background }}>
+        <ScrollView className="flex-1 px-5 pt-20" style={{ backgroundColor: colors.background }}>
           <View className="flex-row items-center justify-between mb-6">
             <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
               {selectedChildren.length > 1
