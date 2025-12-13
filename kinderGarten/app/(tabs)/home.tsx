@@ -12,7 +12,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Bell, LogOut, Globe } from "lucide-react-native";
+import { Bell, LogOut, Globe, Smile, Utensils, Moon, MessageSquare } from "lucide-react-native";
 import colors from "@/config/colors";
 import Card from "@/components/Card";
 import { router } from "expo-router";
@@ -343,48 +343,95 @@ export default function Home() {
         {/* Daily Summary */}
         <Card title="Mood & Meals">
           {dailySummary ? (
-            <>
-              <View style={{ marginBottom: 8 }}>
-                <Text style={{ color: colors.textLight, fontSize: 12 }}>Mood</Text>
-                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
-                  {dailySummary.mood || dailySummary.behavior || "—"}
-                </Text>
-              </View>
-
-              <View style={{ marginBottom: 8 }}>
-                <Text style={{ color: colors.textLight, fontSize: 12 }}>Meal</Text>
-                <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
-                  {dailySummary.eating || dailySummary.meal || "—"}
-                </Text>
-              </View>
-
-              {(dailySummary.sleeping || dailySummary.nap) && (
-                <View style={{ marginBottom: 8 }}>
-                  <Text style={{ color: colors.textLight, fontSize: 12 }}>Sleep</Text>
+            <View style={{ gap: 16 }}>
+              {/* Mood */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  backgroundColor: colors.accentLight,
+                  borderRadius: 10,
+                }}
+              >
+                <Smile size={24} color={colors.accent} style={{ marginRight: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>Mood</Text>
                   <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
-                    {dailySummary.sleeping || dailySummary.nap}
+                    {dailySummary.mood || dailySummary.behavior || "—"}
                   </Text>
+                </View>
+              </View>
+
+              {/* Meal */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  backgroundColor: "#FEF3C7",
+                  borderRadius: 10,
+                }}
+              >
+                <Utensils size={24} color="#F59E0B" style={{ marginRight: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>Meal</Text>
+                  <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
+                    {dailySummary.eating || dailySummary.meal || "—"}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Sleep */}
+              {(dailySummary.sleeping || dailySummary.nap) && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    backgroundColor: "#E0E7FF",
+                    borderRadius: 10,
+                  }}
+                >
+                  <Moon size={24} color="#6366F1" style={{ marginRight: 12 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>Sleep</Text>
+                    <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
+                      {dailySummary.sleeping || dailySummary.nap}
+                    </Text>
+                  </View>
                 </View>
               )}
 
+              {/* Notes */}
               {dailySummary.notes && (
                 <View
                   style={{
-                    marginTop: 12,
-                    paddingTop: 12,
-                    borderTopWidth: 1,
-                    borderTopColor: colors.accentLight,
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    backgroundColor: "#F3F4F6",
+                    borderRadius: 10,
                   }}
                 >
-                  <Text style={{ color: colors.textLight, fontSize: 12 }}>Notes</Text>
-                  <Text style={{ color: colors.text, marginTop: 4 }}>
-                    &quot;{dailySummary.notes}&quot;
-                  </Text>
+                  <MessageSquare size={24} color={colors.textLight} style={{ marginRight: 12, marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>Notes</Text>
+                    <Text style={{ color: colors.text, fontSize: 15, lineHeight: 20 }}>
+                      {dailySummary.notes}
+                    </Text>
+                  </View>
                 </View>
               )}
-            </>
+            </View>
           ) : (
-            <Text style={{ color: colors.textLight }}>No data for today.</Text>
+            <View style={{ alignItems: "center", paddingVertical: 20 }}>
+              <Text style={{ color: colors.textLight, fontSize: 16 }}>No data for today.</Text>
+            </View>
           )}
         </Card>
 
