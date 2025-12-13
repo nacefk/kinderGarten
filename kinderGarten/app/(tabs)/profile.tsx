@@ -22,8 +22,12 @@ import Row from "../../components/Row";
 import * as ImagePicker from "expo-image-picker";
 import { getMyChild, updateChild, uploadAvatar } from "@/api/children";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 export default function Profile() {
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
@@ -82,7 +86,12 @@ export default function Profile() {
         console.log("📱 has_mobile_app:", data?.has_mobile_app);
         console.log("👤 parent_user:", data?.parent_user);
         console.log("👨‍👩‍👧 parent_name:", data?.parent_name);
-        
+        console.log("🔐 parent_credentials:", data?.parent_credentials);
+        console.log(
+          "🔑 parent_credentials keys:",
+          data?.parent_credentials ? Object.keys(data.parent_credentials) : "NO CREDENTIALS"
+        );
+
         const fullProfile = {
           id: data?.id,
           name: data?.name,
@@ -114,9 +123,11 @@ export default function Profile() {
             responsibleName: data?.responsible_name,
             responsiblePhone: data?.responsible_phone,
           },
+          parent_credentials: data?.parent_credentials,
         };
 
         console.log("✅ Full Profile State:", JSON.stringify(fullProfile, null, 2));
+        console.log("🔐 Parent Credentials in fullProfile:", fullProfile.parent_credentials);
         setProfile(fullProfile);
       } catch (error: any) {
         console.error("❌ Erreur de chargement:", error.response?.data || error.message);

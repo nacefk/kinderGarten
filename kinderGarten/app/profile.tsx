@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Check, ChevronLeft, Pencil, ChevronDown } from "lucide-react-native";
+import { Check, ChevronLeft, Pencil, ChevronDown, Eye, EyeOff } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -33,6 +33,7 @@ export default function Profile() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [classrooms, setClassrooms] = useState<any[]>([]);
   const [clubs, setClubs] = useState<any[]>([]);
 
@@ -207,6 +208,15 @@ export default function Profile() {
       setLoading(true);
       try {
         const data = await getChildById(childId);
+        console.log("📋 Full API Response Data:", JSON.stringify(data, null, 2));
+        console.log("🔑 All Available Keys in API Response:", Object.keys(data || {}));
+        console.log("🔐 parent_credentials from API:", data?.parent_credentials);
+        console.log("👤 parent_user from API:", data?.parent_user);
+        console.log(
+          "🔑 parent_user keys:",
+          data?.parent_user ? Object.keys(data.parent_user) : "NO PARENT_USER"
+        );
+
         const filled = {
           id: data?.id || "",
           name: data?.name || "",
@@ -224,7 +234,7 @@ export default function Profile() {
           doctor: data?.doctor || "",
           weight: data?.weight || "",
           height: data?.height || "",
-          nextPaymentDate: data?.next_payment_date || "", // 🧠 use correct field name
+          nextPaymentDate: data?.next_payment_date || "",
           clubs: data?.clubs || [],
           club_details: data?.club_details || [],
           emergencyContact: {
@@ -241,7 +251,10 @@ export default function Profile() {
           },
           parent_username: data?.parent_user?.username,
           parent_email: data?.parent_user?.email,
+          parent_credentials: data?.parent_credentials,
         };
+        console.log("✅ parent_credentials in profile state:", filled.parent_credentials);
+        console.log("📦 Full filled profile:", JSON.stringify(filled, null, 2));
         setProfile(filled);
       } catch (e: any) {
         console.error("❌ Error fetching child:", e.response?.data || e.message);
@@ -933,29 +946,25 @@ export default function Profile() {
                 </Text>
 
                 <View style={{ marginBottom: 12 }}>
-                  <Text style={{ color: colors.text, marginBottom: 4 }}>👤 Nom:</Text>
-                  <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 15 }}>
-                    {profile?.parent_name || "—"}
-                  </Text>
-                </View>
-
-                <View style={{ marginBottom: 12 }}>
-                  <Text style={{ color: colors.text, marginBottom: 4 }}>📧 Email:</Text>
-                  <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 15 }}>
-                    {profile?.parent_email || "—"}
-                  </Text>
-                </View>
-
-                <View style={{ marginBottom: 12 }}>
                   <Text style={{ color: colors.text, marginBottom: 4 }}>👤 Identifiant:</Text>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 15, flex: 1 }}>
-                      {profile?.parent_username || "—"}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{ color: colors.textDark, fontWeight: "500", fontSize: 15, flex: 1 }}
+                    >
+                      {profile?.parent_credentials?.username || profile?.parent_username || "—"}
                     </Text>
                     <TouchableOpacity
                       onPress={() => {
-                        if (profile?.parent_username) {
-                          Alert.alert("✅ Copié", `Identifiant copié: ${profile.parent_username}`);
+                        const username =
+                          profile?.parent_credentials?.username || profile?.parent_username;
+                        if (username) {
+                          Alert.alert("✅ Copié", `Identifiant copié: ${username}`);
                         }
                       }}
                     >
@@ -965,6 +974,103 @@ export default function Profile() {
                     </TouchableOpacity>
                   </View>
                 </View>
+
+                {profile?.parent_credentials?.password && (
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={{ color: colors.text, marginBottom: 4 }}>🔑 Mot de passe:</Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flex: 1,
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          borderWidth: 1,
+                          borderColor: colors.accentLight,
+                          borderRadius: 8,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          backgroundColor: "#F9FAFB",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: colors.textDark,
+                            fontWeight: "500",
+                            fontSize: 15,
+                            flex: 1,
+                            letterSpacing: showPassword ? 0 : 2,
+                          }}
+                        >
+                          {showPassword
+                            ? profile?.parent_credentials?.password
+                            : "•".repeat(profile?.parent_credentials?.password?.length || 8)}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => setShowPassword(!showPassword)}
+                          style={{ padding: 6, marginLeft: 8 }}
+                        >
+                          {showPassword ? (
+                            <EyeOff color={colors.accent} size={20} />
+                          ) : (
+                            <Eye color={colors.accent} size={20} />
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (profile?.parent_credentials?.password) {
+                            Alert.alert("✅ Copié", `Mot de passe copié`);
+                          }
+                        }}
+                      >
+                        <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 13 }}>
+                          Copier
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+
+                {profile?.parent_credentials?.tenant && (
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={{ color: colors.text, marginBottom: 4 }}>🏢 Tenant:</Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={{ color: colors.textDark, fontWeight: "500", fontSize: 15, flex: 1 }}
+                      >
+                        {profile?.parent_credentials?.tenant}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (profile?.parent_credentials?.tenant) {
+                            Alert.alert(
+                              "✅ Copié",
+                              `Tenant copié: ${profile.parent_credentials.tenant}`
+                            );
+                          }
+                        }}
+                      >
+                        <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 13 }}>
+                          Copier
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
 
                 <View
                   style={{

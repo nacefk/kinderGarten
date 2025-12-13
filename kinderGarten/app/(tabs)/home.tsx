@@ -12,7 +12,8 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Bell, LogOut, Globe, Smile, Utensils, Moon, MessageSquare } from "lucide-react-native";
+import { Bell, LogOut, Smile, Utensils, Moon, MessageSquare } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import Card from "@/components/Card";
 import { router } from "expo-router";
@@ -24,10 +25,12 @@ import { getPendingExtraHours, requestExtraHour } from "@/api/attendance";
 import { API_ENDPOINTS } from "@/config/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 export default function Home() {
   const { logout } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
 
   const [profile, setProfile] = useState<any>(null);
   const [dailySummary, setDailySummary] = useState<any>(null);
@@ -290,7 +293,7 @@ export default function Home() {
         style={{ backgroundColor: colors.background }}
       >
         <ActivityIndicator color={colors.accent} size="large" />
-        <Text style={{ color: colors.textLight, marginTop: 10 }}>Loading...</Text>
+        <Text style={{ color: colors.textLight, marginTop: 10 }}>{t("common.loading")}</Text>
       </View>
     );
 
@@ -313,14 +316,14 @@ export default function Home() {
               className="font-semibold text-base"
               style={{ color: profile?.present ? colors.success : colors.error }}
             >
-              ● {profile?.present ? "Present" : "Absent"}
+              ● {profile?.present ? t("dashboard.present") : t("dashboard.absent")}
             </Text>
           </View>
         </View>
 
         <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => setShowLanguageModal(true)} className="mr-4">
-            <Globe color={colors.textDark} size={28} />
+          <TouchableOpacity onPress={() => setShowLanguageModal(true)} className="p-1 mr-3">
+            <Ionicons name="globe-outline" size={28} color={colors.textDark} />
           </TouchableOpacity>
           <TouchableOpacity className="mr-4">
             <Bell color={colors.textDark} size={28} />
@@ -341,7 +344,7 @@ export default function Home() {
         }
       >
         {/* Daily Summary */}
-        <Card title="Mood & Meals">
+        <Card title={t("home.today_activity")}>
           {dailySummary ? (
             <View style={{ gap: 16 }}>
               {/* Mood */}
@@ -357,7 +360,9 @@ export default function Home() {
               >
                 <Smile size={24} color={colors.accent} style={{ marginRight: 12 }} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>Mood</Text>
+                  <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>
+                    {t("reports.behavior")}
+                  </Text>
                   <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
                     {dailySummary.mood || dailySummary.behavior || "—"}
                   </Text>
@@ -377,7 +382,9 @@ export default function Home() {
               >
                 <Utensils size={24} color="#F59E0B" style={{ marginRight: 12 }} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>Meal</Text>
+                  <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>
+                    {t("reports.meal")}
+                  </Text>
                   <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
                     {dailySummary.eating || dailySummary.meal || "—"}
                   </Text>
@@ -398,7 +405,9 @@ export default function Home() {
                 >
                   <Moon size={24} color="#6366F1" style={{ marginRight: 12 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>Sleep</Text>
+                    <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>
+                      {t("reports.nap")}
+                    </Text>
                     <Text style={{ color: colors.text, fontWeight: "600", fontSize: 16 }}>
                       {dailySummary.sleeping || dailySummary.nap}
                     </Text>
@@ -418,9 +427,15 @@ export default function Home() {
                     borderRadius: 10,
                   }}
                 >
-                  <MessageSquare size={24} color={colors.textLight} style={{ marginRight: 12, marginTop: 2 }} />
+                  <MessageSquare
+                    size={24}
+                    color={colors.textLight}
+                    style={{ marginRight: 12, marginTop: 2 }}
+                  />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>Notes</Text>
+                    <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>
+                      {t("reports.notes")}
+                    </Text>
                     <Text style={{ color: colors.text, fontSize: 15, lineHeight: 20 }}>
                       {dailySummary.notes}
                     </Text>
@@ -430,13 +445,15 @@ export default function Home() {
             </View>
           ) : (
             <View style={{ alignItems: "center", paddingVertical: 20 }}>
-              <Text style={{ color: colors.textLight, fontSize: 16 }}>No data for today.</Text>
+              <Text style={{ color: colors.textLight, fontSize: 16 }}>
+                {t("activity.no_activity")}
+              </Text>
             </View>
           )}
         </Card>
 
         {/* Timeline */}
-        <Card title="Timeline">
+        <Card title={t("home.current_activity")}>
           {timeline.length ? (
             timeline.map((item, i) => (
               <View key={`timeline-${i}`} className="flex-row items-center mb-3">
@@ -448,12 +465,12 @@ export default function Home() {
               </View>
             ))
           ) : (
-            <Text style={{ color: colors.textLight }}>No activities now.</Text>
+            <Text style={{ color: colors.textLight }}>{t("home.no_current_activity")}</Text>
           )}
         </Card>
 
         {/* Upcoming */}
-        <Card title="Upcoming">
+        <Card title={t("home.upcoming")}>
           {upcoming.length ? (
             upcoming.map((e, i) => (
               <View key={`upcoming-${i}`} className="flex-row items-center mb-3">
@@ -467,60 +484,103 @@ export default function Home() {
               </View>
             ))
           ) : (
-            <Text style={{ color: colors.textLight }}>No upcoming events.</Text>
+            <Text style={{ color: colors.textLight }}>{t("home.no_upcoming_activity")}</Text>
           )}
         </Card>
 
         {/* Extra Hours */}
-        <Card title="Extra Hours">
+        <Card title={t("home.extra_hours")}>
           {extraHours?.status === "none" && (
             <>
-              <Text style={{ color: colors.text, marginBottom: 12 }}>
-                Request additional supervision time
+              <Text style={{ color: colors.text, marginBottom: 12, fontSize: 15 }}>
+                {t("home.extra_hours_description")}
               </Text>
-              <View className="flex-row justify-between mb-4">
-                {[15, 30, 60].map((opt) => (
-                  <TouchableOpacity
-                    key={opt}
-                    onPress={() => setSelectedOption(opt)}
-                    className="flex-1 mx-1 py-3 rounded-xl border"
-                    style={{
-                      backgroundColor:
-                        selectedOption === opt ? colors.accent : colors.cardBackground,
-                      borderColor: selectedOption === opt ? colors.accent : "#D1D5DB",
-                    }}
-                  >
-                    <Text
-                      className="text-center font-medium"
-                      style={{ color: selectedOption === opt ? "#FFF" : colors.text }}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                {[15, 30, 60].map((opt) => {
+                  const isSelected = selectedOption === opt;
+                  return (
+                    <TouchableOpacity
+                      key={opt}
+                      onPress={() => setSelectedOption(opt)}
+                      style={{
+                        backgroundColor: isSelected ? colors.accent : "#F3F4F6",
+                        paddingHorizontal: 16,
+                        paddingVertical: 10,
+                        borderRadius: 12,
+                        flex: 1,
+                        minWidth: "30%",
+                        alignItems: "center",
+                        borderWidth: 2,
+                        borderColor: isSelected ? colors.accent : "transparent",
+                      }}
                     >
-                      +{opt === 60 ? "1h" : `${opt} min`}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={{
+                          color: isSelected ? "#fff" : colors.textDark,
+                          fontWeight: isSelected ? "600" : "500",
+                          fontSize: 15,
+                        }}
+                      >
+                        +{opt === 60 ? "1h" : `${opt}m`}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
               <TouchableOpacity
                 disabled={!selectedOption}
                 onPress={handleRequestExtraHours}
-                className="py-3 rounded-xl"
-                style={{ backgroundColor: selectedOption ? colors.accent : colors.textLight }}
+                style={{
+                  backgroundColor: selectedOption ? colors.accent : colors.textLight,
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  opacity: selectedOption ? 1 : 0.6,
+                }}
               >
-                <Text className="text-center text-white font-semibold">Request Extra Hours</Text>
+                <Text
+                  style={{ color: "#FFF", textAlign: "center", fontWeight: "600", fontSize: 15 }}
+                >
+                  {t("home.extra_hours")}
+                </Text>
               </TouchableOpacity>
             </>
           )}
           {extraHours?.status === "pending" && (
-            <Text style={{ color: colors.warning, textAlign: "center" }}>Pending approval ⏳</Text>
+            <View
+              style={{
+                backgroundColor: "#FEF3C7",
+                paddingVertical: 12,
+                paddingHorizontal: 12,
+                borderRadius: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: "#D97706", fontWeight: "600", fontSize: 15 }}>
+                {t("home.extra_hours_pending")}
+              </Text>
+            </View>
           )}
           {extraHours?.status === "approved" && (
-            <Text style={{ color: colors.success, textAlign: "center" }}>Approved ✅</Text>
+            <View
+              style={{
+                backgroundColor: "#DCFCE7",
+                paddingVertical: 12,
+                paddingHorizontal: 12,
+                borderRadius: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: "#16A34A", fontWeight: "600", fontSize: 15 }}>
+                {t("home.extra_hours_approved")}
+              </Text>
+            </View>
           )}
         </Card>
       </ScrollView>
 
       {/* Language Modal */}
-      <Modal visible={showLanguageModal} transparent animationType="fade">
+      <Modal visible={showLanguageModal} animationType="fade" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
           style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
@@ -529,8 +589,8 @@ export default function Home() {
             className="w-full rounded-2xl p-6"
             style={{ backgroundColor: colors.cardBackground }}
           >
-            <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
-              Select Language
+            <Text className="text-xl font-bold mb-6 text-center" style={{ color: colors.textDark }}>
+              {t("common.language")}
             </Text>
 
             {["en", "fr", "ar"].map((lang) => (
@@ -538,36 +598,36 @@ export default function Home() {
                 key={lang}
                 onPress={() => {
                   setLanguage(lang as "en" | "fr" | "ar");
-                  setShowLanguageModal(false);
                 }}
-                className="py-3 px-4 rounded-xl mb-2 flex-row items-center"
+                className="flex-row items-center p-4 mb-2 rounded-xl"
                 style={{
-                  backgroundColor: language === lang ? colors.accent : "#F3F4F6",
+                  backgroundColor: language === lang ? "#3B82F6" : colors.background,
                 }}
               >
-                <Globe
-                  color={language === lang ? "#FFF" : colors.textDark}
+                <Ionicons
+                  name="globe-outline"
                   size={20}
-                  style={{ marginRight: 12 }}
+                  color={language === lang ? "#FFF" : colors.textDark}
                 />
                 <Text
                   style={{
-                    color: language === lang ? "#FFF" : colors.textDark,
-                    fontWeight: language === lang ? "600" : "400",
+                    marginLeft: 12,
+                    fontWeight: "600",
                     fontSize: 16,
+                    color: language === lang ? "#FFF" : colors.textDark,
                   }}
                 >
-                  {lang === "en" ? "🇬🇧 English" : lang === "fr" ? "🇫🇷 Français" : "🇸🇦 العربية"}
+                  {lang === "en" ? "English" : lang === "fr" ? "Français" : "العربية"}
                 </Text>
               </TouchableOpacity>
             ))}
 
             <TouchableOpacity
               onPress={() => setShowLanguageModal(false)}
-              className="py-3 rounded-xl mt-4"
+              className="rounded-xl py-3 px-5 mt-4"
               style={{ backgroundColor: colors.accent }}
             >
-              <Text className="text-center text-white font-semibold">Done</Text>
+              <Text className="text-center text-white font-semibold">{t("common.save")}</Text>
             </TouchableOpacity>
           </View>
         </View>

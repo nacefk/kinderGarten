@@ -88,12 +88,16 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Parent - Home Screen
     "home.welcome": "Welcome",
-    "home.today_activity": "Today's Activity",
-    "home.current_activity": "current activity",
-    "home.upcoming": "Upcoming",
+    "home.today_activity": "Daily Report",
+    "home.current_activity": "Current Activity",
+    "home.upcoming": "Upcoming Events",
     "home.class": "Class",
     "home.no_current_activity": "No current activity",
     "home.no_upcoming_activity": "No upcoming activity",
+    "home.extra_hours": "Extra Hours",
+    "home.extra_hours_description": "Request additional supervision time",
+    "home.extra_hours_pending": "⏳ Pending approval",
+    "home.extra_hours_approved": "✅ Approved",
 
     // Parent - Activity Screen
     "activity.today": "Today",
@@ -110,7 +114,11 @@ export const translations: Record<Language, Record<string, string>> = {
     // Parent - Profile Screen
     "profile.my_profile": "My Profile",
     "profile.child_info": "Child Information",
+    "profile.physical_info": "Physical Information",
     "profile.birthdate": "Birthdate",
+    "profile.weight": "Weight",
+    "profile.height": "Height",
+    "profile.gender": "Gender",
     "profile.class": "Class",
     "profile.settings": "Settings",
     "profile.language": "Language",
@@ -118,6 +126,13 @@ export const translations: Record<Language, Record<string, string>> = {
     "profile.about": "About",
     "profile.logout": "Logout",
     "profile.confirm_logout": "Are you sure you want to logout?",
+    "profile.select_date": "Select a date",
+    "profile.male": "Male",
+    "profile.female": "Female",
+    "profile.parent_credentials": "Parent Credentials",
+    "profile.username": "Username",
+    "profile.password": "Password",
+    "profile.tenant": "Tenant",
 
     // Common
     "common.club": "Club",
@@ -221,12 +236,16 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Parent - Home Screen
     "home.welcome": "Bienvenue",
-    "home.today_activity": "Activité d'Aujourd'hui",
-    "home.current_activity": "activité en cours",
-    "home.upcoming": "À Venir",
+    "home.today_activity": "Rapport Journalier",
+    "home.current_activity": "Activité Actuelle",
+    "home.upcoming": "Événements à Venir",
     "home.class": "Classe",
     "home.no_current_activity": "Aucune activité en cours",
     "home.no_upcoming_activity": "Aucune activité à venir",
+    "home.extra_hours": "Heures Supplémentaires",
+    "home.extra_hours_description": "Demander du temps de surveillance supplémentaire",
+    "home.extra_hours_pending": "⏳ En attente d'approbation",
+    "home.extra_hours_approved": "✅ Approuvé",
 
     // Parent - Activity Screen
     "activity.today": "Aujourd'hui",
@@ -243,7 +262,11 @@ export const translations: Record<Language, Record<string, string>> = {
     // Parent - Profile Screen
     "profile.my_profile": "Mon Profil",
     "profile.child_info": "Informations de l'Enfant",
+    "profile.physical_info": "Informations Physiques",
     "profile.birthdate": "Date de Naissance",
+    "profile.weight": "Poids",
+    "profile.height": "Taille",
+    "profile.gender": "Sexe",
     "profile.class": "Classe",
     "profile.settings": "Paramètres",
     "profile.language": "Langue",
@@ -251,6 +274,13 @@ export const translations: Record<Language, Record<string, string>> = {
     "profile.about": "À Propos",
     "profile.logout": "Déconnexion",
     "profile.confirm_logout": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "profile.select_date": "Sélectionner une date",
+    "profile.male": "Garçon",
+    "profile.female": "Fille",
+    "profile.parent_credentials": "Identifiants du Parent",
+    "profile.username": "Nom d'utilisateur",
+    "profile.password": "Mot de passe",
+    "profile.tenant": "Locataire",
 
     // Common
     "common.club": "Club",
@@ -273,21 +303,21 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.presence_today": "حضور اليوم",
     "dashboard.manage_presence": "إدارة حضور الأطفال اليومي.",
     "dashboard.present": "حاضرون",
-    "dashboard.absent": "غائبون",
+    "dashboard.absent": "غائب",
     "dashboard.extra_hours": "ساعات إضافية",
     "dashboard.no_requests": "لا توجد طلبات في الوقت الحالي.",
     "dashboard.approve": "الموافقة",
     "dashboard.reject": "الرفض",
 
     // Calendar (Admin)
-    "calendar.events": "الأحداث",
+    "calendar.events": "الفعاليات",
     "calendar.weekly_plan": "الخطة الأسبوعية",
-    "calendar.event_list": "قائمة الأحداث",
-    "calendar.new_event": "حدث جديد",
-    "calendar.edit_event": "تعديل الحدث",
+    "calendar.event_list": "قائمة الفعاليات",
+    "calendar.new_event": "فعالية جديدة",
+    "calendar.edit_event": "تعديل الفعالية",
     "calendar.planning": "التخطيط",
     "calendar.change_class": "تغيير الفصل",
-    "calendar.no_activities": "لا توجد أنشطة مجدولة.",
+    "calendar.no_activities": "لا توجد فعاليات مجدولة.",
     "calendar.new_activity": "نشاط جديد",
     "calendar.edit_activity": "تعديل النشاط",
 
@@ -354,12 +384,16 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Parent - Home Screen
     "home.welcome": "أهلا وسهلا",
-    "home.today_activity": "نشاط اليوم",
+    "home.today_activity": "التقرير اليومي",
     "home.current_activity": "النشاط الحالي",
-    "home.upcoming": "القادم",
+    "home.upcoming": "الفعاليات القادمة",
     "home.class": "الفصل",
     "home.no_current_activity": "لا يوجد نشاط حالي",
     "home.no_upcoming_activity": "لا يوجد نشاط قادم",
+    "home.extra_hours": "ساعات إضافية",
+    "home.extra_hours_description": "طلب وقت إشراف إضافي",
+    "home.extra_hours_pending": "⏳ بانتظار الموافقة",
+    "home.extra_hours_approved": "✅ موافق عليه",
 
     // Parent - Activity Screen
     "activity.today": "اليوم",
@@ -369,14 +403,18 @@ export const translations: Record<Language, Record<string, string>> = {
     "activity.photos_videos": "الصور والفيديوهات",
     "activity.no_activity": "لم يتم تسجيل أي نشاط اليوم.",
     "activity.no_media": "لا توجد وسائط متاحة.",
-    "activity.upcoming_events": "الأحداث القادمة",
-    "activity.no_events": "لا توجد أحداث قادمة.",
+    "activity.upcoming_events": "الفعاليات القادمة",
+    "activity.no_events": "لا توجد فعاليات قادمة.",
     "activity.loading": "جاري تحميل الأنشطة...",
 
     // Parent - Profile Screen
     "profile.my_profile": "ملفي الشخصي",
     "profile.child_info": "معلومات الطفل",
+    "profile.physical_info": "المعلومات الجسدية",
     "profile.birthdate": "تاريخ الميلاد",
+    "profile.weight": "الوزن",
+    "profile.height": "الطول",
+    "profile.gender": "النوع",
     "profile.class": "الفصل",
     "profile.settings": "الإعدادات",
     "profile.language": "اللغة",
@@ -384,6 +422,13 @@ export const translations: Record<Language, Record<string, string>> = {
     "profile.about": "حول",
     "profile.logout": "تسجيل الخروج",
     "profile.confirm_logout": "هل أنت متأكد من رغبتك في تسجيل الخروج؟",
+    "profile.select_date": "اختر تاريخا",
+    "profile.male": "ذكر",
+    "profile.female": "أنثى",
+    "profile.parent_credentials": "بيانات اعتماد الوالد",
+    "profile.username": "اسم المستخدم",
+    "profile.password": "كلمة المرور",
+    "profile.tenant": "المستأجر",
 
     // Common
     "common.club": "النادي",
