@@ -14,7 +14,7 @@ export default function StoryViewer() {
   const startIndex = Number(index || 0);
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const flatListRef = useRef<FlatList>(null);
-  
+
   // Get gallery items from app store
   const galleryItems = useAppStore((state) => state.data.galleryItems);
   const stories = galleryItems.length > 0 ? galleryItems : [];

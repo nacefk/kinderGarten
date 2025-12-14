@@ -15,7 +15,13 @@ import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
-import { createDailyReport, updateDailyReport, getReportById, getReports, deleteMediaFile } from "@/api/report";
+import {
+  createDailyReport,
+  updateDailyReport,
+  getReportById,
+  getReports,
+  deleteMediaFile,
+} from "@/api/report";
 import * as ImagePicker from "expo-image-picker";
 import { getChildren } from "@/api/children";
 import { useLanguageStore } from "@/store/useLanguageStore";
@@ -368,7 +374,7 @@ export default function ReportsScreen() {
           // Cache the fresh data
           reportCacheRef.current[reportId] = report;
         }
-        
+
         console.log("📋 [handleChildSelect] Loaded report:", report);
         setMeal(report.meal || "");
         setNap(report.nap || "");

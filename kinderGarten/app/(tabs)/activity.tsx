@@ -30,7 +30,7 @@ export default function Activity() {
   const [galleryItems, setGalleryItems] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [weekDays, setWeekDays] = useState<string[]>(["Lundi"]);
-  
+
   // Store gallery items in app store so story-viewer can access them
   const { setData } = useAppStore((state) => state.actions);
 

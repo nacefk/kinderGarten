@@ -136,7 +136,7 @@ export async function updateDailyReport(reportId: number, data: any) {
   // Existing media files from API have .file field and should not be re-uploaded
   if (data.mediaFiles && data.mediaFiles.length > 0) {
     const newMediaFiles = data.mediaFiles.filter((file: any) => file.uri && !file.file);
-    
+
     console.log("📤 [updateDailyReport] NEW media files to upload:", newMediaFiles.length);
 
     newMediaFiles.forEach((file: any, index: number) => {
