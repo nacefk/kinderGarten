@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
-import { createDailyReport, updateDailyReport, getReportById, getReports } from "@/api/report";
+import { createDailyReport, updateDailyReport, getReportById, getReports, deleteMediaFile } from "@/api/report";
 import * as ImagePicker from "expo-image-picker";
 import { getChildren } from "@/api/children";
 import { useLanguageStore } from "@/store/useLanguageStore";
@@ -187,7 +187,8 @@ export default function ReportsScreen() {
       });
 
       if (!result.canceled && result.assets?.length > 0) {
-        setMediaList(result.assets);
+        // Add new media to existing media (for editing reports)
+        setMediaList((prev) => [...prev, ...result.assets]);
       }
     } catch (err) {
       console.error("❌ Error selecting media:", err);
@@ -257,6 +258,9 @@ export default function ReportsScreen() {
     setNotes("");
   };
 
+  // Store cached report data to avoid stale data when reopening modal
+  const reportCacheRef = useRef<Record<number, any>>({});
+
   // ------------------------------------------------------------------------
   const handleSubmit = async () => {
     if (behavior.length === 0 || meal.trim() === "") {
@@ -285,6 +289,9 @@ export default function ReportsScreen() {
             notes,
             mediaFiles: mediaList,
           });
+
+          // Clear cached report data so next open will fetch fresh data
+          delete reportCacheRef.current[reportId];
 
           newReports[child.id] = reportId;
         } else {
@@ -354,7 +361,14 @@ export default function ReportsScreen() {
     if (reportId) {
       setLoading(true);
       try {
-        const report = await getReportById(reportId);
+        // Check cache first - if not found, fetch fresh data
+        let report = reportCacheRef.current[reportId];
+        if (!report) {
+          report = await getReportById(reportId);
+          // Cache the fresh data
+          reportCacheRef.current[reportId] = report;
+        }
+        
         console.log("📋 [handleChildSelect] Loaded report:", report);
         setMeal(report.meal || "");
         setNap(report.nap || "");
@@ -876,17 +890,46 @@ export default function ReportsScreen() {
           {mediaList.length > 0 && (
             <View style={{ flexDirection: "row", flexWrap: "wrap", marginVertical: 10 }}>
               {mediaList.map((item, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: item.uri || item.file }}
-                  style={{
-                    width: 100,
-                    height: 100,
-                    borderRadius: 10,
-                    marginRight: 8,
-                    marginBottom: 8,
-                  }}
-                />
+                <View key={index} style={{ position: "relative", marginRight: 8, marginBottom: 8 }}>
+                  <Image
+                    source={{ uri: item.uri || item.file }}
+                    style={{
+                      width: 100,
+                      height: 100,
+                      borderRadius: 10,
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={async () => {
+                      // If it's an existing media file (has .id), delete from backend first
+                      if (item.id) {
+                        try {
+                          await deleteMediaFile(item.id);
+                          console.log("✅ Media deleted from backend:", item.id);
+                        } catch (err) {
+                          console.error("❌ Error deleting media from backend:", err);
+                          Alert.alert(t("common.error"), t("reports.error_deleting_media"));
+                          return;
+                        }
+                      }
+                      // Remove from local list (both new and existing)
+                      setMediaList((prev) => prev.filter((_, i) => i !== index));
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: -8,
+                      right: -8,
+                      backgroundColor: "red",
+                      borderRadius: 12,
+                      width: 24,
+                      height: 24,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={{ color: "white", fontSize: 14, fontWeight: "bold" }}>×</Text>
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}

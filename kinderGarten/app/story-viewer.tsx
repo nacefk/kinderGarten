@@ -5,20 +5,19 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { ChevronLeft, ChevronRight, Download, X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Dimensions, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { useAppStore } from "@/store/useAppStore";
 
 const { width, height } = Dimensions.get("window");
-
-const stories = [
-  { id: "1", type: "image", uri: "https://i.pravatar.cc/600?img=20" },
-  { id: "2", type: "video", uri: "https://www.w3schools.com/html/mov_bbb.mp4" },
-  { id: "3", type: "image", uri: "https://i.pravatar.cc/600?img=25" },
-];
 
 export default function StoryViewer() {
   const { index } = useLocalSearchParams();
   const startIndex = Number(index || 0);
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const flatListRef = useRef<FlatList>(null);
+  
+  // Get gallery items from app store
+  const galleryItems = useAppStore((state) => state.data.galleryItems);
+  const stories = galleryItems.length > 0 ? galleryItems : [];
 
   const handleNext = () => {
     if (currentIndex < stories.length - 1) {
@@ -39,13 +38,6 @@ export default function StoryViewer() {
   const handleDownload = async () => {
     const currentStory = stories[currentIndex];
     try {
-      // Ask for permissions
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission needed", "Please allow access to save media.");
-        return;
-      }
-
       const fileExtension = currentStory.type === "video" ? ".mp4" : ".jpg";
       const fileUri = FileSystem.documentDirectory + `story${fileExtension}`;
 

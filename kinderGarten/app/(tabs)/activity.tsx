@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Bell, ChevronDown, ChevronLeft } from "lucide-react-native";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
@@ -18,6 +18,7 @@ import LiveView from "@/components/LiveView";
 import { getMyChild } from "@/api/children";
 import { getPlans, getEvents } from "@/api/planning";
 import { getReports } from "@/api/report";
+import { useAppStore } from "@/store/useAppStore";
 
 export default function Activity() {
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,9 @@ export default function Activity() {
   const [galleryItems, setGalleryItems] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [weekDays, setWeekDays] = useState<string[]>(["Lundi"]);
+  
+  // Store gallery items in app store so story-viewer can access them
+  const { setData } = useAppStore((state) => state.actions);
 
   /** 📅 Get current day in French */
   const getCurrentDay = useCallback(() => {
@@ -58,100 +62,113 @@ export default function Activity() {
     setShowDayDropdown(false);
   }, []);
 
-  /** 📦 Load class plans, events, and reports */
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
+  /** 📦 Load activity data (plans, events, reports) */
+  const loadActivityData = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        // 1️⃣ Fetch logged-in parent's child
-        const child = await getMyChild();
-        if (!child || !child.id) {
-          throw new Error("Child data not found");
-        }
-        const classId = child.classroom?.id || child.classroom;
-        const childId = child.id;
-        // 2️⃣ Fetch plans, events, and reports concurrently with error boundaries
-        let plansData = [];
-        let eventsData = [];
-        let reportsData = [];
-
-        try {
-          [plansData, eventsData, reportsData] = await Promise.all([
-            getPlans({ classroom: classId }).catch((err) => {
-              console.warn("⚠️ Error loading plans:", err.message);
-              return [];
-            }),
-            getEvents({ classroom: classId }).catch((err) => {
-              console.warn("⚠️ Error loading events:", err.message);
-              return [];
-            }),
-            getReports(childId).catch((err) => {
-              console.warn("⚠️ Error loading reports:", err.message);
-              return [];
-            }),
-          ]);
-        } catch (err) {
-          console.error("❌ Error fetching activity data:", err);
-        }
-
-        // 3️⃣ Group class plans by day with safety checks
-        const grouped: Record<string, any[]> = {};
-        if (Array.isArray(plansData)) {
-          plansData.forEach((plan: any) => {
-            if (plan && plan.day) {
-              const day = plan.day || "Lundi";
-              if (!grouped[day]) grouped[day] = [];
-              grouped[day].push({
-                time: plan.time || "N/A",
-                title: plan.title || "Untitled",
-                detail: plan.description || "",
-                icon: "🧩",
-              });
-            }
-          });
-        }
-
-        setTimelineByDay(grouped);
-        setWeekDays(Object.keys(grouped).length ? Object.keys(grouped) : ["Lundi"]);
-
-        // 4️⃣ Format media galleries from reports with safety checks
-        const formattedStories = (Array.isArray(reportsData) ? reportsData : [])
-          .filter((report) => report && report.media_files)
-          .flatMap((report: any) =>
-            (report.media_files || [])
-              .filter((media) => media && media.file)
-              .map((media: any) => ({
-                id: `${report.id}_${media.id}`,
-                type: media.file.toLowerCase().endsWith(".mp4") ? "video" : "image",
-                uri: media.file,
-                description: report.notes || "",
-                date: media.uploaded_at,
-              }))
-          );
-
-        setGalleryItems(formattedStories);
-
-        // 5️⃣ Upcoming Events with safety checks
-        const formattedEvents = (Array.isArray(eventsData) ? eventsData : [])
-          .filter((e: any) => e && e.date && new Date(e.date) > new Date())
-          .map((e: any) => ({
-            icon: "🎉",
-            title: e.title || "Event",
-            detail: e.description || "",
-            date: e.date,
-          }))
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-        setEvents(formattedEvents);
-      } catch (error: any) {
-        console.error("❌ Error loading activity data:", error.message);
-        Alert.alert("Erreur", "Impossible de charger les activités. Veuillez réessayer.");
-      } finally {
-        setLoading(false);
+      // 1️⃣ Fetch logged-in parent's child
+      const child = await getMyChild();
+      if (!child || !child.id) {
+        throw new Error("Child data not found");
       }
-    })();
-  }, []);
+      const classId = child.classroom?.id || child.classroom;
+      const childId = child.id;
+      // 2️⃣ Fetch plans, events, and reports concurrently with error boundaries
+      let plansData = [];
+      let eventsData = [];
+      let reportsData = [];
+
+      try {
+        [plansData, eventsData, reportsData] = await Promise.all([
+          getPlans({ classroom: classId }).catch((err) => {
+            console.warn("⚠️ Error loading plans:", err.message);
+            return [];
+          }),
+          getEvents({ classroom: classId }).catch((err) => {
+            console.warn("⚠️ Error loading events:", err.message);
+            return [];
+          }),
+          getReports(childId).catch((err) => {
+            console.warn("⚠️ Error loading reports:", err.message);
+            return [];
+          }),
+        ]);
+      } catch (err) {
+        console.error("❌ Error fetching activity data:", err);
+      }
+
+      // 3️⃣ Group class plans by day with safety checks
+      const grouped: Record<string, any[]> = {};
+      if (Array.isArray(plansData)) {
+        plansData.forEach((plan: any) => {
+          if (plan && plan.day) {
+            const day = plan.day || "Lundi";
+            if (!grouped[day]) grouped[day] = [];
+            grouped[day].push({
+              time: plan.time || "N/A",
+              title: plan.title || "Untitled",
+              detail: plan.description || "",
+              icon: "🧩",
+            });
+          }
+        });
+      }
+
+      setTimelineByDay(grouped);
+      setWeekDays(Object.keys(grouped).length ? Object.keys(grouped) : ["Lundi"]);
+
+      // 4️⃣ Format media galleries from reports with safety checks
+      const formattedStories = (Array.isArray(reportsData) ? reportsData : [])
+        .filter((report) => report && report.media_files)
+        .flatMap((report: any) =>
+          (report.media_files || [])
+            .filter((media) => media && media.file)
+            .map((media: any) => ({
+              id: `${report.id}_${media.id}`,
+              type: media.file.toLowerCase().endsWith(".mp4") ? "video" : "image",
+              uri: media.file,
+              description: report.notes || "",
+              date: media.uploaded_at,
+            }))
+        );
+
+      setGalleryItems(formattedStories);
+      // Store gallery items in app store for story-viewer
+      setData("galleryItems", formattedStories);
+
+      // 5️⃣ Upcoming Events with safety checks
+      const formattedEvents = (Array.isArray(eventsData) ? eventsData : [])
+        .filter((e: any) => e && e.date && new Date(e.date) > new Date())
+        .map((e: any) => ({
+          icon: "🎉",
+          title: e.title || "Event",
+          detail: e.description || "",
+          date: e.date,
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      setEvents(formattedEvents);
+    } catch (error: any) {
+      console.error("❌ Error loading activity data:", error.message);
+      Alert.alert("Erreur", "Impossible de charger les activités. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
+    }
+  }, [setData]);
+
+  /** 📦 Load data on mount */
+  useEffect(() => {
+    loadActivityData();
+  }, [loadActivityData]);
+
+  /** 📦 Refresh data when screen comes into focus */
+  useFocusEffect(
+    useCallback(() => {
+      console.log("📱 Activity screen focused - refreshing data");
+      loadActivityData();
+    }, [loadActivityData])
+  );
 
   if (loading) {
     return (

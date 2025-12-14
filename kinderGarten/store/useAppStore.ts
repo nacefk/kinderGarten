@@ -7,6 +7,7 @@ export const useAppStore = create((set, get) => ({
     childrenList: [],
     classList: [],
     clubList: [],
+    galleryItems: [],
   },
   loading: false,
   error: null,

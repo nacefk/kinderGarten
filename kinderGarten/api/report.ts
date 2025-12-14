@@ -103,7 +103,8 @@ export async function getReportById(reportId: number) {
 }
 
 /**
- * 🔹 Update an existing daily report
+ * 🔹 Update an existing daily report + add new media files
+ * PATCH /api/reports/{report_id}/ supports both text updates and media uploads
  */
 export async function updateDailyReport(reportId: number, data: any) {
   const formData = new FormData();
@@ -129,12 +130,16 @@ export async function updateDailyReport(reportId: number, data: any) {
     behavior,
     activities,
     notes,
-    mediaFilesCount: data.mediaFiles?.length || 0,
   });
 
+  // Add new media files (those with .uri field)
+  // Existing media files from API have .file field and should not be re-uploaded
   if (data.mediaFiles && data.mediaFiles.length > 0) {
-    console.log("📤 [updateDailyReport] Processing media files...");
-    data.mediaFiles.forEach((file: any, index: number) => {
+    const newMediaFiles = data.mediaFiles.filter((file: any) => file.uri && !file.file);
+    
+    console.log("📤 [updateDailyReport] NEW media files to upload:", newMediaFiles.length);
+
+    newMediaFiles.forEach((file: any, index: number) => {
       const type = file.type?.includes("video") ? "video/mp4" : "image/jpeg";
       formData.append("media_files", {
         uri: file.uri,
@@ -150,9 +155,26 @@ export async function updateDailyReport(reportId: number, data: any) {
         "Content-Type": "multipart/form-data",
       },
     });
+    console.log("✅ [updateDailyReport] Report updated with media_files:", res.data.media_files?.length || 0);
     return res.data;
   } catch (error: any) {
     console.error("❌ Error updating report:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+/**
+ * 🔹 Delete a specific media file from a report
+ * DELETE /api/reports/media/{media_id}/
+ */
+export async function deleteMediaFile(mediaId: number) {
+  try {
+    console.log("🗑️ [deleteMediaFile] Deleting media:", mediaId);
+    const res = await api.delete(`${API_ENDPOINTS.REPORTS}media/${mediaId}/`);
+    console.log("✅ [deleteMediaFile] Media deleted successfully");
+    return res.data;
+  } catch (error: any) {
+    console.error("❌ [deleteMediaFile] Error deleting media:", error.response?.data || error.message);
     throw error;
   }
 }
