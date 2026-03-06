@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from "axios";
 import { secureStorage } from "@/utils/secureStorage";
 import { API_CONFIG, API_ENDPOINTS } from "@/config/api";
+import { useAuthStore } from "@/store/useAuthStore";
 
 /**
  * ✅ Centralized axios instance with auto token management
@@ -63,10 +64,17 @@ export const setupAxiosInterceptors = () => {
         } catch (refreshError) {
           console.error("❌ Token refresh failed:", refreshError);
 
-          // Clear tokens and redirect to login
+          // Clear tokens and logout (redirect to login)
           await secureStorage.clearAll();
-
-          // Signal app to redirect to login (handled by auth store)
+          try {
+            // Call logout from auth store to update state and redirect
+            const logout = useAuthStore.getState().logout;
+            if (typeof logout === "function") {
+              await logout();
+            }
+          } catch (logoutError) {
+            console.error("❌ Logout after token refresh failed:", logoutError);
+          }
           return Promise.reject(refreshError);
         }
       }

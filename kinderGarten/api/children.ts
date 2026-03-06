@@ -52,7 +52,7 @@ export async function createChild({
   name,
   birthdate,
   parent_name,
-  classroom,
+  classroom_id,
   avatar,
   hasMobileApp,
   clubs = [],
@@ -60,7 +60,7 @@ export async function createChild({
   name: string;
   birthdate: string;
   parent_name: string;
-  classroom?: number;
+  classroom_id?: number;
   avatar?: string;
   hasMobileApp?: boolean;
   clubs?: number[];
@@ -69,7 +69,7 @@ export async function createChild({
     name,
     birthdate,
     parent_name,
-    classroom,
+    classroom_id,
     avatar,
     hasMobileApp,
     clubs,
