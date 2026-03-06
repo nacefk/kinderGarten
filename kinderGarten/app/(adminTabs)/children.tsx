@@ -13,6 +13,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { MessageCircle } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import HeaderBar from "@/components/Header";
@@ -48,6 +49,7 @@ export default function ChildrenScreen() {
   const [childParent, setChildParent] = useState("");
   const [childClass, setChildClass] = useState<string>("");
   const [childBirthdate, setChildBirthdate] = useState<Date | null>(null);
+  const [childGender, setChildGender] = useState<string>("male");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [childImage, setChildImage] = useState<string | null>(null);
   const [hasMobileApp, setHasMobileApp] = useState(false);
@@ -211,23 +213,42 @@ export default function ChildrenScreen() {
 
   // ------------------- ADD CHILD -------------------
   const handleAddChild = async () => {
-    if (!childName.trim() || !childBirthdate || !childParent.trim())
-      return Alert.alert("Champs manquants", "Veuillez remplir tous les champs.");
+    console.log("🧪 [ADD CHILD] Form values:", {
+      childName,
+      childBirthdate,
+      childGender,
+      childParent,
+      childClass,
+    });
+    if (!childName.trim() || !childBirthdate || !childParent.trim() || !childGender)
+      return Alert.alert("Champs manquants", "Veuillez remplir tous les champs obligatoires.");
+
+    const classObj = classes.find((c: any) => c.name === childClass);
+    if (!classObj || !classObj.id) {
+      console.log("⚠️ [ADD CHILD] Invalid class selection:", {
+        childClass,
+        availableClasses: classes,
+      });
+      Alert.alert("Classe invalide", "Veuillez sélectionner une classe valide pour l'enfant.");
+      return;
+    }
 
     setLoading(true);
     try {
-      const classObj = classes.find((c: any) => c.name === childClass);
       let avatarUrl = "https://cdn-icons-png.flaticon.com/512/1946/1946429.png";
       if (childImage && !childImage.startsWith("http")) avatarUrl = await uploadAvatar(childImage);
 
-      const created = await createChild({
+      const payload = {
         name: childName.trim(),
         birthdate: childBirthdate.toISOString().split("T")[0],
+        gender: childGender,
         parent_name: childParent.trim(),
-        classroom: classObj?.id,
+        classroom_id: classObj.id,
         avatar: avatarUrl,
         hasMobileApp,
-      });
+      };
+      console.log("📦 [ADD CHILD] Payload:", payload, "Class:", classObj);
+      const created = await createChild(payload);
 
       setChildren([...children, created]);
       setShowAddChild(false);
@@ -369,6 +390,7 @@ export default function ChildrenScreen() {
     setChildName("");
     setChildParent("");
     setChildBirthdate(null);
+    setChildGender("male");
     setChildImage(null);
     setHasMobileApp(false);
     if (classes.length) setChildClass(classes[0]?.name || "");
@@ -398,6 +420,48 @@ export default function ChildrenScreen() {
           {item.classroom_name || "Aucune classe"}
         </Text>
       </View>
+      {/* Chat icon button */}
+      <TouchableOpacity
+        onPress={async () => {
+          try {
+            // Fetch full child details to get parent_user.id
+            const childDetails = await import("@/api/children").then((mod) =>
+              mod.getChildById(item.id)
+            );
+            const parentId = childDetails?.parent_user?.id;
+            const adminId = 2;
+            console.log(
+              "[Chat Icon] Open chat for parentId:",
+              parentId,
+              "adminId:",
+              adminId,
+              "item:",
+              item
+            );
+            if (!parentId) {
+              alert("Impossible de trouver l'identifiant du parent pour ce profil.");
+              return;
+            }
+            router.push({
+              pathname: "/(chat)/:conversation",
+              params: {
+                parentId,
+                adminId,
+                name: item.parent_name || item.name,
+                avatar: item.avatar,
+              },
+            });
+          } catch (err: any) {
+            console.error("❌ Error fetching child details for chat:", err?.message || err);
+            alert("Erreur lors de la récupération des informations du parent.");
+          }
+        }}
+        style={{ marginRight: 24 }}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <MessageCircle color={colors.accent} size={22} />
+      </TouchableOpacity>
+      <View style={{ width: 8 }} />
       <Ionicons name="chevron-forward-outline" size={18} color={colors.textLight} />
     </TouchableOpacity>
   );
@@ -899,6 +963,81 @@ export default function ChildrenScreen() {
                     <Ionicons name="camera-outline" size={20} color="#6B7280" />
                   </View>
                 </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Gender Selector */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: 20,
+                gap: 24,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setChildGender("male")}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 120,
+                  height: 48,
+                  paddingVertical: 0,
+                  borderRadius: 12,
+                  backgroundColor: childGender === "male" ? "#3B82F6" : colors.cardBackground,
+                  borderWidth: 2,
+                  borderColor: "#3B82F6",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="male"
+                  size={22}
+                  color={childGender === "male" ? "#fff" : "#3B82F6"}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={{
+                    color: childGender === "male" ? "#fff" : "#3B82F6",
+                    fontWeight: "600",
+                    fontSize: 16,
+                  }}
+                >
+                  {t("children.gender_male")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setChildGender("female")}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 120,
+                  height: 48,
+                  paddingVertical: 0,
+                  borderRadius: 12,
+                  backgroundColor: childGender === "female" ? "#EC4899" : colors.cardBackground,
+                  borderWidth: 2,
+                  borderColor: "#EC4899",
+                }}
+              >
+                <Ionicons
+                  name="female"
+                  size={22}
+                  color={childGender === "female" ? "#fff" : "#EC4899"}
+                  style={{ marginRight: 8 }}
+                />
+                <Text
+                  style={{
+                    color: childGender === "female" ? "#fff" : "#EC4899",
+                    fontWeight: "600",
+                    fontSize: 16,
+                  }}
+                >
+                  {t("children.gender_female")}
+                </Text>
               </TouchableOpacity>
             </View>
 
