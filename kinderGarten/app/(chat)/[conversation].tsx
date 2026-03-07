@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -37,20 +37,29 @@ export default function ConversationScreen() {
   ]);
   const [input, setInput] = useState("");
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      text: input,
-      sender: "user",
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages((prev) => [...prev, newMsg]);
+  const handleSend = useCallback(async () => {
+    if (!input.trim() || !id) return;
+    const text = input.trim();
     setInput("");
-  };
+    try {
+      // Save message to backend
+      await sendMessage(id, text);
+      // Fetch updated messages from backend
+      const msgs = await getMessages(id);
+      const formatted = msgs.map((m: any) => ({
+        id: m.id.toString(),
+        text: m.text,
+        sender: m.sender_name === "admin" ? "other" : "user",
+        time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      }));
+      setMessages(formatted);
+    } catch (err: any) {
+      console.error("❌ Error sending message:", err.response?.data || err.message);
+    }
+  }, [input, id]);
 
   return (
     <>
@@ -85,7 +94,6 @@ export default function ConversationScreen() {
           className="flex-row items-center justify-between px-5 pt-16 pb-6"
           style={{ backgroundColor: colors.accentLight }}
         >
-          {" "}
           <View className="flex-row items-center">
             <TouchableOpacity
               onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/chat"))}
@@ -152,7 +160,7 @@ export default function ConversationScreen() {
                 minHeight: 42, // ensures visibility
               }}
             />
-            <TouchableOpacity onPress={sendMessage} className="ml-3 bg-[#C6A57B] rounded-full p-3">
+            <TouchableOpacity onPress={handleSend} className="ml-3 bg-[#C6A57B] rounded-full p-3">
               <Send color="#fff" size={20} />
             </TouchableOpacity>
           </View>

@@ -1,10 +1,11 @@
-import React from "react";
-import { View, Text, FlatList, TouchableOpacity, Image } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, TouchableOpacity, Image, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { ChevronLeft } from "lucide-react-native";
 import HeaderBar from "@/components/Header";
+import { getConversations, deleteConversation } from "@/api/chat";
 
 type ParentPreview = {
   id: string;
@@ -18,29 +19,44 @@ type ParentPreview = {
 export default function ChatListScreen() {
   const router = useRouter();
 
-  const parents: ParentPreview[] = [
-    {
-      id: "1",
-      name: "Sophie Dupont",
-      lastMessage: "Merci pour les photos 😊",
-      time: "09:45",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      unread: 2,
-    },
-    {
-      id: "2",
-      name: "Paul Martin",
-      lastMessage: "Liam a oublié son doudou 🧸",
-      time: "08:22",
-      avatar: "https://i.pravatar.cc/150?img=15",
-      unread: 0,
-    },
-  ];
+  const [conversations, setConversations] = useState<ParentPreview[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchConversations = async () => {
+    setLoading(true);
+    try {
+      const data = await getConversations();
+      console.log("[Conversations API] Raw data:", data);
+      // Map API data to ParentPreview type
+      const mapped = data.map((conv: any) => ({
+        id: conv.id?.toString() || "",
+        name: conv.other_user_name || conv.name || "Parent inconnu",
+        lastMessage: conv.last_message?.text || "",
+        time: conv.last_message?.timestamp
+          ? new Date(conv.last_message.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "",
+        avatar: conv.other_user_avatar || "https://i.pravatar.cc/150?img=5",
+        unread: conv.unread_count || 0,
+      }));
+      console.log("[Conversations] Mapped:", mapped);
+      setConversations(mapped);
+    } catch (e) {
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConversations();
+  }, []);
 
   const renderParent = ({ item }: { item: ParentPreview }) => (
     <TouchableOpacity
       activeOpacity={0.8}
-      // ✅ navigate to (chat)/[conversation].tsx
       onPress={() =>
         router.push({
           pathname: "/(chat)/:conversation",
@@ -51,6 +67,23 @@ export default function ChatListScreen() {
           },
         })
       }
+      onLongPress={() => {
+        Alert.alert(
+          "Supprimer la conversation",
+          `Voulez-vous supprimer la conversation avec ${item.name} ?`,
+          [
+            { text: "Annuler", style: "cancel" },
+            {
+              text: "Supprimer",
+              style: "destructive",
+              onPress: async () => {
+                await deleteConversation(item.id);
+                fetchConversations();
+              },
+            },
+          ]
+        );
+      }}
       className="flex-row items-center mb-4 p-3 rounded-2xl mx-5"
       style={{
         backgroundColor: colors.cardBackground,
@@ -93,12 +126,16 @@ export default function ChatListScreen() {
         Messages
       </Text>
 
-      <FlatList
-        data={parents}
-        keyExtractor={(item) => item.id}
-        renderItem={renderParent}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <Text className="mx-5 mt-10 text-gray-500">Chargement des conversations...</Text>
+      ) : (
+        <FlatList
+          data={conversations}
+          keyExtractor={(item) => item.id}
+          renderItem={renderParent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 }

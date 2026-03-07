@@ -13,6 +13,7 @@ import { Send, ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
 import colors from "@/config/colors";
 import { getOrCreateConversation, getMessages, sendMessage } from "@/api/chat";
+import { useLocalSearchParams } from "expo-router";
 import { useAuthStore } from "@/store/useAuthStore";
 
 type Message = {
@@ -23,6 +24,8 @@ type Message = {
 };
 
 export default function Chat() {
+  const { adminId, parentId } = useLocalSearchParams();
+  console.log("[Chat Screen] Received params:", { adminId, parentId });
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -32,7 +35,8 @@ export default function Chat() {
   useEffect(() => {
     (async () => {
       try {
-        const convo = await getOrCreateConversation();
+        if (!adminId || !parentId) throw new Error("Both adminId and parentId are required to create a conversation.");
+        const convo = await getOrCreateConversation(Number(adminId), Number(parentId));
         setConversationId(convo.id);
 
         const msgs = convo.messages || (await getMessages(convo.id));
@@ -52,7 +56,7 @@ export default function Chat() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [adminId, parentId]);
 
   /** ✅ Send new message */
   const handleSend = useCallback(async () => {
