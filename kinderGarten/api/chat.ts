@@ -16,13 +16,13 @@ import { API_ENDPOINTS } from "@/config/api";
 
 export async function getOrCreateConversation(adminId: number, parentId: number) {
   console.log("[API] Creating conversation with:", { admin: adminId, parent: parentId });
-  
+
   try {
     const res = await api.post(API_ENDPOINTS.CHAT_CONVERSATIONS, {
       admin: adminId,
       parent: parentId,
     });
-    
+
     console.log("[API] ✅ Conversation created:", { id: res.data.id });
     return res.data;
   } catch (error: any) {
@@ -46,7 +46,7 @@ export async function getMessages(conversationId: number) {
 
 export async function sendMessage(conversationId: number, text: string) {
   console.log("[API] Sending message to conversation:", conversationId);
-  
+
   try {
     const res = await api.post(API_ENDPOINTS.CHAT_MESSAGES, {
       conversation: conversationId,

@@ -28,11 +28,17 @@ type Message = {
 };
 
 export default function ConversationScreen() {
-    // Polling interval in milliseconds
-    const POLL_INTERVAL = 8000;
+  // Polling interval in milliseconds
+  const POLL_INTERVAL = 8000;
   const userId = useAppStore((state) => state.userId);
   const { id: paramId, conversation, name, avatar, adminId, parentId } = useLocalSearchParams();
-  console.log("[Conversation] Params received:", { paramId, conversation, name, adminId, parentId });
+  console.log("[Conversation] Params received:", {
+    paramId,
+    conversation,
+    name,
+    adminId,
+    parentId,
+  });
 
   // Handle id possibly being string[]
   let id: string | number | null = null;
@@ -46,15 +52,17 @@ export default function ConversationScreen() {
     id = Number(id);
   }
 
-  const [conversationId, setConversationId] = useState<string | number | null>(id !== "new" ? id : null);
+  const [conversationId, setConversationId] = useState<string | number | null>(
+    id !== "new" ? id : null
+  );
   console.log("[Conversation] Initial ID:", conversationId);
-  
+
   const { language } = useLanguageStore();
   const t = (key: string) => getTranslation(language, key);
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  
+
   // Create conversation if needed
   useEffect(() => {
     if (conversationId) return; // Already have an ID
@@ -62,10 +70,15 @@ export default function ConversationScreen() {
       console.warn("[Conversation] Missing adminId or parentId, cannot create conversation");
       return;
     }
-    
+
     (async () => {
       try {
-        console.log("[Conversation] Creating conversation with admin:", adminId, "parent:", parentId);
+        console.log(
+          "[Conversation] Creating conversation with admin:",
+          adminId,
+          "parent:",
+          parentId
+        );
         const convo = await getOrCreateConversation(Number(adminId), Number(parentId));
         console.log("[Conversation] ✅ Conversation created, ID:", convo.id);
         setConversationId(convo.id);
@@ -88,7 +101,7 @@ export default function ConversationScreen() {
           const msgs = await getMessages(conversationId as number);
           console.log("[Conversation] Raw messages from API:", msgs);
           const formatted = msgs.map((m: any) => {
-            console.log('[DEBUG] userId:', userId, 'm.sender:', m.sender, 'm:', m);
+            console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
             const isCurrentUser = m.sender?.toString() === userId?.toString();
             return {
               id: m.id.toString(),
@@ -139,17 +152,17 @@ export default function ConversationScreen() {
       const msgs = await getMessages(conversationId as number);
       console.log("[Conversation] Raw messages after send:", msgs);
       const formatted = msgs.map((m: any) => {
-          console.log('[DEBUG] userId:', userId, 'm.sender:', m.sender, 'm:', m);
-          const isCurrentUser = m.sender?.toString() === userId?.toString();
-          return {
-            id: m.id.toString(),
-            text: m.text,
-            sender: isCurrentUser ? "user" : "other",
-            time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
+        console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
+        const isCurrentUser = m.sender?.toString() === userId?.toString();
+        return {
+          id: m.id.toString(),
+          text: m.text,
+          sender: isCurrentUser ? "user" : "other",
+          time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
       });
       console.log("[Conversation] Updated messages count:", formatted.length);
       setMessages(formatted);

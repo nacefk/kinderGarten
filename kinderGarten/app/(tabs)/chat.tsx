@@ -25,12 +25,12 @@ type Message = {
 };
 
 export default function Chat() {
-    // Polling interval in milliseconds
-    const POLL_INTERVAL = 8000;
+  // Polling interval in milliseconds
+  const POLL_INTERVAL = 8000;
   const adminId = useAppStore((state) => state.adminId);
   const userId = useAppStore((state) => state.userId);
   console.log("[Chat] Parent screen loaded - adminId:", adminId, "parentId:", userId);
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -47,7 +47,7 @@ export default function Chat() {
           const msgs = await getMessages(cid);
           console.log("[Chat] Raw messages from API:", msgs);
           const formatted = msgs.map((m: any) => {
-            console.log('[DEBUG] userId:', userId, 'm.sender:', m.sender, 'm:', m);
+            console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
             const isCurrentUser = m.sender?.toString() === userId?.toString();
             return {
               id: m.id.toString(),
@@ -85,7 +85,7 @@ export default function Chat() {
           const msgs = convo.messages || (await getMessages(convo.id));
           console.log("[Chat] Raw messages on load:", msgs);
           const formatted = msgs.map((m: any) => {
-            console.log('[DEBUG] userId:', userId, 'm.sender:', m.sender, 'm:', m);
+            console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
             const isCurrentUser = m.sender?.toString() === userId?.toString();
             return {
               id: m.id.toString(),
@@ -135,17 +135,17 @@ export default function Chat() {
       const msgs = await getMessages(conversationId);
       console.log("[CHAT] Raw messages from API:", msgs);
       const formatted = msgs.map((m: any) => {
-          console.log('[DEBUG] userId:', userId, 'm.sender:', m.sender, 'm:', m);
-          const isCurrentUser = m.sender?.toString() === userId?.toString();
-          return {
-            id: m.id.toString(),
-            text: m.text,
-            sender: isCurrentUser ? "user" : "other",
-            time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
+        console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
+        const isCurrentUser = m.sender?.toString() === userId?.toString();
+        return {
+          id: m.id.toString(),
+          text: m.text,
+          sender: isCurrentUser ? "user" : "other",
+          time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
       });
       console.log("[CHAT] ✅ Updated messages count:", formatted.length);
       setMessages(formatted);

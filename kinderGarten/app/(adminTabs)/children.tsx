@@ -43,7 +43,7 @@ export default function ChildrenScreen() {
   // Debug: Check store state on mount
   useEffect(() => {
     console.log("🎯 [Children] Component mounted, adminId =", adminId);
-    
+
     // If adminId is null, try to restore from SecureStore
     if (!adminId) {
       secureStorage.getAdminId().then((storedAdminId) => {
@@ -418,21 +418,21 @@ export default function ChildrenScreen() {
               mod.getChildById(item.id)
             );
             const parentId = childDetails?.parent_user?.id;
-            
+
             console.log("[CHILDREN] Opening chat with:", { parentId, adminId });
-            
+
             if (!parentId) {
               alert("Impossible de trouver l'identifiant du parent pour ce profil.");
               return;
             }
-            
+
             if (!adminId) {
               alert("Admin ID not found. Please log in again.");
               return;
             }
-            
+
             console.log("[CHILDREN] Navigating to chat screen...");
-            
+
             router.push({
               pathname: "/(chat)/[conversation]",
               params: {

@@ -21,7 +21,9 @@ import { validation, getValidationMessage, convertToSlug } from "@/utils/validat
 export default function Login() {
   const router = useRouter();
   const { setIsAuthenticated, setUserRole } = useAuthStore();
-  const { actions: { setAdminId, setUserId } } = useAppStore();
+  const {
+    actions: { setAdminId, setUserId },
+  } = useAppStore();
 
   const [tenant, setTenant] = useState("new-kindergarten");
   const [username, setUsername] = useState("");
@@ -48,13 +50,32 @@ export default function Login() {
       // ✅ Store userId for both parent and admin
       if (result.role === "parent" && result.user_id) {
         setUserId(String(result.user_id));
-        console.log("[Login] ✅ Parent user_id stored in store:", useAppStore.getState().userId, "(should be:", result.user_id, ")");
+        console.log(
+          "[Login] ✅ Parent user_id stored in store:",
+          useAppStore.getState().userId,
+          "(should be:",
+          result.user_id,
+          ")"
+        );
       } else if (result.role === "admin" && result.admin_id) {
         setUserId(String(result.admin_id));
-        console.log("[Login] ✅ Admin userId stored in store:", useAppStore.getState().userId, "(should be:", result.admin_id, ")");
+        console.log(
+          "[Login] ✅ Admin userId stored in store:",
+          useAppStore.getState().userId,
+          "(should be:",
+          result.admin_id,
+          ")"
+        );
       } else {
         setUserId(null);
-        console.log("[Login] ❌ No userId set - role:", result.role, "user_id:", result.user_id, "admin_id:", result.admin_id);
+        console.log(
+          "[Login] ❌ No userId set - role:",
+          result.role,
+          "user_id:",
+          result.user_id,
+          "admin_id:",
+          result.admin_id
+        );
       }
 
       // ✅ Also save to SecureStore for persistence
@@ -74,7 +95,12 @@ export default function Login() {
         router.replace("/(adminTabs)/dashboard");
       } else {
         // Log store state before redirect
-        console.log("[Login] About to redirect to parent home. Store adminId:", useAppStore.getState().adminId, "userId:", useAppStore.getState().userId);
+        console.log(
+          "[Login] About to redirect to parent home. Store adminId:",
+          useAppStore.getState().adminId,
+          "userId:",
+          useAppStore.getState().userId
+        );
         router.replace("/(tabs)/home");
       }
     } catch (error: any) {
