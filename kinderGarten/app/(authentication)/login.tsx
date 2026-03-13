@@ -14,13 +14,16 @@ import { useRouter } from "expo-router";
 import colors from "@/config/colors";
 import { login } from "@/api/auth";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useAppStore } from "@/store/useAppStore";
+import { secureStorage } from "@/utils/secureStorage";
 import { validation, getValidationMessage, convertToSlug } from "@/utils/validation";
 
 export default function Login() {
   const router = useRouter();
   const { setIsAuthenticated, setUserRole } = useAuthStore();
+  const { actions: { setAdminId, setUserId } } = useAppStore();
 
-  const [tenant, setTenant] = useState("");
+  const [tenant, setTenant] = useState("new-kindergarten");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,11 +43,38 @@ export default function Login() {
       // ✅ Update auth state
       setIsAuthenticated(true);
       setUserRole(result.role);
+      setAdminId(result.admin_id || null);
+
+      // ✅ Store userId for both parent and admin
+      if (result.role === "parent" && result.user_id) {
+        setUserId(String(result.user_id));
+        console.log("[Login] ✅ Parent user_id stored in store:", useAppStore.getState().userId, "(should be:", result.user_id, ")");
+      } else if (result.role === "admin" && result.admin_id) {
+        setUserId(String(result.admin_id));
+        console.log("[Login] ✅ Admin userId stored in store:", useAppStore.getState().userId, "(should be:", result.admin_id, ")");
+      } else {
+        setUserId(null);
+        console.log("[Login] ❌ No userId set - role:", result.role, "user_id:", result.user_id, "admin_id:", result.admin_id);
+      }
+
+      // ✅ Also save to SecureStore for persistence
+      if (result.admin_id) {
+        await secureStorage.setAdminId(result.admin_id);
+      }
+
+      // Verify it was stored
+      console.log("✅ [Login] After setAdminId:");
+      console.log("  Result admin_id:", result.admin_id);
+      console.log("  Store state:", useAppStore.getState().adminId);
+      console.log("  Store parent userId:", useAppStore.getState().userId);
 
       // ✅ Redirect based on role
       if (result.role === "admin") {
+        console.log("[Login] Redirecting to admin dashboard");
         router.replace("/(adminTabs)/dashboard");
       } else {
+        // Log store state before redirect
+        console.log("[Login] About to redirect to parent home. Store adminId:", useAppStore.getState().adminId, "userId:", useAppStore.getState().userId);
         router.replace("/(tabs)/home");
       }
     } catch (error: any) {

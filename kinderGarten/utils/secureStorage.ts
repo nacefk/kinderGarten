@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   REFRESH_TOKEN: "kindergarten_refresh_token",
   TENANT_SLUG: "kindergarten_tenant",
   USER_ROLE: "kindergarten_user_role",
+  ADMIN_ID: "kindergarten_admin_id",
 };
 
 /**
@@ -106,6 +107,29 @@ export const secureStorage = {
   },
 
   /**
+   * Save admin ID
+   */
+  async setAdminId(adminId: string | number) {
+    try {
+      await SecureStore.setItemAsync(STORAGE_KEYS.ADMIN_ID, String(adminId));
+    } catch (error) {
+      console.error("❌ Failed to save admin ID:", error);
+    }
+  },
+
+  /**
+   * Retrieve admin ID
+   */
+  async getAdminId(): Promise<string | null> {
+    try {
+      return await SecureStore.getItemAsync(STORAGE_KEYS.ADMIN_ID);
+    } catch (error) {
+      console.error("❌ Failed to retrieve admin ID:", error);
+      return null;
+    }
+  },
+
+  /**
    * Clear all tokens (logout)
    */
   async clearAll() {
@@ -115,6 +139,7 @@ export const secureStorage = {
         SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN).catch(() => {}),
         SecureStore.deleteItemAsync(STORAGE_KEYS.TENANT_SLUG).catch(() => {}),
         SecureStore.deleteItemAsync(STORAGE_KEYS.USER_ROLE).catch(() => {}),
+        SecureStore.deleteItemAsync(STORAGE_KEYS.ADMIN_ID).catch(() => {}),
       ]);
     } catch (error) {
       console.error("❌ Failed to clear secure storage:", error);

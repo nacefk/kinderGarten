@@ -32,7 +32,7 @@ export async function login(username: string, password: string, tenant: string) 
 
     console.log("✅ Login successful, response:", res.data);
 
-const { access, refresh, role } = res.data;
+    const { access, refresh, role, admin_id, user_id } = res.data;
 
     if (!access || !refresh) {
       throw new Error("Missing tokens in login response");
@@ -57,7 +57,7 @@ const { access, refresh, role } = res.data;
         child = children?.[0] || null;
         if (child) {
           console.log("✅ Child profile loaded:", child.name);
-} else {
+        } else {
           console.warn("⚠️ No child linked to this account yet.");
         }
       } catch (e: any) {
@@ -68,7 +68,8 @@ const { access, refresh, role } = res.data;
       }
     }
 
-    return { role, child };
+    // Return admin_id and user_id for parent logins
+    return { role, child, admin_id, user_id };
   } catch (error: any) {
     console.error("❌ Login error:", {
       message: error.message,

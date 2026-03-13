@@ -1,8 +1,36 @@
+
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getChildren, getClubs } from "@/api/children";
 import { getClasses } from "@/api/class";
 
-export const useAppStore = create((set, get) => ({
+type AppStoreState = {
+  data: {
+    childrenList: any[];
+    classList: any[];
+    clubList: any[];
+    galleryItems: any[];
+  };
+  loading: boolean;
+  error: any;
+  adminId: string | null;
+  userId: string | null;
+  actions: {
+    setData: (key: string, value: any) => void;
+    setAdminId: (adminId: string | null) => void;
+    setUserId: (userId: string | null) => void;
+    fetchChildren: (filters?: any) => Promise<void>;
+    fetchClasses: () => Promise<void>;
+    fetchClubs: () => Promise<void>;
+    removeClassFromStore: (classId: number) => void;
+    removeClubFromStore: (clubId: number) => void;
+  };
+};
+
+export const useAppStore = create<AppStoreState>()(
+  persist(
+    (set, get) => ({
   data: {
     childrenList: [],
     classList: [],
@@ -11,12 +39,22 @@ export const useAppStore = create((set, get) => ({
   },
   loading: false,
   error: null,
+  adminId: null,
+  userId: null,
 
   actions: {
     setData: (key, value) => {
       set((state) => ({
         data: { ...state.data, [key]: value },
       }));
+    },
+
+    setAdminId: (adminId) => {
+      set(() => ({ adminId }));
+    },
+
+    setUserId: (userId) => {
+      set(() => ({ userId }));
     },
 
     // 🧒 Generic children fetcher — can filter by class or club
@@ -84,4 +122,40 @@ export const useAppStore = create((set, get) => ({
       }));
     },
   },
-}));
+    }),
+    {
+      name: "app-store",
+      storage: {
+        getItem: async (name) => {
+          try {
+            const value = await AsyncStorage.getItem(name);
+            return value ? JSON.parse(value) : null;
+          } catch (error) {
+            console.error("❌ AsyncStorage getItem error:", error);
+            return null;
+          }
+        },
+        setItem: async (name, value) => {
+          try {
+            const stringValue = JSON.stringify(value);
+            await AsyncStorage.setItem(name, stringValue);
+          } catch (error) {
+            console.error("❌ AsyncStorage setItem error:", error);
+          }
+        },
+        removeItem: async (name) => {
+          try {
+            await AsyncStorage.removeItem(name);
+          } catch (error) {
+            console.error("❌ AsyncStorage removeItem error:", error);
+          }
+        },
+      },
+      partialize: (state) => ({
+        adminId: state.adminId,
+        userId: state.userId,
+        data: state.data,
+      }),
+    }
+  )
+);

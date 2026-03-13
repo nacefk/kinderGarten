@@ -31,13 +31,29 @@ import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAppStore } from "@/store/useAppStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
+import { secureStorage } from "@/utils/secureStorage";
 import { getTranslation } from "@/config/translations";
 
 export default function ChildrenScreen() {
   const router = useRouter();
   const { language } = useLanguageStore();
   const t = (key: string) => getTranslation(language, key);
+  const adminId = useAppStore((state) => state.adminId);
 
+  // Debug: Check store state on mount
+  useEffect(() => {
+    console.log("🎯 [Children] Component mounted, adminId =", adminId);
+    
+    // If adminId is null, try to restore from SecureStore
+    if (!adminId) {
+      secureStorage.getAdminId().then((storedAdminId) => {
+        console.log("🎯 [Children] Restored adminId from SecureStore:", storedAdminId);
+        if (storedAdminId) {
+          useAppStore.getState().actions.setAdminId(storedAdminId);
+        }
+      });
+    }
+  }, []);
   // ------------------- STATE -------------------
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddClass, setShowAddClass] = useState(false);
@@ -59,20 +75,11 @@ export default function ChildrenScreen() {
   const [children, setChildren] = useState<any[]>([]);
   const [filterType, setFilterType] = useState<"class" | "club" | "none">("none");
 
-  const { data, actions } = useAppStore();
+  const data = useAppStore((state) => state.data);
+  const actions = useAppStore((state) => state.actions);
   const { clubList: clubs, classList: classes, childrenList: storeChildren } = data;
   const { fetchChildren, fetchClasses, fetchClubs, removeClassFromStore, removeClubFromStore } =
     actions;
-
-  // ✅ Debug: Log store data changes
-  useEffect(() => {
-    console.log("🎯 [COMPONENT] Store data updated:", {
-      classesCount: Array.isArray(classes) ? classes.length : "NOT ARRAY",
-      classes: classes,
-      clubsCount: Array.isArray(clubs) ? clubs.length : "NOT ARRAY",
-      childrenCount: Array.isArray(storeChildren) ? storeChildren.length : "NOT ARRAY",
-    });
-  }, [classes, clubs, storeChildren]);
 
   // ✅ Sync store children to local state
   useEffect(() => {
@@ -81,27 +88,18 @@ export default function ChildrenScreen() {
     }
   }, [storeChildren]);
 
-  // ✅ Auto-select first class when classes load
-  useEffect(() => {
-    if (Array.isArray(classes) && classes.length > 0 && !selectedClass && !selectedClub) {
-      console.log("🎯 [COMPONENT] Initializing with no filter (show all children)");
-      // Don't auto-select a class - let admins see all children first
-      // setSelectedClass(classes[0].name);
-    }
-  }, [classes]);
-
   // ------------------- INIT -------------------
   useEffect(() => {
     (async () => {
-      console.log("🚀 [COMPONENT] Initializing children screen...");
+      //  console.log("🚀 [COMPONENT] Initializing children screen...");
       setLoading(true);
       try {
         console.log(
           "🚀 [COMPONENT] Calling Promise.all with fetchChildren, fetchClasses, fetchClubs"
         );
         await Promise.all([fetchChildren(), fetchClasses(), fetchClubs()]);
-        console.log("✅ [COMPONENT] All initial fetches completed");
-      } catch (e) {
+        //  console.log("✅ [COMPONENT] All initial fetches completed");
+      } catch (e: any) {
         console.error("❌ [COMPONENT] Error initializing data:", e.message);
         // Set safe defaults to prevent crashes
         setChildren([]);
@@ -142,13 +140,13 @@ export default function ChildrenScreen() {
             console.log("🧹 [COMPONENT] Starting delete for class:", cls);
             setLoading(true);
             await deleteClass(cls.id);
-            console.log("✅ [COMPONENT] Delete successful, removing from store...");
+            // console.log("✅ [COMPONENT] Delete successful, removing from store...");
             // ✅ Remove from store immediately
             removeClassFromStore(cls.id);
-            console.log("✅ [COMPONENT] Store updated, refetching from backend...");
+            // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
             // 🔄 Verify deletion by refetching
             await fetchClasses();
-            console.log("✅ [COMPONENT] Backend verified, classes refreshed");
+            // console.log("✅ [COMPONENT] Backend verified, classes refreshed");
             Alert.alert("Supprimée ✅", "La classe a été supprimée.");
           } catch (e: any) {
             console.error("❌ [COMPONENT] Error deleting class:", e.message);
@@ -174,13 +172,13 @@ export default function ChildrenScreen() {
             console.log("🧹 [COMPONENT] Starting delete for club:", club);
             setLoading(true);
             await deleteClub(club.id);
-            console.log("✅ [COMPONENT] Delete successful, removing from store...");
+            // console.log("✅ [COMPONENT] Delete successful, removing from store...");
             // ✅ Remove from store immediately
             removeClubFromStore(club.id);
-            console.log("✅ [COMPONENT] Store updated, refetching from backend...");
+            // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
             // 🔄 Verify deletion by refetching
             await fetchClubs();
-            console.log("✅ [COMPONENT] Backend verified, clubs refreshed");
+            //  console.log("✅ [COMPONENT] Backend verified, clubs refreshed");
             Alert.alert("Supprimé ✅", "Le club a été supprimé.");
           } catch (e: any) {
             console.error("❌ Error deleting club:", e.message);
@@ -297,38 +295,29 @@ export default function ChildrenScreen() {
   // ------------------- FILTERS -------------------
   useEffect(() => {
     (async () => {
-      console.log("🔄 [COMPONENT] Filter effect triggered with:", { selectedClass, selectedClub });
-      console.log("🔄 [COMPONENT] Available classes:", classes);
+      // console.log("🔄 [COMPONENT] Filter effect triggered with:", { selectedClass, selectedClub });
+      // console.log("🔄 [COMPONENT] Available classes:", classes);
       setLoading(true);
       try {
         let params: any = {};
         if (selectedClass && !selectedClub) {
-          const cls = classes.find((c) => c.name === selectedClass);
-          console.log("🔄 [COMPONENT] Looking for class:", selectedClass);
-          console.log("🔄 [COMPONENT] Classes array:", classes);
-          console.log("🔄 [COMPONENT] Found class:", cls);
+          const cls = classes.find((c: any) => c.name === selectedClass);
+          //  console.log("🔄 [COMPONENT] Looking for class:", selectedClass);
+          //  console.log("🔄 [COMPONENT] Classes array:", classes);
+          //  console.log("🔄 [COMPONENT] Found class:", cls);
           if (cls) {
             params.classroom = cls.id;
-            console.log("🔄 [COMPONENT] Using classroom ID:", cls.id);
+            // console.log("🔄 [COMPONENT] Using classroom ID:", cls.id);
           } else {
             console.warn("⚠️ [COMPONENT] Class not found, using no filter");
           }
         } else if (selectedClub && !selectedClass) {
-          const club = clubs.find((c) => c.name === selectedClub);
-          console.log("🔄 [COMPONENT] Looking for club:", selectedClub, "Found:", club);
+          const club = clubs.find((c: any) => c.name === selectedClub);
+          // console.log("🔄 [COMPONENT] Looking for club:", selectedClub, "Found:", club);
           if (club) params.club = club.id;
         }
-        console.log("🔄 [COMPONENT] Final params:", params);
-        console.log(
-          "🔄 [COMPONENT] Calling getChildren with:",
-          Object.keys(params).length ? params : undefined
-        );
         const data = await getChildren(Object.keys(params).length ? params : undefined);
-        console.log(
-          "✅ [COMPONENT] Children fetched:",
-          Array.isArray(data) ? `${data.length} items` : "NOT ARRAY",
-          data
-        );
+
         // ✅ Defensive: ensure data is an array
         setChildren(Array.isArray(data) ? data : []);
       } catch (e: any) {
@@ -429,22 +418,25 @@ export default function ChildrenScreen() {
               mod.getChildById(item.id)
             );
             const parentId = childDetails?.parent_user?.id;
-            const adminId = 2;
-            console.log(
-              "[Chat Icon] Open chat for parentId:",
-              parentId,
-              "adminId:",
-              adminId,
-              "item:",
-              item
-            );
+            
+            console.log("[CHILDREN] Opening chat with:", { parentId, adminId });
+            
             if (!parentId) {
               alert("Impossible de trouver l'identifiant du parent pour ce profil.");
               return;
             }
+            
+            if (!adminId) {
+              alert("Admin ID not found. Please log in again.");
+              return;
+            }
+            
+            console.log("[CHILDREN] Navigating to chat screen...");
+            
             router.push({
-              pathname: "/(chat)/:conversation",
+              pathname: "/(chat)/[conversation]",
               params: {
+                conversation: "new",
                 parentId,
                 adminId,
                 name: item.parent_name || item.name,

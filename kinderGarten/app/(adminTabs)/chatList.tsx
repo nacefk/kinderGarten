@@ -27,10 +27,10 @@ export default function ChatListScreen() {
     try {
       const data = await getConversations();
       console.log("[Conversations API] Raw data:", data);
-      // Map API data to ParentPreview type
-      const mapped = data.map((conv: any) => ({
+      // Map API data to ParentPreview type (handle paginated response)
+      const mapped = (data.results || []).map((conv: any) => ({
         id: conv.id?.toString() || "",
-        name: conv.other_user_name || conv.name || "Parent inconnu",
+        name: conv.other_user_name || conv.name || conv.parent_name || "Parent inconnu",
         lastMessage: conv.last_message?.text || "",
         time: conv.last_message?.timestamp
           ? new Date(conv.last_message.timestamp).toLocaleTimeString([], {

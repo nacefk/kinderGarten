@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -14,7 +15,7 @@ import { router } from "expo-router";
 import colors from "@/config/colors";
 import { getOrCreateConversation, getMessages, sendMessage } from "@/api/chat";
 import { useLocalSearchParams } from "expo-router";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAppStore } from "@/store/useAppStore";
 
 type Message = {
   id: string;
@@ -24,62 +25,133 @@ type Message = {
 };
 
 export default function Chat() {
-  const { adminId, parentId } = useLocalSearchParams();
-  console.log("[Chat Screen] Received params:", { adminId, parentId });
+    // Polling interval in milliseconds
+    const POLL_INTERVAL = 8000;
+  const adminId = useAppStore((state) => state.adminId);
+  const userId = useAppStore((state) => state.userId);
+  console.log("[Chat] Parent screen loaded - adminId:", adminId, "parentId:", userId);
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  /** ✅ Load or create conversation on mount */
-  useEffect(() => {
-    (async () => {
-      try {
-        if (!adminId || !parentId) throw new Error("Both adminId and parentId are required to create a conversation.");
-        const convo = await getOrCreateConversation(Number(adminId), Number(parentId));
-        setConversationId(convo.id);
+  /** ✅ Load or create conversation on mount, and poll for new messages only when screen is focused */
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+      let poller: NodeJS.Timeout | null = null;
 
-        const msgs = convo.messages || (await getMessages(convo.id));
-        const formatted = msgs.map((m: any) => ({
-          id: m.id.toString(),
-          text: m.text,
-          sender: m.sender_name === "admin" ? "other" : "user",
-          time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        }));
-        setMessages(formatted);
-      } catch (err: any) {
-        console.error("❌ Error loading chat:", err.message);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [adminId, parentId]);
+      const fetchMessages = async (cid: number) => {
+        try {
+          const msgs = await getMessages(cid);
+          console.log("[Chat] Raw messages from API:", msgs);
+          const formatted = msgs.map((m: any) => {
+            console.log('[DEBUG] userId:', userId, 'm.sender:', m.sender, 'm:', m);
+            const isCurrentUser = m.sender?.toString() === userId?.toString();
+            return {
+              id: m.id.toString(),
+              text: m.text,
+              sender: isCurrentUser ? "user" : "other",
+              time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            };
+          });
+          if (isMounted) {
+            setMessages(formatted);
+          }
+        } catch (err: any) {
+          const errMsg = err.response?.data?.detail || err.response?.data?.error || err.message;
+          console.error("❌ Chat error:", errMsg);
+        }
+      };
+
+      (async () => {
+        try {
+          // Only try to create conversation if we have both IDs
+          if (!adminId || !userId) {
+            console.log("[Chat] Missing adminId or userId", { adminId, userId });
+            setLoading(false);
+            return;
+          }
+
+          console.log("[Chat] Creating conversation with admin:", adminId, "parent:", userId);
+          const convo = await getOrCreateConversation(Number(adminId), Number(userId));
+          console.log("[Chat] ✅ Conversation created/retrieved, ID:", convo.id);
+          setConversationId(convo.id);
+
+          const msgs = convo.messages || (await getMessages(convo.id));
+          console.log("[Chat] Raw messages on load:", msgs);
+          const formatted = msgs.map((m: any) => {
+            console.log('[DEBUG] userId:', userId, 'm.sender:', m.sender, 'm:', m);
+            const isCurrentUser = m.sender?.toString() === userId?.toString();
+            return {
+              id: m.id.toString(),
+              text: m.text,
+              sender: isCurrentUser ? "user" : "other",
+              time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            };
+          });
+          if (isMounted) {
+            setMessages(formatted);
+          }
+          setLoading(false);
+
+          // Start polling for new messages only when screen is focused
+          poller = setInterval(() => fetchMessages(convo.id), POLL_INTERVAL);
+        } catch (err: any) {
+          const errMsg = err.response?.data?.detail || err.response?.data?.error || err.message;
+          console.error("❌ Chat error:", errMsg);
+          setLoading(false);
+        }
+      })();
+
+      return () => {
+        isMounted = false;
+        if (poller) clearInterval(poller);
+      };
+    }, [adminId, userId])
+  );
 
   /** ✅ Send new message */
   const handleSend = useCallback(async () => {
-    if (!input.trim() || !conversationId) return;
+    if (!input.trim() || !conversationId) {
+      console.warn("[CHAT] Cannot send - missing input or conversationId");
+      return;
+    }
 
     const text = input.trim();
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      text,
-      sender: "user",
-      time: new Date().toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages((prev) => [...prev, newMsg]);
     setInput("");
 
     try {
+      console.log("[CHAT] Sending message to conversation:", conversationId);
       await sendMessage(conversationId, text);
+      // Fetch latest messages from server after sending
+      const msgs = await getMessages(conversationId);
+      console.log("[CHAT] Raw messages from API:", msgs);
+      const formatted = msgs.map((m: any) => {
+          console.log('[DEBUG] userId:', userId, 'm.sender:', m.sender, 'm:', m);
+          const isCurrentUser = m.sender?.toString() === userId?.toString();
+          return {
+            id: m.id.toString(),
+            text: m.text,
+            sender: isCurrentUser ? "user" : "other",
+            time: new Date(m.timestamp).toLocaleTimeString("fr-FR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          };
+      });
+      console.log("[CHAT] ✅ Updated messages count:", formatted.length);
+      setMessages(formatted);
     } catch (err: any) {
-      console.error("❌ Error sending message:", err.response?.data || err.message);
-      // Optionally show error toast to user
+      const errMsg = err.response?.data?.detail || err.response?.data?.error || err.message;
+      console.error("❌ Failed to send message:", errMsg);
     }
   }, [input, conversationId]);
 

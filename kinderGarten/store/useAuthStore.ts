@@ -6,12 +6,14 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   userRole: "admin" | "parent" | "teacher" | null;
+  adminId: number | null;
   error: string | null;
 
   // Actions
   checkAuth: () => Promise<void>;
   setIsAuthenticated: (value: boolean) => void;
   setUserRole: (role: string) => void;
+  setAdminId: (id: number | null) => void;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -24,7 +26,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: true,
   userRole: null,
+  adminId: null,
   error: null,
+  // Set admin ID
+  setAdminId: (id: number | null) => set({ adminId: id }),
 
   // Check if user is authenticated by looking for valid token
   checkAuth: async () => {
