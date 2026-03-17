@@ -10,7 +10,11 @@ import {
   Alert,
   Modal,
   RefreshControl,
+  TextInput,
+  Platform,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
 import { Bell, LogOut, Smile, Utensils, Moon, MessageSquare } from "lucide-react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,11 +25,33 @@ import { api } from "@/api/api";
 import { getMyChild } from "@/api/children";
 import { getReports } from "@/api/report";
 import { getPlans } from "@/api/planning";
-import { getPendingExtraHours, requestExtraHour } from "@/api/attendance";
+import { getMyExtraHourRequests, requestExtraHour } from "@/api/attendance";
+import { getAttendanceForChild } from "@/api/attendanceStatus";
 import { API_ENDPOINTS } from "@/config/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { getTranslation } from "@/config/translations";
+
+// Absence request API helper
+async function requestPlannedAbsence({
+  childId,
+  start_date,
+  end_date,
+  reason,
+}: {
+  childId: number;
+  start_date: string;
+  end_date: string;
+  reason: string;
+}) {
+  // You may want to move this to /api/absenceRequest.ts for better structure
+  return api.post("attendance/absence/request/", {
+    child: childId,
+    start_date,
+    end_date,
+    reason,
+  });
+}
 
 export default function Home() {
   const { logout } = useAuthStore();
@@ -42,20 +68,40 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
 
+  // Planned Absence State
+  const [showAbsenceModal, setShowAbsenceModal] = useState(false);
+  // Multi-day absence state
+  const [absenceStartDate, setAbsenceStartDate] = useState<Date>(new Date());
+  const [absenceEndDate, setAbsenceEndDate] = useState<Date>(new Date());
+  const [absenceReason, setAbsenceReason] = useState("");
+  const [absenceSubmitting, setAbsenceSubmitting] = useState(false);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
   // 🔹 Function to load all home data
   const loadData = useCallback(async () => {
     try {
       // 1️⃣ Get authenticated child profile
       const child = await getMyChild();
+      console.log("[Home] Child object:", child);
       const classroomId = child.classroom?.id || child.classroom;
       const classroomName = child.classroom?.name || `Classroom ${classroomId}`;
       const childId = child.id;
 
+      // 1️⃣.b Fetch attendance status for this child
+      let attendanceStatus = null;
+      try {
+        attendanceStatus = await getAttendanceForChild(childId);
+        console.log("[Home] Attendance record for child:", attendanceStatus);
+      } catch (e) {
+        console.error("[Home] Error fetching attendance status:", e);
+      }
+
       // 2️⃣ Fetch parallel data
-      const [reports, plans, pendingExtra] = await Promise.all([
+      const [reports, plans, allExtraRequests] = await Promise.all([
         getReports(childId),
         getPlans({ classroom: classroomId }),
-        getPendingExtraHours(),
+        getMyExtraHourRequests(),
       ]);
 
       // 3️⃣ Fetch calendar events
@@ -68,7 +114,7 @@ export default function Home() {
         id: childId,
         name: child.name,
         avatar: child.avatar,
-        present: child.attendanceStatus === "present" || child.present === true,
+        present: attendanceStatus?.status === "present",
         className: classroomName,
       });
 
@@ -91,11 +137,11 @@ export default function Home() {
       } else {
         console.log("📊 [Home] No reports available for this child");
       }
-      setExtraHours(
-        Array.isArray(pendingExtra) && pendingExtra.length > 0
-          ? pendingExtra[0]
-          : { status: "none" }
-      );
+      // Find the most recent request for this child (if any)
+      const myChildRequest = Array.isArray(allExtraRequests)
+        ? allExtraRequests.find((req) => req.child === childId && req.status === "pending")
+        : null;
+      setExtraHours(myChildRequest || { status: "none" });
 
       buildTimeline(plans, eventsRes.data?.results || eventsRes.data, classroomName);
     } catch (err: any) {
@@ -217,22 +263,66 @@ export default function Home() {
       const newMinute = (total % 60).toString().padStart(2, "0");
       const endTime = `${newHour}:${newMinute}`;
 
+      // Build valid ISO datetime strings for today using Date object
+      const today = new Date();
+      const [startHour, startMinute] = baseEnd.split(":").map(Number);
+      const [endHour, endMinute] = endTime.split(":").map(Number);
+      const startDateObj = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startHour, startMinute, 0, 0);
+      const endDateObj = new Date(today.getFullYear(), today.getMonth(), today.getDate(), endHour, endMinute, 0, 0);
+      const startIso = startDateObj.toISOString();
+      const endIso = endDateObj.toISOString();
+
       await requestExtraHour({
         child: child.id,
-        start: baseEnd,
-        end: endTime,
+        duration: selectedOption,
       });
 
-      setExtraHours({
-        ...extraHours,
-        status: "pending",
-        requestedMinutes: selectedOption,
-      });
+      // 1️⃣ Set UI to pending immediately (optimistic update)
+      console.log('[ExtraHour] Setting UI to pending...');
+      setExtraHours({ status: "pending" });
+      setSelectedOption(null);
+
+      // 2️⃣ Fetch actual status from backend
+      try {
+        const allExtraRequests = await getMyExtraHourRequests();
+        // Find the most recent request for this child
+        const myChildRequests = Array.isArray(allExtraRequests)
+          ? allExtraRequests.filter((req) => req.child === child.id)
+          : [];
+        if (myChildRequests.length > 0) {
+          // Sort by created/updated date if available, fallback to first
+          const sorted = myChildRequests.sort((a, b) => {
+            if (a.updated && b.updated) {
+              return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+            }
+            if (a.created && b.created) {
+              return new Date(b.created).getTime() - new Date(a.created).getTime();
+            }
+            return 0;
+          });
+          const latest = sorted[0];
+          console.log('[ExtraHour] Backend response status:', latest.status, latest);
+          setExtraHours(latest);
+        }
+      } catch (fetchErr) {
+        console.warn("⚠️ Error fetching extra hour requests after request:", fetchErr);
+      }
 
       Alert.alert("Request Sent", "Your request is pending approval.");
     } catch (err: any) {
-      console.error("❌ Error:", err.response?.data || err.message);
-      Alert.alert("Error", "Unable to send request.");
+      const apiMessage = err?.response?.data || err?.message || "";
+      console.error("❌ Error:", apiMessage);
+      if (
+        typeof apiMessage === "string" &&
+        apiMessage.toLowerCase().includes("pending extra hour request")
+      ) {
+        Alert.alert(
+          "Pending Request",
+          "You already have a pending request for this child. Please wait for approval or rejection before submitting another."
+        );
+      } else {
+        Alert.alert("Error", "Unable to send request.");
+      }
     }
   }, [selectedOption, extraHours]);
 
@@ -246,45 +336,43 @@ export default function Home() {
     return `${newHour}:${newMinute}`;
   }, [selectedOption, extraHours]);
 
-  // ✅ Polling for attendance status updates
-  useEffect(() => {
-    let pollInterval: ReturnType<typeof setInterval> | null = null;
-
-    const startPolling = async () => {
-      try {
-        pollInterval = setInterval(async () => {
-          try {
-            const response = await getPendingExtraHours();
-            const pendingExtra = response.data || response || [];
-            if (Array.isArray(pendingExtra) && pendingExtra.length > 0) {
-              const current = pendingExtra[0];
-              if (current.status === "approved") {
-                setExtraHours({ status: "approved" });
-              } else if (current.status === "pending") {
-                setExtraHours({ status: "pending" });
-              }
-            }
-          } catch (error) {
-            console.warn("⚠️ Polling error:", error);
-          }
-        }, 30000); // Poll every 30 seconds
-      } catch (error) {
-        console.error("❌ Polling setup failed:", error);
-      }
-    };
-
-    startPolling();
-
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-    };
-  }, []);
-
   // ✅ Logout handler
   const handleLogout = useCallback(async () => {
     await logout();
     router.replace("/(authentication)/login");
   }, [logout]);
+
+  // Planned Absence Submit Handler
+  const handleSubmitAbsence = useCallback(async () => {
+    if (!profile?.id || !absenceStartDate || !absenceEndDate || !absenceReason.trim()) {
+      Alert.alert("Missing info", "Please select a start and end date and enter a reason.");
+      return;
+    }
+    if (absenceEndDate < absenceStartDate) {
+      Alert.alert("Invalid range", "End date cannot be before start date.");
+      return;
+    }
+    setAbsenceSubmitting(true);
+    try {
+      await requestPlannedAbsence({
+        childId: profile.id,
+        start_date: absenceStartDate.toISOString().split("T")[0],
+        end_date: absenceEndDate.toISOString().split("T")[0],
+        reason: absenceReason.trim(),
+      });
+      setShowAbsenceModal(false);
+      setAbsenceReason("");
+      setAbsenceStartDate(new Date());
+      setAbsenceEndDate(new Date());
+      Alert.alert("Success", "Absence reported for selected days.");
+    } catch (err: any) {
+      console.error("❌ Absence request error:", err);
+      const backendMsg = err.response?.data?.message || err.response?.data?.detail || err.message;
+      Alert.alert("Error", backendMsg || "Failed to report absence. Please try again.");
+    } finally {
+      setAbsenceSubmitting(false);
+    }
+  }, [profile, absenceStartDate, absenceEndDate, absenceReason]);
 
   if (loading)
     return (
@@ -343,6 +431,7 @@ export default function Home() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
         }
       >
+        {/* ...existing code... */}
         {/* Daily Summary */}
         <Card title={t("home.today_activity")}>
           {dailySummary ? (
@@ -577,7 +666,240 @@ export default function Home() {
             </View>
           )}
         </Card>
-      </ScrollView>
+
+      {/* Planned Absence Card - styled to match other views */}
+      <Card title={t("home.report_planned_absence") || "Report Planned Absence"}>
+        <TouchableOpacity
+          onPress={() => setShowAbsenceModal(true)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: colors.accent,
+            borderRadius: 12,
+            paddingVertical: 14,
+            paddingHorizontal: 18,
+            marginBottom: 8,
+            shadowColor: colors.accent,
+            shadowOpacity: 0.08,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <Ionicons
+            name="calendar-outline"
+            size={22}
+            color="#fff"
+            style={{ marginRight: 10 }}
+          />
+          <Text
+            style={{
+              color: "#fff",
+              fontWeight: "700",
+              fontSize: 16,
+            }}
+          >
+            {t("home.absence_button_pick_absence_dates") || "Pick absence dates"}
+          </Text>
+        </TouchableOpacity>
+        <Text
+          style={{
+            color: colors.textLight,
+            fontSize: 13,
+            marginLeft: 2,
+            marginBottom: 2,
+          }}
+        >
+          {t("home.absence_section_hint") ||
+            "Let us know if your child will be absent for one or more days."}
+        </Text>
+      </Card>
+    </ScrollView>
+
+      {/* Planned Absence Modal (multi-day, no Card, scrollable) */}
+      <Modal visible={showAbsenceModal} animationType="fade" transparent>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.25)",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.cardBackground,
+              borderRadius: 18,
+              paddingHorizontal: 20,
+              paddingTop: 24,
+              paddingBottom: 28,
+              width: "92%",
+              maxWidth: 440,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.12,
+              shadowRadius: 8,
+              elevation: 8,
+              maxHeight: "90%",
+            }}
+          >
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 8 }}
+            >
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "700",
+                  color: colors.textDark,
+                  marginBottom: 8,
+                  textAlign: "center",
+                }}
+              >
+                {t("home.report_planned_absence")}
+              </Text>
+              <Text
+                style={{
+                  color: colors.textLight,
+                  fontSize: 14,
+                  textAlign: "center",
+                  marginBottom: 18,
+                }}
+              >
+                {t("home.absence_modal_subtitle")}
+              </Text>
+              {/* Start Date Picker */}
+              <TouchableOpacity
+                onPress={() => setShowStartDatePicker(true)}
+                style={{
+                  backgroundColor: colors.accentLight,
+                  borderRadius: 10,
+                  padding: 14,
+                  marginBottom: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 16 }}>
+                  <Ionicons name="calendar-outline" size={18} color={colors.textDark} />{" "}
+                  {absenceStartDate
+                    ? `Start: ${absenceStartDate.toLocaleDateString()}`
+                    : "Select Start Date"}
+                </Text>
+              </TouchableOpacity>
+              {showStartDatePicker && (
+                <DateTimePicker
+                  value={absenceStartDate}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                    setShowStartDatePicker(false);
+                    if (selectedDate) {
+                      setAbsenceStartDate(selectedDate);
+                      if (absenceEndDate < selectedDate) {
+                        setAbsenceEndDate(selectedDate);
+                      }
+                    }
+                  }}
+                  minimumDate={new Date()}
+                />
+              )}
+              {/* End Date Picker */}
+              <TouchableOpacity
+                onPress={() => setShowEndDatePicker(true)}
+                style={{
+                  backgroundColor: colors.accentLight,
+                  borderRadius: 10,
+                  padding: 14,
+                  marginBottom: 18,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 16 }}>
+                  <Ionicons name="calendar-outline" size={18} color={colors.textDark} />{" "}
+                  {absenceEndDate
+                    ? `End: ${absenceEndDate.toLocaleDateString()}`
+                    : "Select End Date"}
+                </Text>
+              </TouchableOpacity>
+              {showEndDatePicker && (
+                <DateTimePicker
+                  value={absenceEndDate}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                    setShowEndDatePicker(false);
+                    if (selectedDate) setAbsenceEndDate(selectedDate);
+                  }}
+                  minimumDate={absenceStartDate > new Date() ? absenceStartDate : new Date()}
+                />
+              )}
+              {/* Reason Input */}
+              <TextInput
+                placeholder={t("home.absence_reason_placeholder")}
+                value={absenceReason}
+                onChangeText={setAbsenceReason}
+                style={{
+                  backgroundColor: colors.background,
+                  borderRadius: 10,
+                  padding: 14,
+                  marginBottom: 18,
+                  color: colors.textDark,
+                  fontSize: 16,
+                  minHeight: 48,
+                  textAlignVertical: "top",
+                }}
+                multiline
+                numberOfLines={3}
+                editable={!absenceSubmitting}
+                maxLength={200}
+              />
+              {/* Absence Days Counter */}
+              <View style={{ alignItems: "center", marginBottom: 10 }}>
+                <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 15 }}>
+                  {t("home.absence_days_count") || "Selected days:"} {Math.max(1, Math.round((absenceEndDate.getTime() - absenceStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)}
+                </Text>
+              </View>
+              {/* Submit Button */}
+              <TouchableOpacity
+                onPress={handleSubmitAbsence}
+                disabled={absenceSubmitting || !absenceReason.trim()}
+                style={{
+                  backgroundColor:
+                    absenceSubmitting || !absenceReason.trim() ? colors.textLight : colors.accent,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  opacity: absenceSubmitting || !absenceReason.trim() ? 0.6 : 1,
+                  marginBottom: 10,
+                }}
+              >
+                <Text
+                  style={{ color: "#FFF", textAlign: "center", fontWeight: "700", fontSize: 16 }}
+                >
+                  {absenceSubmitting
+                    ? t("common.loading")
+                    : t("home.submit_absence")}
+                </Text>
+              </TouchableOpacity>
+              {/* Cancel Button */}
+              <TouchableOpacity
+                onPress={() => setShowAbsenceModal(false)}
+                disabled={absenceSubmitting}
+                style={{
+                  backgroundColor: colors.error,
+                  paddingVertical: 12,
+                  borderRadius: 10,
+                  opacity: absenceSubmitting ? 0.6 : 1,
+                }}
+              >
+                <Text
+                  style={{ color: "#FFF", textAlign: "center", fontWeight: "600", fontSize: 15 }}
+                >
+                  {t("common.cancel") || "Cancel"}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       {/* Language Modal */}
       <Modal visible={showLanguageModal} animationType="fade" transparent>

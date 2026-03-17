@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { getTodayAbsences } from "@/api/absence";
+// Absences Today State and Fetch
+
 import {
   View,
   Text,
@@ -16,46 +19,101 @@ import { useLanguageStore } from "@/store/useLanguageStore";
 import { getTranslation, Language } from "@/config/translations";
 import {
   getAttendanceSummary,
-  getPendingExtraHours,
+  getTodayExtraHours,
   approveExtraHour,
   rejectExtraHour,
 } from "@/api/attendance";
 
 type ExtraHour = {
-  id: number;
-  child_name: string;
-  start: string;
-  end: string;
-  status: "pending" | "approved" | "rejected";
+  id?: number;
+  request_id?: number;
+  child_name?: string;
+  child?: { name: string } | string;
+  date?: string;
+  start?: string;
+  end?: string;
+  duration?: number;
+  status?: "pending" | "approved" | "rejected";
 };
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { language, setLanguage } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
+  const languages: Language[] = ["en", "fr", "ar"];
   const [presence, setPresence] = useState({ present: 0, absent: 0 });
   const [extraHours, setExtraHours] = useState<ExtraHour[]>([]);
   const [loadingPresence, setLoadingPresence] = useState(true);
   const [loadingExtra, setLoadingExtra] = useState(true);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
-
-  const t = (key: string) => getTranslation(language, key);
-  const languages: Language[] = ["en", "fr", "ar"];
-
+  type AbsencesTodayType = any[] | { error: string };
+  const [absencesToday, setAbsencesToday] = useState<AbsencesTodayType>([]);
+  const [loadingAbsences, setLoadingAbsences] = useState(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingAbsences(true);
+        const data = await getTodayAbsences();
+        setAbsencesToday(
+          Array.isArray(data) ? data : data && Array.isArray(data.results) ? data.results : data
+        );
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          setAbsencesToday({ error: "unauthorized" });
+        } else {
+          console.error("❌ Error loading today's absences:", err?.message || err);
+          setAbsencesToday([]);
+        }
+      } finally {
+        setLoadingAbsences(false);
+      }
+    })();
+  }, []);
   const handleApprove = async (id: number) => {
     try {
       await approveExtraHour(id);
-      setExtraHours((prev) => prev.filter((item) => item.id !== id));
-    } catch (e) {
-      console.error("❌ Approve error:", e);
+      setExtraHours((prev) => prev.filter((item) => {
+        const itemId = item.id !== undefined ? item.id : (item as any).request_id;
+        return itemId !== id;
+      }));
+    } catch (e: any) {
+      const apiMessage = e?.response?.data || e?.message || "";
+      console.error("❌ Approve error:", apiMessage);
+      let msg = "Unable to approve request.";
+      if (typeof apiMessage === "string") {
+        if (apiMessage.toLowerCase().includes("already approved") || apiMessage.toLowerCase().includes("already rejected")) {
+          msg = "This request has already been processed.";
+        } else if (apiMessage.toLowerCase().includes("does not exist")) {
+          msg = "This request no longer exists.";
+        } else if (apiMessage.toLowerCase().includes("not allowed") || apiMessage.toLowerCase().includes("permission")) {
+          msg = "You do not have permission to approve this request.";
+        }
+      }
+      alert(msg);
     }
   };
 
   const handleReject = async (id: number) => {
     try {
       await rejectExtraHour(id);
-      setExtraHours((prev) => prev.filter((item) => item.id !== id));
-    } catch (e) {
-      console.error("❌ Reject error:", e);
+      setExtraHours((prev) => prev.filter((item) => {
+        const itemId = item.id !== undefined ? item.id : (item as any).request_id;
+        return itemId !== id;
+      }));
+    } catch (e: any) {
+      const apiMessage = e?.response?.data || e?.message || "";
+      console.error("❌ Reject error:", apiMessage);
+      let msg = "Unable to reject request.";
+      if (typeof apiMessage === "string") {
+        if (apiMessage.toLowerCase().includes("already approved") || apiMessage.toLowerCase().includes("already rejected")) {
+          msg = "This request has already been processed.";
+        } else if (apiMessage.toLowerCase().includes("does not exist")) {
+          msg = "This request no longer exists.";
+        } else if (apiMessage.toLowerCase().includes("not allowed") || apiMessage.toLowerCase().includes("permission")) {
+          msg = "You do not have permission to reject this request.";
+        }
+      }
+      alert(msg);
     }
   };
 
@@ -88,15 +146,19 @@ export default function DashboardScreen() {
     (async () => {
       try {
         setLoadingExtra(true);
-        const data = await getPendingExtraHours();
-        // Ensure data is an array (handle cases where API returns object)
+        const data = await getTodayExtraHours();
+        console.log('[Dashboard] Received today extra hours data:', data);
+        // Data should be an array directly from the API
         if (Array.isArray(data)) {
+          console.log('[Dashboard] Data is array:', data);
           setExtraHours(data);
         } else if (data && typeof data === "object") {
-          // If API returns {results: [...]} or similar
+          // If API returns {results: [...]} (fallback)
           const results = (data as any).results || (data as any).data || [];
+          console.log('[Dashboard] Data is object, results:', results);
           setExtraHours(Array.isArray(results) ? results : []);
         } else {
+          console.log('[Dashboard] Data is neither array nor object');
           setExtraHours([]);
         }
       } catch (err: any) {
@@ -156,6 +218,37 @@ export default function DashboardScreen() {
 
         {loadingPresence ? (
           <ActivityIndicator color={colors.accent} size="small" />
+        ) : presence.present === 0 && presence.absent === 0 ? (
+          <View
+            style={{
+              backgroundColor: '#F5F5F5',
+              borderRadius: 14,
+              padding: 18,
+              alignItems: 'center',
+              marginTop: 12,
+              marginBottom: 8,
+            }}
+          >
+            <Ionicons name="checkbox-outline" size={32} color={colors.accent} style={{ marginBottom: 6 }} />
+            <Text style={{ color: colors.textDark, fontWeight: '600', fontSize: 15, textAlign: 'center', marginBottom: 6 }}>
+              {t("dashboard.no_attendance_marked")}
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push("/presence")}
+              style={{
+                backgroundColor: colors.accent,
+                borderRadius: 8,
+                paddingVertical: 8,
+                paddingHorizontal: 20,
+                marginTop: 2,
+              }}
+              activeOpacity={0.9}
+            >
+              <Text style={{ color: '#fff', fontWeight: '500', fontSize: 14 }}>
+                {t("dashboard.mark_attendance_now")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <View className="flex-row justify-between items-center mt-3">
             <View>
@@ -174,8 +267,129 @@ export default function DashboardScreen() {
         )}
       </TouchableOpacity>
 
-      {/* --- Extra Hours Bloc --- */}
+      {/* --- Absences Today Bloc (Modernized) --- */}
       <View
+        className="rounded-2xl p-5 mb-6 mx-5"
+        style={{
+          backgroundColor: colors.cardBackground,
+          shadowColor: "#000",
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
+          elevation: 2,
+        }}
+      >
+        <View className="flex-row items-center justify-between mb-2">
+          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+            {t("dashboard.absent")} {t("dashboard.today")}
+          </Text>
+          <Ionicons name="alert-circle-outline" size={22} color={colors.accent} />
+        </View>
+        {loadingAbsences ? (
+          <ActivityIndicator color={colors.accent} size="small" />
+        ) : absencesToday && !Array.isArray(absencesToday) && absencesToday.error === "unauthorized" ? (
+          <Text style={{ color: colors.error, textAlign: "center", marginTop: 10 }}>
+            {typeof t === "function"
+              ? t("dashboard.absences_unauthorized")
+              : "You are not authorized to view absences. Please log in as an admin."}
+          </Text>
+        ) : Array.isArray(absencesToday) && absencesToday?.length > 0 ? (
+          <View style={{ marginTop: 8 }}>
+            {absencesToday.map((abs, idx) => {
+              const name = abs.child_name || abs.child || "Unknown";
+              const initials = name
+                .split(" ")
+                .map((n: string) => n[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+              return (
+                <View
+                  key={abs.id || idx}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: "#F8F6F2",
+                    borderRadius: 16,
+                    paddingVertical: 12,
+                    paddingHorizontal: 14,
+                    marginBottom: 10,
+                    shadowColor: colors.accent,
+                    shadowOpacity: 0.08,
+                    shadowRadius: 2,
+                    elevation: 1,
+                  }}
+                >
+                  {/* Avatar/Initials */}
+                  <View
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 19,
+                      backgroundColor: colors.accentLight,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12,
+                    }}
+                  >
+                    <Text style={{ color: colors.accent, fontWeight: "bold", fontSize: 16 }}>
+                      {initials}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    {/* Name */}
+                    <Text
+                      numberOfLines={1}
+                      style={{ color: colors.textDark, fontWeight: "700", fontSize: 15 }}
+                    >
+                      {name}
+                    </Text>
+                    {/* Reason Title */}
+                    <Text
+                      style={{ color: colors.text, fontWeight: "600", fontSize: 12, marginTop: 1 }}
+                    >
+                      {t("dashboard.reason_title")}
+                    </Text>
+                    {/* Reason */}
+                    <Text
+                      numberOfLines={2}
+                      style={{ color: colors.textLight, fontSize: 12, marginTop: 1 }}
+                    >
+                      {abs.reason || t("dashboard.no_reason")}
+                    </Text>
+                    {/* Full Period */}
+                    {abs.start_date && abs.end_date && (
+                      <Text
+                        style={{ color: colors.warning, fontSize: 11, marginTop: 2 }}
+                      >
+                        {t("dashboard.absence_period")}: {abs.start_date} → {abs.end_date}
+                      </Text>
+                    )}
+                  </View>
+                  {/* Status Icon */}
+                  <Ionicons
+                    name="remove-circle"
+                    size={18}
+                    color={colors.error}
+                    style={{ marginLeft: 10, alignSelf: "flex-start", marginTop: 2 }}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={{ alignItems: "center", marginTop: 16, marginBottom: 8 }}>
+            <Ionicons name="happy-outline" size={36} color={colors.accent} style={{ marginBottom: 4 }} />
+            <Text style={{ color: colors.textLight, textAlign: "center", fontSize: 15 }}>
+              {typeof t === "function" ? t("dashboard.no_absences_today") : "No absences today."}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* --- Extra Hours Bloc --- */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => router.push("/(admin)/extra-hours")}
         className="rounded-2xl p-5 mb-10 mx-5"
         style={{
           backgroundColor: colors.cardBackground,
@@ -187,7 +401,7 @@ export default function DashboardScreen() {
       >
         <View className="flex-row items-center justify-between mb-2">
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            {t("dashboard.extra_hours")}
+            {t("dashboard.extra_hours")} {t("dashboard.today")}
           </Text>
           <Ionicons name="time-outline" size={22} color={colors.accent} />
         </View>
@@ -199,45 +413,45 @@ export default function DashboardScreen() {
             {t("dashboard.no_requests")}
           </Text>
         ) : (
-          extraHours.map((req) => (
-            <View
-              key={req.id}
-              className="flex-row items-center justify-between mb-3 border-b pb-2"
-              style={{ borderColor: "#eee" }}
-            >
-              <View>
-                <Text className="font-medium" style={{ color: colors.textDark }}>
-                  {req.child_name}
-                </Text>
-                <Text className="text-sm" style={{ color: colors.textLight }}>
-                  {formatTime(req.start)} → {formatTime(req.end)}
-                </Text>
-              </View>
-
-              {/* ACTION BUTTONS */}
-              <View className="flex-row">
-                {/* APPROVE */}
-                <TouchableOpacity
-                  onPress={() => handleApprove(req.id)}
-                  className="mr-2 p-2 rounded-lg"
-                  style={{ backgroundColor: "#4CAF50" }}
-                >
-                  <Ionicons name="checkmark" size={20} color="#fff" />
-                </TouchableOpacity>
-
-                {/* REJECT */}
-                <TouchableOpacity
-                  onPress={() => handleReject(req.id)}
-                  className="p-2 rounded-lg"
-                  style={{ backgroundColor: "#E53935" }}
-                >
-                  <Ionicons name="close" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
+          <View style={{ marginTop: 8 }}>
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 14 }}>
+                {extraHours.length} {extraHours.length === 1 ? "request" : "requests"}
+              </Text>
             </View>
-          ))
+            {extraHours.slice(0, 3).map((req) => (
+              <View
+                key={(req.request_id || req.id) ?? Math.random()}
+                className="flex-row items-center justify-between mb-3 border-b pb-2"
+                style={{ borderColor: "#eee" }}
+              >
+                <View>
+                  <Text className="font-medium" style={{ color: colors.textDark }}>
+                    {typeof req.child === 'string' ? req.child : req.child?.name || req.child_name || "Unknown"}
+                  </Text>
+                  <Text className="text-sm" style={{ color: colors.textLight }}>
+                    {t("dashboard.extra_hours_duration")}: {req.duration ?? 0} min
+                  </Text>
+                </View>
+              </View>
+            ))}
+            {extraHours.length > 3 && (
+              <View style={{ marginTop: 8 }}>
+                <Text
+                  style={{
+                    color: colors.accent,
+                    fontWeight: "600",
+                    fontSize: 13,
+                    textAlign: "center",
+                  }}
+                >
+                  +{extraHours.length - 3} more
+                </Text>
+              </View>
+            )}
+          </View>
         )}
-      </View>
+      </TouchableOpacity>
 
       {/* Language Selection Modal */}
       <Modal visible={showLanguageModal} animationType="fade" transparent>

@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
   ATTENDANCE: "attendance/",
   ATTENDANCE_SUMMARY: "attendance/summary/",
   ATTENDANCE_EXTRA: "attendance/extra/",
+  ATTENDANCE_EXTRA_HOURS: "attendance/extra-hours/",
   ATTENDANCE_UPDATE: "attendance/update/",
   ATTENDANCE_REALTIME: "attendance/realtime/",
   PLANNING_EVENTS: "planning/events/",

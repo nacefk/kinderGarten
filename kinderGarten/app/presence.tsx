@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { secureStorage } from "@/utils/secureStorage";
 import colors from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "expo-router";
@@ -19,7 +19,7 @@ import HeaderBar from "@/components/Header";
 
 type PresenceStatus = "present" | "absent";
 
-const API_BASE = "http://127.0.0.1:8000/api/attendance/"; // ✅ ensure trailing slash
+const API_BASE = "http://192.168.1.230:8000/api/attendance/"; // ✅ ensure trailing slash
 
 export default function PresenceScreen() {
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function PresenceScreen() {
   const fetchAttendance = async () => {
     try {
       setLoading(true);
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await secureStorage.getAccessToken();
       if (!token) return;
 
       const res = await axios.get(API_BASE, {
@@ -43,7 +43,12 @@ export default function PresenceScreen() {
       });
       // Convert list into { childId: status }
       const map: Record<number, PresenceStatus> = {};
-      res.data.forEach((record: any) => {
+      const attendanceArray = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data.results)
+        ? res.data.results
+        : [];
+      attendanceArray.forEach((record: any) => {
         map[record.child] = record.status as PresenceStatus;
       });
 
@@ -82,7 +87,7 @@ export default function PresenceScreen() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await secureStorage.getAccessToken();
       if (!token) {
         Alert.alert("Erreur", "Aucun jeton d'authentification trouvé.");
         return;
