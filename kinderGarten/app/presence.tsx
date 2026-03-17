@@ -46,8 +46,8 @@ export default function PresenceScreen() {
       const attendanceArray = Array.isArray(res.data)
         ? res.data
         : Array.isArray(res.data.results)
-        ? res.data.results
-        : [];
+          ? res.data.results
+          : [];
       attendanceArray.forEach((record: any) => {
         map[record.child] = record.status as PresenceStatus;
       });

@@ -72,20 +72,28 @@ export default function DashboardScreen() {
   const handleApprove = async (id: number) => {
     try {
       await approveExtraHour(id);
-      setExtraHours((prev) => prev.filter((item) => {
-        const itemId = item.id !== undefined ? item.id : (item as any).request_id;
-        return itemId !== id;
-      }));
+      setExtraHours((prev) =>
+        prev.filter((item) => {
+          const itemId = item.id !== undefined ? item.id : (item as any).request_id;
+          return itemId !== id;
+        })
+      );
     } catch (e: any) {
       const apiMessage = e?.response?.data || e?.message || "";
       console.error("❌ Approve error:", apiMessage);
       let msg = "Unable to approve request.";
       if (typeof apiMessage === "string") {
-        if (apiMessage.toLowerCase().includes("already approved") || apiMessage.toLowerCase().includes("already rejected")) {
+        if (
+          apiMessage.toLowerCase().includes("already approved") ||
+          apiMessage.toLowerCase().includes("already rejected")
+        ) {
           msg = "This request has already been processed.";
         } else if (apiMessage.toLowerCase().includes("does not exist")) {
           msg = "This request no longer exists.";
-        } else if (apiMessage.toLowerCase().includes("not allowed") || apiMessage.toLowerCase().includes("permission")) {
+        } else if (
+          apiMessage.toLowerCase().includes("not allowed") ||
+          apiMessage.toLowerCase().includes("permission")
+        ) {
           msg = "You do not have permission to approve this request.";
         }
       }
@@ -96,20 +104,28 @@ export default function DashboardScreen() {
   const handleReject = async (id: number) => {
     try {
       await rejectExtraHour(id);
-      setExtraHours((prev) => prev.filter((item) => {
-        const itemId = item.id !== undefined ? item.id : (item as any).request_id;
-        return itemId !== id;
-      }));
+      setExtraHours((prev) =>
+        prev.filter((item) => {
+          const itemId = item.id !== undefined ? item.id : (item as any).request_id;
+          return itemId !== id;
+        })
+      );
     } catch (e: any) {
       const apiMessage = e?.response?.data || e?.message || "";
       console.error("❌ Reject error:", apiMessage);
       let msg = "Unable to reject request.";
       if (typeof apiMessage === "string") {
-        if (apiMessage.toLowerCase().includes("already approved") || apiMessage.toLowerCase().includes("already rejected")) {
+        if (
+          apiMessage.toLowerCase().includes("already approved") ||
+          apiMessage.toLowerCase().includes("already rejected")
+        ) {
           msg = "This request has already been processed.";
         } else if (apiMessage.toLowerCase().includes("does not exist")) {
           msg = "This request no longer exists.";
-        } else if (apiMessage.toLowerCase().includes("not allowed") || apiMessage.toLowerCase().includes("permission")) {
+        } else if (
+          apiMessage.toLowerCase().includes("not allowed") ||
+          apiMessage.toLowerCase().includes("permission")
+        ) {
           msg = "You do not have permission to reject this request.";
         }
       }
@@ -147,18 +163,18 @@ export default function DashboardScreen() {
       try {
         setLoadingExtra(true);
         const data = await getTodayExtraHours();
-        console.log('[Dashboard] Received today extra hours data:', data);
+        console.log("[Dashboard] Received today extra hours data:", data);
         // Data should be an array directly from the API
         if (Array.isArray(data)) {
-          console.log('[Dashboard] Data is array:', data);
+          console.log("[Dashboard] Data is array:", data);
           setExtraHours(data);
         } else if (data && typeof data === "object") {
           // If API returns {results: [...]} (fallback)
           const results = (data as any).results || (data as any).data || [];
-          console.log('[Dashboard] Data is object, results:', results);
+          console.log("[Dashboard] Data is object, results:", results);
           setExtraHours(Array.isArray(results) ? results : []);
         } else {
-          console.log('[Dashboard] Data is neither array nor object');
+          console.log("[Dashboard] Data is neither array nor object");
           setExtraHours([]);
         }
       } catch (err: any) {
@@ -221,16 +237,29 @@ export default function DashboardScreen() {
         ) : presence.present === 0 && presence.absent === 0 ? (
           <View
             style={{
-              backgroundColor: '#F5F5F5',
+              backgroundColor: "#F5F5F5",
               borderRadius: 14,
               padding: 18,
-              alignItems: 'center',
+              alignItems: "center",
               marginTop: 12,
               marginBottom: 8,
             }}
           >
-            <Ionicons name="checkbox-outline" size={32} color={colors.accent} style={{ marginBottom: 6 }} />
-            <Text style={{ color: colors.textDark, fontWeight: '600', fontSize: 15, textAlign: 'center', marginBottom: 6 }}>
+            <Ionicons
+              name="checkbox-outline"
+              size={32}
+              color={colors.accent}
+              style={{ marginBottom: 6 }}
+            />
+            <Text
+              style={{
+                color: colors.textDark,
+                fontWeight: "600",
+                fontSize: 15,
+                textAlign: "center",
+                marginBottom: 6,
+              }}
+            >
               {t("dashboard.no_attendance_marked")}
             </Text>
             <TouchableOpacity
@@ -244,7 +273,7 @@ export default function DashboardScreen() {
               }}
               activeOpacity={0.9}
             >
-              <Text style={{ color: '#fff', fontWeight: '500', fontSize: 14 }}>
+              <Text style={{ color: "#fff", fontWeight: "500", fontSize: 14 }}>
                 {t("dashboard.mark_attendance_now")}
               </Text>
             </TouchableOpacity>
@@ -286,7 +315,9 @@ export default function DashboardScreen() {
         </View>
         {loadingAbsences ? (
           <ActivityIndicator color={colors.accent} size="small" />
-        ) : absencesToday && !Array.isArray(absencesToday) && absencesToday.error === "unauthorized" ? (
+        ) : absencesToday &&
+          !Array.isArray(absencesToday) &&
+          absencesToday.error === "unauthorized" ? (
           <Text style={{ color: colors.error, textAlign: "center", marginTop: 10 }}>
             {typeof t === "function"
               ? t("dashboard.absences_unauthorized")
@@ -306,8 +337,8 @@ export default function DashboardScreen() {
                 <View
                   key={abs.id || idx}
                   style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
+                    flexDirection: "row",
+                    alignItems: "center",
                     backgroundColor: "#F8F6F2",
                     borderRadius: 16,
                     paddingVertical: 12,
@@ -326,8 +357,8 @@ export default function DashboardScreen() {
                       height: 38,
                       borderRadius: 19,
                       backgroundColor: colors.accentLight,
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      alignItems: "center",
+                      justifyContent: "center",
                       marginRight: 12,
                     }}
                   >
@@ -358,9 +389,7 @@ export default function DashboardScreen() {
                     </Text>
                     {/* Full Period */}
                     {abs.start_date && abs.end_date && (
-                      <Text
-                        style={{ color: colors.warning, fontSize: 11, marginTop: 2 }}
-                      >
+                      <Text style={{ color: colors.warning, fontSize: 11, marginTop: 2 }}>
                         {t("dashboard.absence_period")}: {abs.start_date} → {abs.end_date}
                       </Text>
                     )}
@@ -378,7 +407,12 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <View style={{ alignItems: "center", marginTop: 16, marginBottom: 8 }}>
-            <Ionicons name="happy-outline" size={36} color={colors.accent} style={{ marginBottom: 4 }} />
+            <Ionicons
+              name="happy-outline"
+              size={36}
+              color={colors.accent}
+              style={{ marginBottom: 4 }}
+            />
             <Text style={{ color: colors.textLight, textAlign: "center", fontSize: 15 }}>
               {typeof t === "function" ? t("dashboard.no_absences_today") : "No absences today."}
             </Text>
@@ -427,7 +461,9 @@ export default function DashboardScreen() {
               >
                 <View>
                   <Text className="font-medium" style={{ color: colors.textDark }}>
-                    {typeof req.child === 'string' ? req.child : req.child?.name || req.child_name || "Unknown"}
+                    {typeof req.child === "string"
+                      ? req.child
+                      : req.child?.name || req.child_name || "Unknown"}
                   </Text>
                   <Text className="text-sm" style={{ color: colors.textLight }}>
                     {t("dashboard.extra_hours_duration")}: {req.duration ?? 0} min

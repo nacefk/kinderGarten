@@ -84,7 +84,7 @@ export async function rejectExtraHour(id: number) {
 /** Get all extra hours (for admin) - ordered by date/time */
 export async function getAllExtraHours() {
   try {
-    const response = await withRetry(() => 
+    const response = await withRetry(() =>
       api.get(API_ENDPOINTS.ATTENDANCE_EXTRA_HOURS)
     );
     console.log('[getAllExtraHours] Full response:', response.data);
@@ -104,12 +104,12 @@ export async function getAllExtraHours() {
 /** Get today's extra hour requests (for dashboard) */
 export async function getTodayExtraHours() {
   try {
-    const response = await withRetry(() => 
+    const response = await withRetry(() =>
       api.get(API_ENDPOINTS.ATTENDANCE_EXTRA_HOURS)
     );
-    
+
     console.log('[getTodayExtraHours] Full response:', response.data);
-    
+
     // Get today's date in local timezone (YYYY-MM-DD format)
     const today = new Date();
     const todayFormatted = [
@@ -117,46 +117,46 @@ export async function getTodayExtraHours() {
       String(today.getMonth() + 1).padStart(2, '0'),
       String(today.getDate()).padStart(2, '0'),
     ].join('-');
-    
+
     let items: any[] = [];
-    
+
     if (Array.isArray(response.data)) {
       items = response.data;
     } else if (response.data && typeof response.data === "object") {
       const results = (response.data as any).results || (response.data as any).data || [];
       items = Array.isArray(results) ? results : [];
     }
-    
+
     console.log('[getTodayExtraHours] Parsed items:', items);
     console.log('[getTodayExtraHours] Today date:', todayFormatted);
-    
+
     // Filter by today's date - check multiple possible date fields
     const todayItems = items.filter(item => {
       // Try different possible date field names from the API
-      let itemDate = item.created_at || 
-                     item.date || 
-                     item.request_date || 
+      let itemDate = item.created_at ||
+                     item.date ||
+                     item.request_date ||
                      item.createdAt ||
                      (item.timestamp ? item.timestamp.split('T')[0] : null);
-      
+
       // Extract just the date part from ISO timestamp (YYYY-MM-DD)
       if (itemDate && typeof itemDate === 'string') {
         itemDate = itemDate.split('T')[0]; // Remove time and timezone
       }
-      
+
       if (!itemDate) {
         console.log('[getTodayExtraHours] Item has no date field:', item);
         return true; // Include items with no date as fallback
       }
-      
+
       const dateStr = itemDate;
       const matches = dateStr === todayFormatted;
       console.log('[getTodayExtraHours] Item date:', dateStr, 'matches today:', matches);
       return matches;
     });
-    
+
     console.log('[getTodayExtraHours] Filtered items count:', todayItems.length);
-    
+
     // Return in same format as input
     if (Array.isArray(response.data)) {
       return todayItems;

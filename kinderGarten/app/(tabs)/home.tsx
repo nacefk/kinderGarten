@@ -267,8 +267,24 @@ export default function Home() {
       const today = new Date();
       const [startHour, startMinute] = baseEnd.split(":").map(Number);
       const [endHour, endMinute] = endTime.split(":").map(Number);
-      const startDateObj = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startHour, startMinute, 0, 0);
-      const endDateObj = new Date(today.getFullYear(), today.getMonth(), today.getDate(), endHour, endMinute, 0, 0);
+      const startDateObj = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        startHour,
+        startMinute,
+        0,
+        0
+      );
+      const endDateObj = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        endHour,
+        endMinute,
+        0,
+        0
+      );
       const startIso = startDateObj.toISOString();
       const endIso = endDateObj.toISOString();
 
@@ -278,7 +294,7 @@ export default function Home() {
       });
 
       // 1️⃣ Set UI to pending immediately (optimistic update)
-      console.log('[ExtraHour] Setting UI to pending...');
+      console.log("[ExtraHour] Setting UI to pending...");
       setExtraHours({ status: "pending" });
       setSelectedOption(null);
 
@@ -301,7 +317,7 @@ export default function Home() {
             return 0;
           });
           const latest = sorted[0];
-          console.log('[ExtraHour] Backend response status:', latest.status, latest);
+          console.log("[ExtraHour] Backend response status:", latest.status, latest);
           setExtraHours(latest);
         }
       } catch (fetchErr) {
@@ -667,53 +683,48 @@ export default function Home() {
           )}
         </Card>
 
-      {/* Planned Absence Card - styled to match other views */}
-      <Card title={t("home.report_planned_absence") || "Report Planned Absence"}>
-        <TouchableOpacity
-          onPress={() => setShowAbsenceModal(true)}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: colors.accent,
-            borderRadius: 12,
-            paddingVertical: 14,
-            paddingHorizontal: 18,
-            marginBottom: 8,
-            shadowColor: colors.accent,
-            shadowOpacity: 0.08,
-            shadowRadius: 4,
-            elevation: 2,
-          }}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={22}
-            color="#fff"
-            style={{ marginRight: 10 }}
-          />
-          <Text
+        {/* Planned Absence Card - styled to match other views */}
+        <Card title={t("home.report_planned_absence") || "Report Planned Absence"}>
+          <TouchableOpacity
+            onPress={() => setShowAbsenceModal(true)}
             style={{
-              color: "#fff",
-              fontWeight: "700",
-              fontSize: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: colors.accent,
+              borderRadius: 12,
+              paddingVertical: 14,
+              paddingHorizontal: 18,
+              marginBottom: 8,
+              shadowColor: colors.accent,
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
+              elevation: 2,
             }}
           >
-            {t("home.absence_button_pick_absence_dates") || "Pick absence dates"}
+            <Ionicons name="calendar-outline" size={22} color="#fff" style={{ marginRight: 10 }} />
+            <Text
+              style={{
+                color: "#fff",
+                fontWeight: "700",
+                fontSize: 16,
+              }}
+            >
+              {t("home.absence_button_pick_absence_dates") || "Pick absence dates"}
+            </Text>
+          </TouchableOpacity>
+          <Text
+            style={{
+              color: colors.textLight,
+              fontSize: 13,
+              marginLeft: 2,
+              marginBottom: 2,
+            }}
+          >
+            {t("home.absence_section_hint") ||
+              "Let us know if your child will be absent for one or more days."}
           </Text>
-        </TouchableOpacity>
-        <Text
-          style={{
-            color: colors.textLight,
-            fontSize: 13,
-            marginLeft: 2,
-            marginBottom: 2,
-          }}
-        >
-          {t("home.absence_section_hint") ||
-            "Let us know if your child will be absent for one or more days."}
-        </Text>
-      </Card>
-    </ScrollView>
+        </Card>
+      </ScrollView>
 
       {/* Planned Absence Modal (multi-day, no Card, scrollable) */}
       <Modal visible={showAbsenceModal} animationType="fade" transparent>
@@ -855,7 +866,14 @@ export default function Home() {
               {/* Absence Days Counter */}
               <View style={{ alignItems: "center", marginBottom: 10 }}>
                 <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 15 }}>
-                  {t("home.absence_days_count") || "Selected days:"} {Math.max(1, Math.round((absenceEndDate.getTime() - absenceStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)}
+                  {t("home.absence_days_count") || "Selected days:"}{" "}
+                  {Math.max(
+                    1,
+                    Math.round(
+                      (absenceEndDate.getTime() - absenceStartDate.getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    ) + 1
+                  )}
                 </Text>
               </View>
               {/* Submit Button */}
@@ -874,9 +892,7 @@ export default function Home() {
                 <Text
                   style={{ color: "#FFF", textAlign: "center", fontWeight: "700", fontSize: 16 }}
                 >
-                  {absenceSubmitting
-                    ? t("common.loading")
-                    : t("home.submit_absence")}
+                  {absenceSubmitting ? t("common.loading") : t("home.submit_absence")}
                 </Text>
               </TouchableOpacity>
               {/* Cancel Button */}

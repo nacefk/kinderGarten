@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import { useRouter } from "expo-router";
@@ -368,7 +361,9 @@ export default function ExtraHoursScreen() {
                     </View>
 
                     {/* Right side: Duration, Status, & Actions */}
-                    <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 12, gap: 8 }}>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center", marginLeft: 12, gap: 8 }}
+                    >
                       {/* Duration Badge */}
                       <View
                         style={{
