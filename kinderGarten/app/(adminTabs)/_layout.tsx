@@ -1,13 +1,16 @@
 import { Tabs, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
+import { useAppStore } from "@/store/useAppStore";
 import { getTranslation } from "@/config/translations";
 
 export default function AdminLayout() {
   const { isAuthenticated, userRole } = useAuthStore();
   const { language } = useLanguageStore();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   const t = (key: string) => getTranslation(language, key);
 
   // ✅ Route protection: ensure user is authenticated and is admin
@@ -19,7 +22,7 @@ export default function AdminLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#007aff",
+        tabBarActiveTintColor: colors.secondary,
       }}
     >
       {/* Dashboard Tab */}

@@ -17,6 +17,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useAppStore } from "@/store/useAppStore";
 import { secureStorage } from "@/utils/secureStorage";
 import { validation, getValidationMessage, convertToSlug } from "@/utils/validation";
+import { initializeNotifications } from "@/utils/notifications";
 
 export default function Login() {
   const router = useRouter();
@@ -50,32 +51,32 @@ export default function Login() {
       // ✅ Store userId for both parent and admin
       if (result.role === "parent" && result.user_id) {
         setUserId(String(result.user_id));
-        console.log(
-          "[Login] ✅ Parent user_id stored in store:",
-          useAppStore.getState().userId,
-          "(should be:",
-          result.user_id,
-          ")"
-        );
+        // // console.log(
+        //   "[Login] ✅ Parent user_id stored in store:",
+        //   useAppStore.getState().userId,
+        //   "(should be:",
+        //   result.user_id,
+        //   ")"
+        // );
       } else if (result.role === "admin" && result.admin_id) {
         setUserId(String(result.admin_id));
-        console.log(
-          "[Login] ✅ Admin userId stored in store:",
-          useAppStore.getState().userId,
-          "(should be:",
-          result.admin_id,
-          ")"
-        );
+        // // console.log(
+        //   "[Login] ✅ Admin userId stored in store:",
+        //   useAppStore.getState().userId,
+        //   "(should be:",
+        //   result.admin_id,
+        //   ")"
+        // );
       } else {
         setUserId(null);
-        console.log(
-          "[Login] ❌ No userId set - role:",
-          result.role,
-          "user_id:",
-          result.user_id,
-          "admin_id:",
-          result.admin_id
-        );
+        // // console.log(
+        //   "[Login] ❌ No userId set - role:",
+        //   result.role,
+        //   "user_id:",
+        //   result.user_id,
+        //   "admin_id:",
+        //   result.admin_id
+        // );
       }
 
       // ✅ Also save to SecureStore for persistence
@@ -83,24 +84,28 @@ export default function Login() {
         await secureStorage.setAdminId(result.admin_id);
       }
 
+      // 🔔 Initialize notifications with authenticated user
+      // // console.log("🔔 Initializing notifications after login...");
+      await initializeNotifications();
+
       // Verify it was stored
-      console.log("✅ [Login] After setAdminId:");
-      console.log("  Result admin_id:", result.admin_id);
-      console.log("  Store state:", useAppStore.getState().adminId);
-      console.log("  Store parent userId:", useAppStore.getState().userId);
+      // // console.log("✅ [Login] After setAdminId:");
+      // // console.log("  Result admin_id:", result.admin_id);
+      // // console.log("  Store state:", useAppStore.getState().adminId);
+      // // console.log("  Store parent userId:", useAppStore.getState().userId);
 
       // ✅ Redirect based on role
       if (result.role === "admin") {
-        console.log("[Login] Redirecting to admin dashboard");
+        // // console.log("[Login] Redirecting to admin dashboard");
         router.replace("/(adminTabs)/dashboard");
       } else {
         // Log store state before redirect
-        console.log(
-          "[Login] About to redirect to parent home. Store adminId:",
-          useAppStore.getState().adminId,
-          "userId:",
-          useAppStore.getState().userId
-        );
+        // // console.log(
+        //   "[Login] About to redirect to parent home. Store adminId:",
+        //   useAppStore.getState().adminId,
+        //   "userId:",
+        //   useAppStore.getState().userId
+        // );
         router.replace("/(tabs)/home");
       }
     } catch (error: any) {
@@ -140,7 +145,7 @@ export default function Login() {
           className="rounded-3xl p-8"
           style={{
             backgroundColor: colors.cardBackground,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             shadowOpacity: 0.08,
             shadowRadius: 10,
             elevation: 4,
@@ -160,10 +165,10 @@ export default function Login() {
             placeholder="Kindergarten slug (e.g. new-kindergarten)"
             placeholderTextColor={colors.textLight}
             style={{
-              backgroundColor: "#F8F8F8",
+              backgroundColor: colors.cardBackground,
               color: colors.textDark,
               borderWidth: 1,
-              borderColor: "#E5E7EB",
+              borderColor: colors.border,
             }}
             value={tenant}
             onChangeText={setTenant}
@@ -177,10 +182,10 @@ export default function Login() {
             placeholder="Username"
             placeholderTextColor={colors.textLight}
             style={{
-              backgroundColor: "#F8F8F8",
+              backgroundColor: colors.cardBackground,
               color: colors.textDark,
               borderWidth: 1,
-              borderColor: "#E5E7EB",
+              borderColor: colors.border,
             }}
             value={username}
             onChangeText={setUsername}
@@ -192,9 +197,9 @@ export default function Login() {
           <View
             className="mb-6 flex-row items-center rounded-2xl px-5"
             style={{
-              backgroundColor: "#F8F8F8",
+              backgroundColor: colors.cardBackground,
               borderWidth: 1,
-              borderColor: "#E5E7EB",
+              borderColor: colors.border,
             }}
           >
             <TextInput
@@ -223,7 +228,7 @@ export default function Login() {
             activeOpacity={0.9}
             className="rounded-2xl py-4 items-center"
             style={{
-              backgroundColor: loading ? "#ccc" : colors.accent,
+              backgroundColor: loading ? colors.disabled : colors.accent,
               shadowColor: colors.accent,
               shadowOpacity: 0.25,
               shadowRadius: 8,

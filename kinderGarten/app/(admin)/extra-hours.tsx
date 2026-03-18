@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import { useRouter } from "expo-router";
@@ -38,28 +38,34 @@ export default function ExtraHoursScreen() {
   const [groupedData, setGroupedData] = useState<GroupedExtraHours>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Handle search submission
+  const handleSearchSubmit = () => {
+    loadExtraHours(false, searchQuery.trim() || undefined);
+  };
 
   // Load extra hours on mount and when refreshing
-  const loadExtraHours = async (isRefresh = false) => {
+  const loadExtraHours = async (isRefresh = false, search?: string) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const data = await getAllExtraHours();
-      console.log("[ExtraHoursScreen] Received data:", data);
+      const data = await getAllExtraHours(search);
+      // // console.log("[ExtraHoursScreen] Received data:", data);
 
       // Handle API response - should be an array directly
       let items: ExtraHour[] = [];
       if (Array.isArray(data)) {
         items = data;
-        console.log("[ExtraHoursScreen] Data is array, items:", items);
+        // console.log("[ExtraHoursScreen] Data is array, items:", items);
       } else if (data && typeof data === "object") {
         const results = (data as any).results || (data as any).data || [];
         items = Array.isArray(results) ? results : [];
-        console.log("[ExtraHoursScreen] Data is object, results:", results, "items:", items);
+        // console.log("[ExtraHoursScreen] Data is object, results:", results, "items:", items);
       }
 
-      console.log("[ExtraHoursScreen] Total items after parsing:", items.length);
+      // console.log("[ExtraHoursScreen] Total items after parsing:", items.length);
       setExtraHours(items);
 
       // Group by date
@@ -82,10 +88,10 @@ export default function ExtraHoursScreen() {
           date = new Date().toISOString().split("T")[0];
         }
 
-        console.log("[ExtraHoursScreen] Item date field:", date, "item:", {
-          child: item.child_name,
-          status: item.status,
-        });
+        // // console.log("[ExtraHoursScreen] Item date field:", date, "item:", {
+        //   child: item.child_name,
+        //   status: item.status,
+        // });
 
         if (!grouped[date]) {
           grouped[date] = [];
@@ -93,7 +99,7 @@ export default function ExtraHoursScreen() {
         grouped[date].push(item);
       });
 
-      console.log("[ExtraHoursScreen] Grouped data:", Object.keys(grouped));
+      // console.log("[ExtraHoursScreen] Grouped data:", Object.keys(grouped));
 
       // Sort each day by time
       Object.keys(grouped).forEach((date) => {
@@ -111,7 +117,7 @@ export default function ExtraHoursScreen() {
         sortedGrouped[date] = grouped[date];
       });
 
-      console.log("[ExtraHoursScreen] Final grouped data keys:", Object.keys(sortedGrouped));
+      // console.log("[ExtraHoursScreen] Final grouped data keys:", Object.keys(sortedGrouped));
       setGroupedData(sortedGrouped);
     } catch (err: any) {
       console.error("❌ Error loading extra hours:", err.message);
@@ -122,6 +128,7 @@ export default function ExtraHoursScreen() {
     }
   };
 
+  // Load on mount
   useEffect(() => {
     loadExtraHours();
   }, []);
@@ -233,6 +240,8 @@ export default function ExtraHoursScreen() {
     }
   };
 
+  const filteredGroupedData = groupedData;
+
   return (
     <ScrollView
       className="flex-1"
@@ -241,6 +250,43 @@ export default function ExtraHoursScreen() {
     >
       {/* Header */}
       <HeaderBar title={t("dashboard.extra_hours")} showBack={true} />
+
+      {/* Search Bar */}
+      <View className="px-5 pt-4 pb-3">
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: colors.cardBackground,
+            borderRadius: 12,
+            paddingHorizontal: 12,
+            borderWidth: 1,
+            borderColor: colors.accentLight,
+          }}
+        >
+          <Ionicons name="search" size={18} color={colors.textLight} />
+          <TextInput
+            style={{
+              flex: 1,
+              paddingVertical: 10,
+              paddingHorizontal: 8,
+              color: colors.textDark,
+              fontSize: 14,
+            }}
+            placeholder={t("common.search_by_child")}
+            placeholderTextColor={colors.textLight}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearchSubmit}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={18} color={colors.textLight} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
 
       {/* Content */}
       {loading ? (
@@ -254,7 +300,7 @@ export default function ExtraHoursScreen() {
         >
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
-      ) : Object.keys(groupedData).length === 0 ? (
+      ) : Object.keys(filteredGroupedData).length === 0 ? (
         <View
           style={{
             flex: 1,
@@ -281,7 +327,7 @@ export default function ExtraHoursScreen() {
         </View>
       ) : (
         <View className="px-5 py-6">
-          {Object.keys(groupedData).map((date, dateIndex) => (
+          {Object.keys(filteredGroupedData).map((date, dateIndex) => (
             <View key={date} className="mb-6">
               {/* Date Group Header - More Prominent */}
               <View style={{ marginBottom: 12 }}>
@@ -316,20 +362,20 @@ export default function ExtraHoursScreen() {
                   >
                     <Text
                       style={{
-                        color: "#fff",
+                        color: colors.white,
                         fontSize: 12,
                         fontWeight: "600",
                       }}
                     >
-                      {groupedData[date].length}{" "}
-                      {groupedData[date].length === 1 ? "request" : "requests"}
+                      {filteredGroupedData[date].length}{" "}
+                      {t(filteredGroupedData[date].length === 1 ? "common.request" : "common.requests")}
                     </Text>
                   </View>
                 </View>
               </View>
 
               {/* Requests for this day */}
-              {groupedData[date].map((req) => {
+              {filteredGroupedData[date].map((req) => {
                 const id = req.id || req.request_id;
                 if (!id) return null; // Skip if no ID
                 const childName =
@@ -341,17 +387,17 @@ export default function ExtraHoursScreen() {
                 return (
                   <View
                     key={id}
-                    className="rounded-xl p-4 mb-3 flex-row items-center justify-between"
+                    className="rounded-xl p-4 mb-3 flex-row items-stretch justify-between"
                     style={{
                       backgroundColor: colors.cardBackground,
-                      shadowColor: "#000",
+                      shadowColor: colors.shadow,
                       shadowOpacity: 0.05,
                       shadowRadius: 4,
                       elevation: 2,
                     }}
                   >
                     {/* Left side: Child name */}
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, justifyContent: "center" }}>
                       <Text
                         className="font-semibold"
                         style={{ color: colors.textDark, fontSize: 15 }}
@@ -360,17 +406,16 @@ export default function ExtraHoursScreen() {
                       </Text>
                     </View>
 
-                    {/* Right side: Duration, Status, & Actions */}
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center", marginLeft: 12, gap: 8 }}
-                    >
-                      {/* Duration Badge */}
+                    {/* Right side: Stacked (Duration on top, Status & Actions below) */}
+                    <View style={{ flexDirection: "column", marginLeft: 12, gap: 6, justifyContent: "space-between" }}>
+                      {/* Duration Badge - Top */}
                       <View
                         style={{
                           backgroundColor: colors.accentLight,
                           borderRadius: 8,
                           paddingVertical: 4,
                           paddingHorizontal: 8,
+                          alignSelf: "flex-end",
                         }}
                       >
                         <Text
@@ -384,63 +429,66 @@ export default function ExtraHoursScreen() {
                         </Text>
                       </View>
 
-                      {/* Status Badge */}
-                      {req.status && (
-                        <View
-                          style={{
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 6,
-                            backgroundColor:
-                              req.status === "approved"
-                                ? "#E8F5E9"
-                                : req.status === "rejected"
-                                  ? "#FFEBEE"
-                                  : "#FFF3E0",
-                          }}
-                        >
-                          <Text
+                      {/* Status & Actions Row - Bottom */}
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        {/* Status Badge */}
+                        {req.status && (
+                          <View
                             style={{
-                              color:
+                              paddingHorizontal: 8,
+                              paddingVertical: 4,
+                              borderRadius: 6,
+                              backgroundColor:
                                 req.status === "approved"
-                                  ? "#2E7D32"
+                                  ? colors.successLight
                                   : req.status === "rejected"
-                                    ? "#C62828"
-                                    : "#E65100",
-                              fontSize: 11,
-                              fontWeight: "600",
-                              textTransform: "capitalize",
+                                    ? colors.errorLight
+                                    : colors.warningLighter,
                             }}
                           >
-                            {t(`common.${req.status}`)}
-                          </Text>
-                        </View>
-                      )}
+                            <Text
+                              style={{
+                                color:
+                                  req.status === "approved"
+                                    ? colors.successDarkText
+                                    : req.status === "rejected"
+                                      ? colors.errorDarkText
+                                      : colors.warningDarkText,
+                                fontSize: 11,
+                                fontWeight: "600",
+                                textTransform: "capitalize",
+                              }}
+                            >
+                              {t(`common.${req.status}`)}
+                            </Text>
+                          </View>
+                        )}
 
-                      {/* Action buttons */}
-                      {req.status === "pending" && (
-                        <View className="flex-row" style={{ gap: 6 }}>
-                          {/* Approve */}
-                          <TouchableOpacity
-                            onPress={() => handleApprove(id)}
-                            className="rounded-lg"
-                            style={{ backgroundColor: "#4CAF50", padding: 6 }}
-                            activeOpacity={0.8}
-                          >
-                            <Ionicons name="checkmark" size={16} color="#fff" />
-                          </TouchableOpacity>
+                        {/* Action buttons */}
+                        {req.status === "pending" && (
+                          <View className="flex-row" style={{ gap: 6 }}>
+                            {/* Approve */}
+                            <TouchableOpacity
+                              onPress={() => handleApprove(id)}
+                              className="rounded-lg"
+                              style={{ backgroundColor: colors.successDark, padding: 6 }}
+                              activeOpacity={0.8}
+                            >
+                              <Ionicons name="checkmark" size={16} color={colors.white} />
+                            </TouchableOpacity>
 
-                          {/* Reject */}
-                          <TouchableOpacity
-                            onPress={() => handleReject(id)}
-                            className="rounded-lg"
-                            style={{ backgroundColor: "#E53935", padding: 6 }}
-                            activeOpacity={0.8}
-                          >
-                            <Ionicons name="close" size={16} color="#fff" />
-                          </TouchableOpacity>
-                        </View>
-                      )}
+                            {/* Reject */}
+                            <TouchableOpacity
+                              onPress={() => handleReject(id)}
+                              className="rounded-lg"
+                              style={{ backgroundColor: colors.errorDark, padding: 6 }}
+                              activeOpacity={0.8}
+                            >
+                              <Ionicons name="close" size={16} color={colors.white} />
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
                     </View>
                   </View>
                 );

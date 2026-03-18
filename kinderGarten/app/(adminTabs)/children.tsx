@@ -15,7 +15,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { MessageCircle } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
+import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
 import {
   createClub,
@@ -29,7 +30,6 @@ import { createClass, getClasses } from "@/api/class";
 import { createChild } from "@/api/children";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useAppStore } from "@/store/useAppStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { secureStorage } from "@/utils/secureStorage";
 import { getTranslation } from "@/config/translations";
@@ -39,15 +39,17 @@ export default function ChildrenScreen() {
   const { language } = useLanguageStore();
   const t = (key: string) => getTranslation(language, key);
   const adminId = useAppStore((state) => state.adminId);
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
 
   // Debug: Check store state on mount
   useEffect(() => {
-    console.log("🎯 [Children] Component mounted, adminId =", adminId);
+    // console.log("🎯 [Children] Component mounted, adminId =", adminId);
 
     // If adminId is null, try to restore from SecureStore
     if (!adminId) {
       secureStorage.getAdminId().then((storedAdminId) => {
-        console.log("🎯 [Children] Restored adminId from SecureStore:", storedAdminId);
+        // console.log("🎯 [Children] Restored adminId from SecureStore:", storedAdminId);
         if (storedAdminId) {
           useAppStore.getState().actions.setAdminId(storedAdminId);
         }
@@ -91,14 +93,14 @@ export default function ChildrenScreen() {
   // ------------------- INIT -------------------
   useEffect(() => {
     (async () => {
-      //  console.log("🚀 [COMPONENT] Initializing children screen...");
+      //  // console.log("🚀 [COMPONENT] Initializing children screen...");
       setLoading(true);
       try {
-        console.log(
-          "🚀 [COMPONENT] Calling Promise.all with fetchChildren, fetchClasses, fetchClubs"
-        );
+        // // console.log(
+        //   "🚀 [COMPONENT] Calling Promise.all with fetchChildren, fetchClasses, fetchClubs"
+        // );
         await Promise.all([fetchChildren(), fetchClasses(), fetchClubs()]);
-        //  console.log("✅ [COMPONENT] All initial fetches completed");
+        //  // console.log("✅ [COMPONENT] All initial fetches completed");
       } catch (e: any) {
         console.error("❌ [COMPONENT] Error initializing data:", e.message);
         // Set safe defaults to prevent crashes
@@ -137,16 +139,16 @@ export default function ChildrenScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            console.log("🧹 [COMPONENT] Starting delete for class:", cls);
+            // console.log("🧹 [COMPONENT] Starting delete for class:", cls);
             setLoading(true);
             await deleteClass(cls.id);
-            // console.log("✅ [COMPONENT] Delete successful, removing from store...");
+            // // console.log("✅ [COMPONENT] Delete successful, removing from store...");
             // ✅ Remove from store immediately
             removeClassFromStore(cls.id);
-            // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
+            // // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
             // 🔄 Verify deletion by refetching
             await fetchClasses();
-            // console.log("✅ [COMPONENT] Backend verified, classes refreshed");
+            // // console.log("✅ [COMPONENT] Backend verified, classes refreshed");
             Alert.alert("Supprimée ✅", "La classe a été supprimée.");
           } catch (e: any) {
             console.error("❌ [COMPONENT] Error deleting class:", e.message);
@@ -169,16 +171,16 @@ export default function ChildrenScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            console.log("🧹 [COMPONENT] Starting delete for club:", club);
+            // console.log("🧹 [COMPONENT] Starting delete for club:", club);
             setLoading(true);
             await deleteClub(club.id);
-            // console.log("✅ [COMPONENT] Delete successful, removing from store...");
+            // // console.log("✅ [COMPONENT] Delete successful, removing from store...");
             // ✅ Remove from store immediately
             removeClubFromStore(club.id);
-            // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
+            // // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
             // 🔄 Verify deletion by refetching
             await fetchClubs();
-            //  console.log("✅ [COMPONENT] Backend verified, clubs refreshed");
+            //  // console.log("✅ [COMPONENT] Backend verified, clubs refreshed");
             Alert.alert("Supprimé ✅", "Le club a été supprimé.");
           } catch (e: any) {
             console.error("❌ Error deleting club:", e.message);
@@ -211,22 +213,22 @@ export default function ChildrenScreen() {
 
   // ------------------- ADD CHILD -------------------
   const handleAddChild = async () => {
-    console.log("🧪 [ADD CHILD] Form values:", {
-      childName,
-      childBirthdate,
-      childGender,
-      childParent,
-      childClass,
-    });
+    // // console.log("🧪 [ADD CHILD] Form values:", {
+    //   childName,
+    //   childBirthdate,
+    //   childGender,
+    //   childParent,
+    //   childClass,
+    // });
     if (!childName.trim() || !childBirthdate || !childParent.trim() || !childGender)
       return Alert.alert("Champs manquants", "Veuillez remplir tous les champs obligatoires.");
 
     const classObj = classes.find((c: any) => c.name === childClass);
     if (!classObj || !classObj.id) {
-      console.log("⚠️ [ADD CHILD] Invalid class selection:", {
-        childClass,
-        availableClasses: classes,
-      });
+      // // console.log("⚠️ [ADD CHILD] Invalid class selection:", {
+      //   childClass,
+      //   availableClasses: classes,
+      // });
       Alert.alert("Classe invalide", "Veuillez sélectionner une classe valide pour l'enfant.");
       return;
     }
@@ -245,7 +247,7 @@ export default function ChildrenScreen() {
         avatar: avatarUrl,
         hasMobileApp,
       };
-      console.log("📦 [ADD CHILD] Payload:", payload, "Class:", classObj);
+      // // console.log("📦 [ADD CHILD] Payload:", payload, "Class:", classObj);
       const created = await createChild(payload);
 
       setChildren([...children, created]);
@@ -295,25 +297,25 @@ export default function ChildrenScreen() {
   // ------------------- FILTERS -------------------
   useEffect(() => {
     (async () => {
-      // console.log("🔄 [COMPONENT] Filter effect triggered with:", { selectedClass, selectedClub });
-      // console.log("🔄 [COMPONENT] Available classes:", classes);
+      // // console.log("🔄 [COMPONENT] Filter effect triggered with:", { selectedClass, selectedClub });
+      // // console.log("🔄 [COMPONENT] Available classes:", classes);
       setLoading(true);
       try {
         let params: any = {};
         if (selectedClass && !selectedClub) {
           const cls = classes.find((c: any) => c.name === selectedClass);
-          //  console.log("🔄 [COMPONENT] Looking for class:", selectedClass);
-          //  console.log("🔄 [COMPONENT] Classes array:", classes);
-          //  console.log("🔄 [COMPONENT] Found class:", cls);
+          //  // console.log("🔄 [COMPONENT] Looking for class:", selectedClass);
+          //  // console.log("🔄 [COMPONENT] Classes array:", classes);
+          //  // console.log("🔄 [COMPONENT] Found class:", cls);
           if (cls) {
             params.classroom = cls.id;
-            // console.log("🔄 [COMPONENT] Using classroom ID:", cls.id);
+            // // console.log("🔄 [COMPONENT] Using classroom ID:", cls.id);
           } else {
             console.warn("⚠️ [COMPONENT] Class not found, using no filter");
           }
         } else if (selectedClub && !selectedClass) {
           const club = clubs.find((c: any) => c.name === selectedClub);
-          // console.log("🔄 [COMPONENT] Looking for club:", selectedClub, "Found:", club);
+          // // console.log("🔄 [COMPONENT] Looking for club:", selectedClub, "Found:", club);
           if (club) params.club = club.id;
         }
         const data = await getChildren(Object.keys(params).length ? params : undefined);
@@ -419,7 +421,7 @@ export default function ChildrenScreen() {
             );
             const parentId = childDetails?.parent_user?.id;
 
-            console.log("[CHILDREN] Opening chat with:", { parentId, adminId });
+            // console.log("[CHILDREN] Opening chat with:", { parentId, adminId });
 
             if (!parentId) {
               alert("Impossible de trouver l'identifiant du parent pour ce profil.");
@@ -431,7 +433,7 @@ export default function ChildrenScreen() {
               return;
             }
 
-            console.log("[CHILDREN] Navigating to chat screen...");
+            // console.log("[CHILDREN] Navigating to chat screen...");
 
             router.push({
               pathname: "/(chat)/[conversation]",
@@ -542,25 +544,25 @@ export default function ChildrenScreen() {
                     <TouchableOpacity
                       key={cls.id}
                       onPress={() => {
-                        console.log("🎯 [INTERACTION] Class chip clicked:", cls.name);
-                        console.log("🎯 [INTERACTION] Current selectedClass:", selectedClass);
-                        console.log(
-                          "🎯 [INTERACTION] Will toggle to:",
-                          selectedClass === cls.name ? null : cls.name
-                        );
+                        // // console.log("🎯 [INTERACTION] Class chip clicked:", cls.name);
+                        // // console.log("🎯 [INTERACTION] Current selectedClass:", selectedClass);
+                        // // console.log(
+                        //   "🎯 [INTERACTION] Will toggle to:",
+                        //   selectedClass === cls.name ? null : cls.name
+                        // );
                         setSelectedClass((prev) => {
                           const newValue = prev === cls.name ? null : cls.name;
-                          console.log(
-                            "🎯 [STATE UPDATE] selectedClass updated from",
-                            prev,
-                            "to",
-                            newValue
-                          );
+                          // // console.log(
+                          //   "🎯 [STATE UPDATE] selectedClass updated from",
+                          //   prev,
+                          //   "to",
+                          //   newValue
+                          // );
                           return newValue;
                         });
                       }}
                       onLongPress={() => {
-                        console.log("🗑️ [INTERACTION] Delete class long-pressed:", cls.name);
+                        // console.log("🗑️ [INTERACTION] Delete class long-pressed:", cls.name);
                         handleDeleteClass(cls);
                       }}
                       activeOpacity={0.8}
@@ -694,15 +696,15 @@ export default function ChildrenScreen() {
             elevation: 5,
           }}
         >
-          <Ionicons name="add-circle-outline" size={20} color="#FFF" />
-          <Text style={{ color: "#FFF", fontWeight: "600", fontSize: 14 }}>{t("common.club")}</Text>
+          <Ionicons name="add-circle-outline" size={20} color={colors.cardBackground} />
+          <Text style={{ color: colors.cardBackground, fontWeight: "600", fontSize: 14 }}>{t("common.club")}</Text>
         </TouchableOpacity>
 
         {/* Add Class Button */}
         <TouchableOpacity
           onPress={() => setShowAddClass(true)}
           style={{
-            backgroundColor: "#3B82F6",
+            backgroundColor: colors.maleBlue,
             borderRadius: 50,
             paddingHorizontal: 20,
             paddingVertical: 12,
@@ -714,8 +716,8 @@ export default function ChildrenScreen() {
             elevation: 5,
           }}
         >
-          <Ionicons name="add-circle-outline" size={20} color="#FFF" />
-          <Text style={{ color: "#FFF", fontWeight: "600", fontSize: 14 }}>
+          <Ionicons name="add-circle-outline" size={20} color={colors.cardBackground} />
+          <Text style={{ color: colors.cardBackground, fontWeight: "600", fontSize: 14 }}>
             {t("common.class")}
           </Text>
         </TouchableOpacity>
@@ -727,7 +729,7 @@ export default function ChildrenScreen() {
             resetChildForm();
           }}
           style={{
-            backgroundColor: "#10B981",
+            backgroundColor: colors.successGreen,
             borderRadius: 50,
             paddingHorizontal: 20,
             paddingVertical: 12,
@@ -739,8 +741,8 @@ export default function ChildrenScreen() {
             elevation: 5,
           }}
         >
-          <Ionicons name="add-circle-outline" size={20} color="#FFF" />
-          <Text style={{ color: "#FFF", fontWeight: "600", fontSize: 14 }}>
+          <Ionicons name="add-circle-outline" size={20} color={colors.cardBackground} />
+          <Text style={{ color: colors.cardBackground, fontWeight: "600", fontSize: 14 }}>
             {t("common.child")}
           </Text>
         </TouchableOpacity>
@@ -750,11 +752,11 @@ export default function ChildrenScreen() {
       <Modal visible={showAddClass} animationType="slide" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          style={{ backgroundColor: colors.overlayDark }}
         >
           <View
             className="w-full rounded-2xl p-6"
-            style={{ backgroundColor: colors.cardBackground }}
+            style={{ backgroundColor: colors.cardBackground} }
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
               {t("children.new_class")}
@@ -766,17 +768,17 @@ export default function ChildrenScreen() {
               onChangeText={setNewClassName}
               className="rounded-xl px-4 py-3 text-base mb-5"
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 color: colors.textDark,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             />
             <View className="flex-row justify-end">
               <TouchableOpacity
                 onPress={() => setShowAddClass(false)}
                 className="px-5 py-3 mr-2 rounded-xl"
-                style={{ backgroundColor: "#E5E7EB" }}
+                style={{ backgroundColor: colors.border }}
               >
                 <Text style={{ color: colors.textDark }}>{t("common.cancel")}</Text>
               </TouchableOpacity>
@@ -796,11 +798,11 @@ export default function ChildrenScreen() {
       <Modal visible={showAddClub} animationType="slide" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          style={{ backgroundColor: colors.overlayDark }}
         >
           <View
             className="w-full rounded-2xl p-6"
-            style={{ backgroundColor: colors.cardBackground }}
+            style={{ backgroundColor: colors.cardBackground} }
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
               {t("children.new_club")}
@@ -812,17 +814,17 @@ export default function ChildrenScreen() {
               onChangeText={setNewClubName}
               className="rounded-xl px-4 py-3 text-base mb-5"
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 color: colors.textDark,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             />
             <View className="flex-row justify-end">
               <TouchableOpacity
                 onPress={() => setShowAddClub(false)}
                 className="px-5 py-3 mr-2 rounded-xl"
-                style={{ backgroundColor: "#E5E7EB" }}
+                style={{ backgroundColor: colors.border }}
               >
                 <Text style={{ color: colors.textDark }}>{t("common.cancel")}</Text>
               </TouchableOpacity>
@@ -842,11 +844,11 @@ export default function ChildrenScreen() {
       <Modal visible={showAddChild} animationType="slide" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          style={{ backgroundColor: colors.overlayDark }}
         >
           <View
             className="w-full rounded-2xl p-6"
-            style={{ backgroundColor: colors.cardBackground }}
+            style={{ backgroundColor: colors.cardBackground} }
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
               {t("children.new_child")}
@@ -860,10 +862,10 @@ export default function ChildrenScreen() {
               onChangeText={setChildName}
               className="rounded-xl px-4 py-3 text-base mb-3"
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 color: colors.textDark,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             />
 
@@ -871,9 +873,9 @@ export default function ChildrenScreen() {
             <View
               className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             >
               <TouchableOpacity
@@ -927,7 +929,7 @@ export default function ChildrenScreen() {
                     width: 120,
                     height: 120,
                     borderRadius: 60,
-                    backgroundColor: "#F9FAFB",
+                    backgroundColor: colors.pureWhiteGray,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
@@ -952,7 +954,7 @@ export default function ChildrenScreen() {
                       padding: 6,
                     }}
                   >
-                    <Ionicons name="camera-outline" size={20} color="#6B7280" />
+                    <Ionicons name="camera-outline" size={20} color={colors.mediumGray} />
                   </View>
                 </View>
               </TouchableOpacity>
@@ -978,21 +980,21 @@ export default function ChildrenScreen() {
                   height: 48,
                   paddingVertical: 0,
                   borderRadius: 12,
-                  backgroundColor: childGender === "male" ? "#3B82F6" : colors.cardBackground,
+                  backgroundColor: childGender === "male" ? colors.maleBlue : colors.cardBackground,
                   borderWidth: 2,
-                  borderColor: "#3B82F6",
+                  borderColor: colors.maleBlue,
                   marginRight: 12,
                 }}
               >
                 <Ionicons
                   name="male"
                   size={22}
-                  color={childGender === "male" ? "#fff" : "#3B82F6"}
+                  color={childGender === "male" ? colors.white : colors.maleBlue}
                   style={{ marginRight: 8 }}
                 />
                 <Text
                   style={{
-                    color: childGender === "male" ? "#fff" : "#3B82F6",
+                    color: childGender === "male" ? colors.white : colors.maleBlue,
                     fontWeight: "600",
                     fontSize: 16,
                   }}
@@ -1010,20 +1012,20 @@ export default function ChildrenScreen() {
                   height: 48,
                   paddingVertical: 0,
                   borderRadius: 12,
-                  backgroundColor: childGender === "female" ? "#EC4899" : colors.cardBackground,
+                  backgroundColor: childGender === "female" ? colors.femalePink : colors.cardBackground,
                   borderWidth: 2,
-                  borderColor: "#EC4899",
+                  borderColor: colors.femalePink,
                 }}
               >
                 <Ionicons
                   name="female"
                   size={22}
-                  color={childGender === "female" ? "#fff" : "#EC4899"}
+                  color={childGender === "female" ? colors.white : colors.femalePink}
                   style={{ marginRight: 8 }}
                 />
                 <Text
                   style={{
-                    color: childGender === "female" ? "#fff" : "#EC4899",
+                    color: childGender === "female" ? colors.white : colors.femalePink,
                     fontWeight: "600",
                     fontSize: 16,
                   }}
@@ -1041,10 +1043,10 @@ export default function ChildrenScreen() {
               onChangeText={setChildParent}
               className="rounded-xl px-4 py-3 text-base mb-5"
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 color: colors.textDark,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             />
 
@@ -1084,9 +1086,9 @@ export default function ChildrenScreen() {
             <View
               className="flex-row justify-between items-center mb-5 px-4 py-2.5 rounded-xl"
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             >
               <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 14.5 }}>
@@ -1100,7 +1102,7 @@ export default function ChildrenScreen() {
                   width: 46,
                   height: 26,
                   borderRadius: 13,
-                  backgroundColor: hasMobileApp ? colors.accent : "#D1D5DB",
+                  backgroundColor: hasMobileApp ? colors.accent : colors.disabled,
                   justifyContent: "center",
                   paddingHorizontal: 3,
                 }}
@@ -1110,7 +1112,7 @@ export default function ChildrenScreen() {
                     width: 20,
                     height: 20,
                     borderRadius: 10,
-                    backgroundColor: "#FFF",
+                    backgroundColor: colors.cardBackground,
                     transform: [{ translateX: hasMobileApp ? 20 : 0 }],
                     shadowColor: "#000",
                     shadowOpacity: 0.15,
@@ -1126,7 +1128,7 @@ export default function ChildrenScreen() {
               <TouchableOpacity
                 onPress={() => setShowAddChild(false)}
                 className="px-5 py-3 mr-2 rounded-xl"
-                style={{ backgroundColor: "#E5E7EB" }}
+                style={{ backgroundColor: colors.border }}
               >
                 <Text style={{ color: colors.textDark }}>{t("common.cancel")}</Text>
               </TouchableOpacity>

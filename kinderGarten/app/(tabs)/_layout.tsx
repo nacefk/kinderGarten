@@ -2,11 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs, Redirect } from "expo-router";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
+import { getColors } from "@/config/colors";
+import { useAppStore } from "@/store/useAppStore";
 import { getTranslation } from "@/config/translations";
 
 export default function TabsLayout() {
   const { isAuthenticated } = useAuthStore();
   const { language } = useLanguageStore();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   const t = (key: string) => getTranslation(language, key);
 
   // ✅ Route protection
@@ -18,7 +22,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#007aff",
+        tabBarActiveTintColor: colors.secondary,
       }}
     >
       <Tabs.Screen

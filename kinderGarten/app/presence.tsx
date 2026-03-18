@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { secureStorage } from "@/utils/secureStorage";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "expo-router";
 import HeaderBar from "@/components/Header";
@@ -24,6 +24,8 @@ const API_BASE = "http://192.168.1.230:8000/api/attendance/"; // ✅ ensure trai
 export default function PresenceScreen() {
   const router = useRouter();
   const { data } = useAppStore();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   const classes = data.classes || [];
   const children = data.childrenList || [];
 
@@ -136,7 +138,7 @@ export default function PresenceScreen() {
         className="flex-row items-center mb-3 p-3 rounded-2xl"
         style={{
           backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
+          shadowColor: colors.shadow,
           shadowOpacity: 0.05,
           shadowRadius: 3,
           elevation: 2,
@@ -156,12 +158,12 @@ export default function PresenceScreen() {
           <Ionicons
             name={isPresent ? "checkmark-circle" : "close-circle"}
             size={22}
-            color={isPresent ? "#4CAF50" : "#E53935"}
+            color={isPresent ? colors.successDark : colors.errorDark}
           />
           <Text
-            className="ml-2 font-medium"
+            className="ml-2 font-semibold"
             style={{
-              color: isPresent ? "#4CAF50" : "#E53935",
+              color: isPresent ? colors.successDark : colors.errorDark,
             }}
           >
             {isPresent ? "Présent" : "Absent"}
@@ -278,7 +280,7 @@ export default function PresenceScreen() {
             style={{
               backgroundColor: colors.background,
               borderTopWidth: 1,
-              borderColor: "#EEE",
+              borderColor: colors.lightBorder,
             }}
           >
             <TouchableOpacity

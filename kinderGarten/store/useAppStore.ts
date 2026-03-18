@@ -5,6 +5,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getChildren, getClubs } from "@/api/children";
 import { getClasses } from "@/api/class";
 
+type TenantData = {
+  id: number;
+  name: string;
+  slug: string;
+  created_at: string;
+  is_active: boolean;
+  logo: string | null;
+  primary_color: string | null;
+  secondary_color: string | null;
+};
+
 type AppStoreState = {
   data: {
     childrenList: any[];
@@ -12,6 +23,7 @@ type AppStoreState = {
     clubList: any[];
     galleryItems: any[];
   };
+  tenant: TenantData | null;
   loading: boolean;
   error: any;
   adminId: string | null;
@@ -20,9 +32,11 @@ type AppStoreState = {
     setData: (key: string, value: any) => void;
     setAdminId: (adminId: string | null) => void;
     setUserId: (userId: string | null) => void;
+    setTenant: (tenant: TenantData | null) => void;
     fetchChildren: (filters?: any) => Promise<void>;
     fetchClasses: () => Promise<void>;
     fetchClubs: () => Promise<void>;
+    fetchTenant: () => Promise<void>;
     removeClassFromStore: (classId: number) => void;
     removeClubFromStore: (clubId: number) => void;
   };
@@ -37,6 +51,7 @@ export const useAppStore = create<AppStoreState>()(
     clubList: [],
     galleryItems: [],
   },
+  tenant: null,
   loading: false,
   error: null,
   adminId: null,
@@ -56,6 +71,27 @@ export const useAppStore = create<AppStoreState>()(
     setUserId: (userId) => {
       set(() => ({ userId }));
     },
+setTenant: (tenant) => {
+      set(() => ({ tenant }));
+    },
+
+    // 🏢 Fetch tenant data (logo, primary_color, etc)
+    fetchTenant: async () => {
+      try {
+        console.log("🏢 [Store] fetchTenant called");
+        const { getTenant } = await import("@/api/tenant");
+        const tenantData = await getTenant();
+        if (tenantData) {
+          set(() => ({ tenant: tenantData }));
+          console.log("✅ [Store] Tenant data loaded - Primary (buttons/icons):", tenantData.primary_color, "| Secondary (header):", tenantData.secondary_color);
+        } else {
+          console.log("⚠️ [Store] getTenant returned null");
+        }
+      } catch (err) {
+        console.error("❌ [Store] fetchTenant error:", err);
+      }
+    },
+
 
     // 🧒 Generic children fetcher — can filter by class or club
     fetchChildren: async (filters = {}) => {
@@ -151,11 +187,12 @@ export const useAppStore = create<AppStoreState>()(
           }
         },
       },
-      partialize: (state) => ({
+      partialize: (state: any) => ({
         adminId: state.adminId,
         userId: state.userId,
         data: state.data,
-      }),
+        tenant: state.tenant,
+      }) as any,
     }
   )
 );

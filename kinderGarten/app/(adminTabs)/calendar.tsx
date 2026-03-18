@@ -12,7 +12,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
+import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { getTranslation } from "@/config/translations";
@@ -46,6 +47,7 @@ interface EventItem {
 interface PlanActivity {
   id?: string;
   time: string;
+  endTime?: string;
   title: string;
   day: string;
   class_name: { id: number; name: string };
@@ -55,6 +57,8 @@ interface PlanActivity {
 export default function CalendarScreen() {
   const { language } = useLanguageStore();
   const { userRole } = useAuthStore();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   const t = (key: string) => getTranslation(language, key);
   const [activeTab, setActiveTab] = useState<"events" | "plan">("events");
   const [calendarEvents, setCalendarEvents] = useState<EventItem[]>([]);
@@ -135,19 +139,21 @@ export default function CalendarScreen() {
 
   const fetchData = async (classId?: number) => {
     try {
-      console.log("📡 Fetching events for classroom:", classId);
+      // // console.log("📡 Fetching events for classroom:", classId);
       const [eventsData, plansData] = await Promise.all([
         getEvents(classId ? { classroom: classId } : undefined),
         getPlans(classId ? { classroom: classId } : undefined),
       ]);
-      console.log("✅ Events fetched:", eventsData.length, "events");
-      console.log("✅ Plans fetched:", plansData.length, "plans");
+      // // console.log("✅ Events fetched:", eventsData.length, "events");
+      // // console.log("✅ Plans fetched:", plansData.length, "plans");
+      // // console.log("📋 Raw plans data:", plansData);
       setCalendarEvents(eventsData);
 
       const ALL_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
       const groupedPlans = plansData.reduce((acc: any, plan: any) => {
-        const className = plan.class_name_detail?.name || plan.class_name?.name || "Inconnu";
+        const className = plan.classroom_detail?.name || plan.class_name_detail?.name || plan.class_name?.name || "Inconnu";
+        // console.log("🔍 Processing plan ID:", plan.id, "| Class:", className, "| Has starts_at?", !!plan.starts_at, "| Starts_at:", plan.starts_at);
 
         // 🔥 First time we encounter a class → pre-fill all 7 days
         if (!acc[className]) {
@@ -157,14 +163,87 @@ export default function CalendarScreen() {
           });
         }
 
-        // 🔥 Insert activity into its correct day
-        acc[className][plan.day].push({
-          id: plan.id,
-          time: plan.time,
-          title: plan.title,
-          day: plan.day,
-          class_name: className,
-        });
+        // 🔥 Handle new format: flat plan with starts_at/ends_at (backend returns single plan as activity)
+        if (plan.starts_at && plan.ends_at && plan.title) {
+          // console.log("📦 Processing plan with ISO times:", plan.id, plan.starts_at);
+          
+          // Convert ISO datetime to day and time
+          const startDate = new Date(plan.starts_at);
+          const endDate = new Date(plan.ends_at);
+          // console.log("⏰ ISO datetime:", plan.starts_at, "→ Parsed date:", startDate, "→ Day:", startDate.toLocaleDateString("en-US", { weekday: "long" }));
+          
+          const day = startDate.toLocaleDateString("en-US", { weekday: "long" });
+          // Map English day names to French
+          const dayMap: Record<string, string> = {
+            "Monday": "Lundi",
+            "Tuesday": "Mardi",
+            "Wednesday": "Mercredi",
+            "Thursday": "Jeudi",
+            "Friday": "Vendredi",
+            "Saturday": "Samedi",
+            "Sunday": "Dimanche",
+          };
+          const frenchDay = dayMap[day] || day;
+          
+          const time = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+          const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+          
+          const activityItem = {
+            id: plan.id,
+            time,
+            endTime,
+            title: plan.title,
+            day: frenchDay,
+            class_name: className,
+          };
+          // console.log("✅ Adding plan to", className, frenchDay, ":", activityItem);
+          acc[className][frenchDay].push(activityItem);
+        }
+        // 🔥 Handle activities array format (if backend returns it)
+        else if (Array.isArray(plan.activities) && plan.activities.length > 0) {
+          // console.log("📦 Processing activities array for plan:", plan.id, plan.activities);
+          plan.activities.forEach((activity: any) => {
+            if (!activity.starts_at || !activity.ends_at) return;
+            
+            const startDate = new Date(activity.starts_at);
+            const endDate = new Date(activity.ends_at);
+            const day = startDate.toLocaleDateString("en-US", { weekday: "long" });
+            const dayMap: Record<string, string> = {
+              "Monday": "Lundi",
+              "Tuesday": "Mardi",
+              "Wednesday": "Mercredi",
+              "Thursday": "Jeudi",
+              "Friday": "Vendredi",
+              "Saturday": "Samedi",
+              "Sunday": "Dimanche",
+            };
+            const frenchDay = dayMap[day] || day;
+            const time = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+            const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+            
+            acc[className][frenchDay].push({
+              id: plan.id,
+              time,
+              endTime,
+              title: activity.title,
+              day: frenchDay,
+              class_name: className,
+            });
+          });
+        }
+        // 🔥 Handle old format with flat fields (day/time from old backend)
+        else if (plan.day && plan.time && plan.title) {
+          // console.log("📦 Processing flat plan with day/time:", plan.id);
+          acc[className][plan.day].push({
+            id: plan.id,
+            time: plan.time,
+            title: plan.title,
+            day: plan.day,
+            class_name: className,
+          });
+        } else {
+          // console.log("⚠️ Plan has no valid time data:", plan.id, plan.title);
+        }
 
         return acc;
       }, {});
@@ -172,13 +251,20 @@ export default function CalendarScreen() {
       // 🔥 Make sure selected class still has all days
       if (selectedClass) {
         const cls = selectedClass.name;
+        // console.log("🔍 Looking for selected class:", cls, "| Available classes in groupedPlans:", Object.keys(groupedPlans));
         if (groupedPlans[cls]) {
           ALL_DAYS.forEach((d) => {
             if (!groupedPlans[cls][d]) groupedPlans[cls][d] = [];
           });
+          // console.log("✅ Found class", cls, "with activities:", groupedPlans[cls]);
+        } else {
+          // console.log("❌ Selected class", cls, "not found in grouped plans");
         }
+      } else {
+        // console.log("❌ No selected class");
       }
 
+      // console.log("📊 Final grouped plans for display:", groupedPlans);
       setWeeklyPlans(groupedPlans);
     } catch (error) {
       console.error(error);
@@ -316,13 +402,15 @@ export default function CalendarScreen() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PlanActivity | null>(null);
   const [newPlanDay, setNewPlanDay] = useState("Lundi");
-  const [newPlanTime, setNewPlanTime] = useState("08:00");
+  const [newPlanStartTime, setNewPlanStartTime] = useState("08:00");
+  const [newPlanEndTime, setNewPlanEndTime] = useState("09:00");
   const [newPlanTitle, setNewPlanTitle] = useState("");
 
   const openEditPlan = (plan: PlanActivity) => {
     setEditingPlan(plan);
     setNewPlanDay(plan.day);
-    setNewPlanTime(plan.time);
+    setNewPlanStartTime(plan.time);
+    setNewPlanEndTime(plan.endTime || plan.time); // Use endTime if available, else fallback to start time
     setNewPlanTitle(plan.title);
     setShowPlanModal(true);
   };
@@ -338,11 +426,21 @@ export default function CalendarScreen() {
     }
 
     const payload = {
-      time: newPlanTime,
       title: newPlanTitle.trim(),
       day: newPlanDay,
+      time: newPlanStartTime, // Keep for backward compatibility in API
       class_name: selectedClass.id,
+      activities: [
+        {
+          title: newPlanTitle.trim(),
+          day: newPlanDay,
+          time: newPlanStartTime,
+          endTime: newPlanEndTime, // Pass end time
+          // starts_at and ends_at will be calculated by the API
+        }
+      ]
     };
+    // console.log("📋 Payload being sent to createPlan/updatePlan:", payload);
     try {
       let newItem;
       if (editingPlan?.id) {
@@ -362,14 +460,15 @@ export default function CalendarScreen() {
         if (editingPlan?.id) {
           updated[className][newPlanDay] = updated[className][newPlanDay].map((p: any) =>
             p.id === editingPlan.id
-              ? { ...p, ...newItem, title: newPlanTitle.trim(), time: newPlanTime }
+              ? { ...p, ...newItem, title: newPlanTitle.trim(), time: newPlanStartTime, endTime: newPlanEndTime }
               : p
           );
         } else {
           updated[className][newPlanDay].push({
             id: newItem.id,
             title: newPlanTitle.trim(),
-            time: newPlanTime,
+            time: newPlanStartTime,
+            endTime: newPlanEndTime,
             day: newPlanDay,
           });
         }
@@ -377,13 +476,31 @@ export default function CalendarScreen() {
         return updated;
       });
 
+      // Refresh data from backend
+      await fetchData(selectedClass?.id);
+
       Alert.alert("Succès ✅", "L'activité a été enregistrée.");
       setShowPlanModal(false);
       setEditingPlan(null);
       setNewPlanTitle("");
-    } catch (e) {
+      setNewPlanStartTime("08:00");
+      setNewPlanEndTime("09:00");
+    } catch (e: any) {
       console.error("❌ Error saving plan:", e);
-      Alert.alert("Erreur", "Impossible d'enregistrer l'activité.");
+      // Show detailed error message
+      let errorMessage = "Impossible d'enregistrer l'activité.";
+      if (e.message) {
+        errorMessage = e.message;
+      } else if (e.response?.data?.detail) {
+        errorMessage = e.response.data.detail;
+      } else if (e.response?.data?.activities) {
+        errorMessage = Array.isArray(e.response.data.activities) 
+          ? e.response.data.activities[0] 
+          : e.response.data.activities;
+      } else if (e.response?.data?.non_field_errors) {
+        errorMessage = e.response.data.non_field_errors[0];
+      }
+      Alert.alert("Erreur", errorMessage);
     }
   };
 
@@ -489,7 +606,8 @@ export default function CalendarScreen() {
             >
               <Ionicons name="time-outline" size={16} color={colors.accent} />
               <Text className="ml-2 text-sm" style={{ color: colors.textDark }}>
-                {item.time} — {item.title}
+                {item.time}
+                {item.endTime ? ` - ${item.endTime}` : ""} — {item.title}
               </Text>
               <Ionicons
                 name="create-outline"
@@ -514,18 +632,28 @@ export default function CalendarScreen() {
       <HeaderBar title="Calendrier" showBack={true} />
 
       {/* Tabs */}
-      <View className="flex-row mb-6 bg-white rounded-2xl p-1 shadow-sm mx-5 mt-4">
+      <View 
+        className="flex-row mb-6 bg-white rounded-2xl p-1 mx-5 mt-4"
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.25,
+          shadowRadius: 8,
+          elevation: 5,
+        }}
+      >
         {["events", "plan"].map((tab) => (
           <TouchableOpacity
             key={tab}
-            className={`flex-1 py-3 rounded-2xl items-center ${
-              activeTab === tab ? "bg-[#C6A57B]" : ""
-            }`}
+            className="flex-1 py-3 rounded-2xl items-center"
+            style={{
+              backgroundColor: activeTab === tab ? colors.primary : colors.background,
+            }}
             onPress={() => setActiveTab(tab as "events" | "plan")}
           >
             <Text
               className="text-base font-semibold"
-              style={{ color: activeTab === tab ? "#fff" : colors.textDark }}
+              style={{ color: activeTab === tab ? colors.white : colors.textDark }}
             >
               {tab === "events" ? t("calendar.events") : t("calendar.weekly_plan")}
             </Text>
@@ -615,7 +743,7 @@ export default function CalendarScreen() {
       <Modal visible={showEventModal} animationType="slide" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          style={{ backgroundColor: colors.overlayDark }}
         >
           <View
             className="w-full rounded-2xl p-6"
@@ -633,10 +761,10 @@ export default function CalendarScreen() {
               className="rounded-xl px-4 py-3 text-base mb-3"
               placeholderTextColor={colors.textLight}
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 color: colors.textDark,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             />
 
@@ -646,7 +774,7 @@ export default function CalendarScreen() {
                 <TouchableOpacity
                   onPress={() => setShowClassPicker(!showClassPicker)}
                   className="rounded-xl px-4 py-3 mb-3 flex-row items-center justify-between"
-                  style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+                  style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
                 >
                   <Text style={{ color: colors.text }}>
                     {selectedEventClass?.name || "Sélectionner une classe"}
@@ -661,7 +789,7 @@ export default function CalendarScreen() {
                 {showClassPicker && (
                   <View
                     className="mb-3 rounded-xl"
-                    style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+                    style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
                   >
                     <TouchableOpacity
                       onPress={() => {
@@ -669,7 +797,7 @@ export default function CalendarScreen() {
                         setShowClassPicker(false);
                       }}
                       className="px-4 py-3 border-b"
-                      style={{ borderBottomColor: "#E5E7EB" }}
+                      style={{ borderBottomColor: colors.border }}
                     >
                       <Text
                         style={{
@@ -686,7 +814,7 @@ export default function CalendarScreen() {
                         setShowClassPicker(false);
                       }}
                       className="px-4 py-3 border-b"
-                      style={{ borderBottomColor: "#E5E7EB" }}
+                      style={{ borderBottomColor: colors.border }}
                     >
                       <Text
                         style={{
@@ -705,7 +833,7 @@ export default function CalendarScreen() {
                           setShowClassPicker(false);
                         }}
                         className="px-4 py-3 border-b"
-                        style={{ borderBottomColor: "#E5E7EB" }}
+                        style={{ borderBottomColor: colors.border }}
                       >
                         <Text
                           style={{
@@ -724,7 +852,7 @@ export default function CalendarScreen() {
             {isParent && (
               <View
                 className="rounded-xl px-4 py-3 mb-3"
-                style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+                style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
               >
                 <Text style={{ color: colors.text }}>{selectedClass?.name}</Text>
               </View>
@@ -734,7 +862,7 @@ export default function CalendarScreen() {
             <TouchableOpacity
               onPress={() => setShowPicker("date")}
               className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
-              style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+              style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
             >
               <Text style={{ color: colors.text }}>{newDate.toLocaleDateString("fr-FR")}</Text>
               <Ionicons name="calendar-outline" size={20} color={colors.textLight} />
@@ -744,7 +872,7 @@ export default function CalendarScreen() {
             <TouchableOpacity
               onPress={() => setShowPicker("time")}
               className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
-              style={{ backgroundColor: "#F8F8F8", borderWidth: 1, borderColor: "#E5E7EB" }}
+              style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
             >
               <Text style={{ color: colors.text }}>
                 {newDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
@@ -774,10 +902,10 @@ export default function CalendarScreen() {
               className="rounded-xl px-4 py-3 text-base mb-5"
               placeholderTextColor={colors.textLight}
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 color: colors.textDark,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             />
 
@@ -787,9 +915,9 @@ export default function CalendarScreen() {
                 <TouchableOpacity
                   onPress={handleDeleteEvent}
                   className="rounded-xl py-3 px-5"
-                  style={{ backgroundColor: "#FEE2E2" }}
+                  style={{ backgroundColor: colors.redLight }}
                 >
-                  <Text style={{ color: "#B91C1C", fontWeight: "500" }}>{t("common.delete")}</Text>
+                  <Text style={{ color: colors.redDark, fontWeight: "500" }}>{t("common.delete")}</Text>
                 </TouchableOpacity>
               )}
 
@@ -801,7 +929,7 @@ export default function CalendarScreen() {
                     setShowClassPicker(false);
                   }}
                   className="rounded-xl py-3 px-5 mr-2"
-                  style={{ backgroundColor: "#F3F4F6" }}
+                  style={{ backgroundColor: colors.lightGrayBg }}
                 >
                   <Text style={{ color: colors.text }}>{t("common.cancel")}</Text>
                 </TouchableOpacity>
@@ -825,7 +953,7 @@ export default function CalendarScreen() {
       <Modal visible={showPlanModal} animationType="fade" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          style={{ backgroundColor: colors.overlayDark }}
         >
           <View
             className="w-full rounded-2xl p-6"
@@ -837,19 +965,44 @@ export default function CalendarScreen() {
                 : `${t("calendar.new_activity")} (${newPlanDay})`}
             </Text>
 
-            <TextInput
-              placeholder="Heure (ex: 08:00)"
-              value={newPlanTime}
-              onChangeText={setNewPlanTime}
-              className="rounded-xl px-4 py-3 text-base mb-3"
-              placeholderTextColor={colors.textLight}
-              style={{
-                backgroundColor: "#F8F8F8",
-                color: colors.textDark,
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-              }}
-            />
+            <View className="flex-row gap-3 mb-3">
+              <View className="flex-1">
+                <Text className="text-xs font-semibold mb-1" style={{ color: colors.textLight }}>
+                  Début
+                </Text>
+                <TextInput
+                  placeholder="08:00"
+                  value={newPlanStartTime}
+                  onChangeText={setNewPlanStartTime}
+                  className="rounded-xl px-4 py-3 text-base"
+                  placeholderTextColor={colors.textLight}
+                  style={{
+                    backgroundColor: colors.cardBackground,
+                    color: colors.textDark,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="text-xs font-semibold mb-1" style={{ color: colors.textLight }}>
+                  Fin
+                </Text>
+                <TextInput
+                  placeholder="09:00"
+                  value={newPlanEndTime}
+                  onChangeText={setNewPlanEndTime}
+                  className="rounded-xl px-4 py-3 text-base"
+                  placeholderTextColor={colors.textLight}
+                  style={{
+                    backgroundColor: colors.cardBackground,
+                    color: colors.textDark,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                />
+              </View>
+            </View>
 
             <TextInput
               placeholder="Titre de l'activité"
@@ -858,10 +1011,10 @@ export default function CalendarScreen() {
               className="rounded-xl px-4 py-3 text-base mb-5"
               placeholderTextColor={colors.textLight}
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 color: colors.textDark,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             />
 
@@ -870,11 +1023,11 @@ export default function CalendarScreen() {
                 <TouchableOpacity
                   onPress={handleDeletePlan}
                   className="flex-1 rounded-xl py-3 mx-1"
-                  style={{ backgroundColor: "#FEE2E2" }}
+                  style={{ backgroundColor: colors.redLight }}
                 >
                   <Text
                     style={{
-                      color: "#BC1C1C",
+                      color: colors.redDark,
                       fontWeight: "500",
                       textAlign: "center",
                     }}
@@ -887,7 +1040,7 @@ export default function CalendarScreen() {
               <TouchableOpacity
                 onPress={() => setShowPlanModal(false)}
                 className="flex-1 rounded-xl py-3 mx-1"
-                style={{ backgroundColor: "#F3F4F6" }}
+                style={{ backgroundColor: colors.lightGrayBg }}
               >
                 <Text style={{ color: colors.text, textAlign: "center" }}>
                   {t("common.cancel")}

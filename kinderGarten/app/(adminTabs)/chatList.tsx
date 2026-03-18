@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
+import { useAppStore } from "@/store/useAppStore";
 import { ChevronLeft } from "lucide-react-native";
 import HeaderBar from "@/components/Header";
 import { getConversations, deleteConversation } from "@/api/chat";
@@ -18,6 +19,8 @@ type ParentPreview = {
 
 export default function ChatListScreen() {
   const router = useRouter();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
 
   const [conversations, setConversations] = useState<ParentPreview[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,7 @@ export default function ChatListScreen() {
     setLoading(true);
     try {
       const data = await getConversations();
-      console.log("[Conversations API] Raw data:", data);
+      // // console.log("[Conversations API] Raw data:", data);
       // Map API data to ParentPreview type (handle paginated response)
       const mapped = (data.results || []).map((conv: any) => ({
         id: conv.id?.toString() || "",
@@ -41,7 +44,7 @@ export default function ChatListScreen() {
         avatar: conv.other_user_avatar || "https://i.pravatar.cc/150?img=5",
         unread: conv.unread_count || 0,
       }));
-      console.log("[Conversations] Mapped:", mapped);
+      // console.log("[Conversations] Mapped:", mapped);
       setConversations(mapped);
     } catch (e) {
       setConversations([]);
@@ -109,7 +112,7 @@ export default function ChatListScreen() {
           {item.time}
         </Text>
         {item.unread > 0 && (
-          <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: "#C6A57B" }}>
+          <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: colors.primary }}>
             <Text className="text-white text-xs font-medium">{item.unread}</Text>
           </View>
         )}

@@ -12,10 +12,10 @@ import {
 } from "react-native";
 import { Send, ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
+import { useAppStore } from "@/store/useAppStore";
 import { getOrCreateConversation, getMessages, sendMessage } from "@/api/chat";
 import { useLocalSearchParams } from "expo-router";
-import { useAppStore } from "@/store/useAppStore";
 
 type Message = {
   id: string;
@@ -29,7 +29,9 @@ export default function Chat() {
   const POLL_INTERVAL = 8000;
   const adminId = useAppStore((state) => state.adminId);
   const userId = useAppStore((state) => state.userId);
-  console.log("[Chat] Parent screen loaded - adminId:", adminId, "parentId:", userId);
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
+  // // console.log("[Chat] Parent screen loaded - adminId:", adminId, "parentId:", userId);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -45,9 +47,9 @@ export default function Chat() {
       const fetchMessages = async (cid: number) => {
         try {
           const msgs = await getMessages(cid);
-          console.log("[Chat] Raw messages from API:", msgs);
+          // console.log("[Chat] Raw messages from API:", msgs);
           const formatted = msgs.map((m: any) => {
-            console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
+            // console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
             const isCurrentUser = m.sender?.toString() === userId?.toString();
             return {
               id: m.id.toString(),
@@ -72,20 +74,20 @@ export default function Chat() {
         try {
           // Only try to create conversation if we have both IDs
           if (!adminId || !userId) {
-            console.log("[Chat] Missing adminId or userId", { adminId, userId });
+            // console.log("[Chat] Missing adminId or userId", { adminId, userId });
             setLoading(false);
             return;
           }
 
-          console.log("[Chat] Creating conversation with admin:", adminId, "parent:", userId);
+          // console.log("[Chat] Creating conversation with admin:", adminId, "parent:", userId);
           const convo = await getOrCreateConversation(Number(adminId), Number(userId));
-          console.log("[Chat] ✅ Conversation created/retrieved, ID:", convo.id);
+          // console.log("[Chat] ✅ Conversation created/retrieved, ID:", convo.id);
           setConversationId(convo.id);
 
           const msgs = convo.messages || (await getMessages(convo.id));
-          console.log("[Chat] Raw messages on load:", msgs);
+          // console.log("[Chat] Raw messages on load:", msgs);
           const formatted = msgs.map((m: any) => {
-            console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
+            // console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
             const isCurrentUser = m.sender?.toString() === userId?.toString();
             return {
               id: m.id.toString(),
@@ -129,13 +131,13 @@ export default function Chat() {
     setInput("");
 
     try {
-      console.log("[CHAT] Sending message to conversation:", conversationId);
+      // console.log("[CHAT] Sending message to conversation:", conversationId);
       await sendMessage(conversationId, text);
       // Fetch latest messages from server after sending
       const msgs = await getMessages(conversationId);
-      console.log("[CHAT] Raw messages from API:", msgs);
+      // console.log("[CHAT] Raw messages from API:", msgs);
       const formatted = msgs.map((m: any) => {
-        console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
+        // console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
         const isCurrentUser = m.sender?.toString() === userId?.toString();
         return {
           id: m.id.toString(),
@@ -147,7 +149,7 @@ export default function Chat() {
           }),
         };
       });
-      console.log("[CHAT] ✅ Updated messages count:", formatted.length);
+      // console.log("[CHAT] ✅ Updated messages count:", formatted.length);
       setMessages(formatted);
     } catch (err: any) {
       const errMsg = err.response?.data?.detail || err.response?.data?.error || err.message;
@@ -156,16 +158,16 @@ export default function Chat() {
   }, [input, conversationId]);
 
   return (
-    <View className="flex-1 bg-[#FAF8F5]">
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
       <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
+        style={{ backgroundColor: colors.secondary }}
       >
         <TouchableOpacity
           onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/home"))}
         >
-          <ChevronLeft color="#374151" size={28} />
+          <ChevronLeft color={colors.textDark} size={28} />
         </TouchableOpacity>
         <Text className="text-lg font-semibold text-gray-800">Discussion avec l’Admin</Text>
       </View>
@@ -191,11 +193,12 @@ export default function Chat() {
                   className={`px-5 py-2 ${item.sender === "user" ? "items-end" : "items-start"}`}
                 >
                   <View
-                    className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                      item.sender === "user"
-                        ? "bg-[#C6A57B] rounded-br-none"
-                        : "bg-white rounded-bl-none"
-                    }`}
+                    className={`max-w-[80%] rounded-2xl px-4 py-2`}
+                    style={{
+                      backgroundColor: item.sender === "user" ? colors.primary : colors.cardBackground,
+                      borderBottomRightRadius: item.sender === "user" ? 0 : 16,
+                      borderBottomLeftRadius: item.sender === "user" ? 16 : 0,
+                    }}
                   >
                     <Text
                       className={`text-base ${item.sender === "user" ? "text-white" : "text-gray-800"}`}
@@ -225,7 +228,7 @@ export default function Chat() {
                 placeholder="Écrire un message..."
                 className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-gray-800"
               />
-              <TouchableOpacity onPress={handleSend} className="ml-3 bg-[#C6A57B] rounded-full p-2">
+              <TouchableOpacity onPress={handleSend} className="ml-3 rounded-full p-2" style={{ backgroundColor: colors.accent }}>
                 <Send color="#fff" size={20} />
               </TouchableOpacity>
             </View>

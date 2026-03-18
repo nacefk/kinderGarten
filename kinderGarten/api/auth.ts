@@ -38,6 +38,8 @@ export async function login(username: string, password: string, tenant: string) 
       throw new Error("Missing tokens in login response");
     }
 
+    console.log("💾 Saving tokens to secure storage...");
+    
     // ✅ Save tokens securely (NOT logged)
     await Promise.all([
       secureStorage.setAccessToken(access),
@@ -45,6 +47,10 @@ export async function login(username: string, password: string, tenant: string) 
       secureStorage.setTenantSlug(tenant),
       secureStorage.setUserRole(role),
     ]);
+
+    // ✅ Verify tokens were saved
+    const savedToken = await secureStorage.getAccessToken();
+    console.log("✅ Token saved and verified:", savedToken ? "✓ SUCCESS" : "✗ FAILED");
 
     // ✅ Set token for API
     await setAuthToken(access);

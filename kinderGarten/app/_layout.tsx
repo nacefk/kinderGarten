@@ -4,11 +4,13 @@ import { Slot } from "expo-router";
 import { setupAxiosInterceptors } from "@/api/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
+import { useAppStore } from "@/store/useAppStore";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function RootLayout() {
   const { checkAuth } = useAuthStore();
   const { initLanguage } = useLanguageStore();
+  const { actions } = useAppStore();
 
   useEffect(() => {
     // ✅ Initialize auth on app startup
@@ -19,6 +21,9 @@ export default function RootLayout() {
 
     // ✅ Setup axios interceptors for token refresh
     setupAxiosInterceptors();
+
+    // ✅ Fetch tenant data (logo, primary_color)
+    actions.fetchTenant();
   }, []);
 
   return (

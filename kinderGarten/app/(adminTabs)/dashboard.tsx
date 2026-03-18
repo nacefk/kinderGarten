@@ -13,9 +13,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LogOut } from "lucide-react-native";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
 import { useRouter } from "expo-router";
 import { useLanguageStore } from "@/store/useLanguageStore";
+import { useAppStore } from "@/store/useAppStore";
 import { getTranslation, Language } from "@/config/translations";
 import {
   getAttendanceSummary,
@@ -39,6 +40,19 @@ type ExtraHour = {
 export default function DashboardScreen() {
   const router = useRouter();
   const { language, setLanguage } = useLanguageStore();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
+  
+  // Debug: Log when colors update
+  useEffect(() => {
+    console.log("🎯 [Dashboard] Colors updated:", {
+      primary: colors.primary,
+      secondary: colors.secondary,
+      tenant_primary: tenant?.primary_color,
+      tenant_secondary: tenant?.secondary_color
+    });
+  }, [colors, tenant]);
+  
   const t = (key: string) => getTranslation(language, key);
   const languages: Language[] = ["en", "fr", "ar"];
   const [presence, setPresence] = useState({ present: 0, absent: 0 });
@@ -163,18 +177,18 @@ export default function DashboardScreen() {
       try {
         setLoadingExtra(true);
         const data = await getTodayExtraHours();
-        console.log("[Dashboard] Received today extra hours data:", data);
+        // // console.log("[Dashboard] Received today extra hours data:", data);
         // Data should be an array directly from the API
         if (Array.isArray(data)) {
-          console.log("[Dashboard] Data is array:", data);
+          // console.log("[Dashboard] Data is array:", data);
           setExtraHours(data);
         } else if (data && typeof data === "object") {
           // If API returns {results: [...]} (fallback)
           const results = (data as any).results || (data as any).data || [];
-          console.log("[Dashboard] Data is object, results:", results);
+          // console.log("[Dashboard] Data is object, results:", results);
           setExtraHours(Array.isArray(results) ? results : []);
         } else {
-          console.log("[Dashboard] Data is neither array nor object");
+          // console.log("[Dashboard] Data is neither array nor object");
           setExtraHours([]);
         }
       } catch (err: any) {
@@ -196,7 +210,7 @@ export default function DashboardScreen() {
       {/* Header */}
       <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
+        style={{ backgroundColor: colors.secondary }}
       >
         <View className="flex-row items-center" />
         <View className="flex-1" />
@@ -237,7 +251,7 @@ export default function DashboardScreen() {
         ) : presence.present === 0 && presence.absent === 0 ? (
           <View
             style={{
-              backgroundColor: "#F5F5F5",
+              backgroundColor: colors.lightGray,
               borderRadius: 14,
               padding: 18,
               alignItems: "center",
@@ -287,7 +301,7 @@ export default function DashboardScreen() {
               <Text style={{ color: colors.textLight }}>{t("dashboard.present")}</Text>
             </View>
             <View>
-              <Text className="text-3xl font-bold" style={{ color: "#E53935" }}>
+              <Text className="text-3xl font-bold" style={{ color: colors.errorDark }}>
                 {presence.absent}
               </Text>
               <Text style={{ color: colors.textLight }}>{t("dashboard.absent")}</Text>
@@ -309,7 +323,7 @@ export default function DashboardScreen() {
       >
         <View className="flex-row items-center justify-between mb-2">
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            {t("dashboard.absent")} {t("dashboard.today")}
+            {t("dashboard.absence_reports")} {t("dashboard.today")}
           </Text>
           <Ionicons name="alert-circle-outline" size={22} color={colors.accent} />
         </View>
@@ -339,7 +353,7 @@ export default function DashboardScreen() {
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    backgroundColor: "#F8F6F2",
+                    backgroundColor: colors.lightTan,
                     borderRadius: 16,
                     paddingVertical: 12,
                     paddingHorizontal: 14,
@@ -435,7 +449,7 @@ export default function DashboardScreen() {
       >
         <View className="flex-row items-center justify-between mb-2">
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            {t("dashboard.extra_hours")} {t("dashboard.today")}
+            {t("dashboard.extra_hours")}
           </Text>
           <Ionicons name="time-outline" size={22} color={colors.accent} />
         </View>
@@ -450,7 +464,7 @@ export default function DashboardScreen() {
           <View style={{ marginTop: 8 }}>
             <View style={{ marginBottom: 12 }}>
               <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 14 }}>
-                {extraHours.length} {extraHours.length === 1 ? "request" : "requests"}
+                {extraHours.length} {t(extraHours.length === 1 ? "common.request" : "common.requests")}
               </Text>
             </View>
             {extraHours.slice(0, 3).map((req) => (
@@ -493,7 +507,7 @@ export default function DashboardScreen() {
       <Modal visible={showLanguageModal} animationType="fade" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          style={{ backgroundColor: colors.overlayDark }}
         >
           <View
             className="w-full rounded-2xl p-6"
@@ -518,14 +532,14 @@ export default function DashboardScreen() {
                 <Ionicons
                   name="globe-outline"
                   size={20}
-                  color={language === lang ? "#FFF" : colors.textDark}
+                  color={language === lang ? colors.white : colors.textDark}
                 />
                 <Text
                   style={{
                     marginLeft: 12,
                     fontWeight: "600",
                     fontSize: 16,
-                    color: language === lang ? "#FFF" : colors.textDark,
+                    color: language === lang ? colors.cardBackground : colors.textDark,
                   }}
                 >
                   {lang === "en" ? "English" : lang === "fr" ? "Français" : "العربية"}

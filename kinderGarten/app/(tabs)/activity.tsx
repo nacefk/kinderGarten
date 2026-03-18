@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import colors from "../../config/colors";
+import { getColors } from "@/config/colors";
 import Card from "../../components/Card";
 import TimelineItem from "../../components/TimelineItem";
 import LiveView from "@/components/LiveView";
@@ -21,6 +21,8 @@ import { getReports } from "@/api/report";
 import { useAppStore } from "@/store/useAppStore";
 
 export default function Activity() {
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<"today" | "week" | "upcoming">("today");
   const [selectedDay, setSelectedDay] = useState<string>("Lundi");
@@ -165,7 +167,7 @@ export default function Activity() {
   /** 📦 Refresh data when screen comes into focus */
   useFocusEffect(
     useCallback(() => {
-      console.log("📱 Activity screen focused - refreshing data");
+      // // console.log("📱 Activity screen focused - refreshing data");
       loadActivityData();
     }, [loadActivityData])
   );
@@ -192,7 +194,7 @@ export default function Activity() {
       {/* Header */}
       <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
+        style={{ backgroundColor: colors.secondary }}
       >
         <View className="flex-row items-center">
           <TouchableOpacity
@@ -228,7 +230,7 @@ export default function Activity() {
             <Text
               className="font-medium"
               style={{
-                color: selectedFilter === tab.key ? "#FFF" : colors.textDark,
+                color: selectedFilter === tab.key ? colors.cardBackground : colors.textDark,
               }}
             >
               {tab.label}
@@ -270,7 +272,7 @@ export default function Activity() {
                             className="w-24 h-24 rounded-xl items-center justify-center"
                             style={{ backgroundColor: colors.textDark }}
                           >
-                            <Text className="text-xs" style={{ color: "#FFF" }}>
+                            <Text className="text-xs" style={{ color: colors.cardBackground }}>
                               🎬 Vidéo
                             </Text>
                           </View>

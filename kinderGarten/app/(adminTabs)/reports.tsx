@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
 import {
@@ -36,6 +36,8 @@ export default function ReportsScreen() {
     clubList: clubs,
   } = useAppStore((state) => state.data);
   const { fetchClasses, fetchChildren, fetchClubs } = useAppStore((state) => state.actions);
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
 
   const [selectedClass, setSelectedClass] = useState<any | null>(null);
   const [selectedChildren, setSelectedChildren] = useState<any[]>([]);
@@ -142,14 +144,14 @@ export default function ReportsScreen() {
         // If no class has students, use the first class anyway
         if (!classToSelect) {
           classToSelect = classes[0];
-          console.log(
-            "📚 [Reports] No class with students found, using first class:",
-            classToSelect.name
-          );
+          // // console.log(
+          //   "📚 [Reports] No class with students found, using first class:",
+          //   classToSelect.name
+          // );
         }
 
         if (!selectedClass || selectedClass.id !== classToSelect.id) {
-          console.log("📚 [Reports] Setting selected class to:", classToSelect.name);
+          // console.log("📚 [Reports] Setting selected class to:", classToSelect.name);
           setSelectedClass(classToSelect);
           setFilterType("class");
           setShowClassDropdown(false);
@@ -158,15 +160,15 @@ export default function ReportsScreen() {
             setLoading(true);
             // Only fetch if we haven't already
             if (!childrenData.length) {
-              console.log("📚 [Reports] Fetching children for classroom ID:", classToSelect.id);
+              // // console.log("📚 [Reports] Fetching children for classroom ID:", classToSelect.id);
               childrenData = await getChildren({ classroom: classToSelect.id });
             }
 
-            console.log(
-              "📚 [Reports] Setting childrenList with",
-              Array.isArray(childrenData) ? childrenData.length : 0,
-              "children"
-            );
+            // // console.log(
+            //   "📚 [Reports] Setting childrenList with",
+            //   Array.isArray(childrenData) ? childrenData.length : 0,
+            //   "children"
+            // );
             setChildrenList(Array.isArray(childrenData) ? childrenData : []);
           } catch (err: any) {
             console.error("❌ Error loading children:", err.message);
@@ -207,11 +209,11 @@ export default function ReportsScreen() {
       const existingMap: Record<number, boolean> = {};
       const idMap: Record<number, number> = {};
 
-      console.log("📋 [loadReportsForClass] Reports from API:", data);
-      console.log(
-        "📋 [loadReportsForClass] Looking for reports matching childrenList ids:",
-        childrenList.map((c) => c.id)
-      );
+      // // console.log("📋 [loadReportsForClass] Reports from API:", data);
+      // // console.log(
+      //   "📋 [loadReportsForClass] Looking for reports matching childrenList ids:",
+      //   childrenList.map((c) => c.id)
+      // );
 
       if (Array.isArray(data)) {
         data.forEach((r: any) => {
@@ -221,14 +223,14 @@ export default function ReportsScreen() {
           if (childExists) {
             existingMap[r.child] = true;
             idMap[r.child] = r.id;
-            console.log(
-              `📋 [loadReportsForClass] Found report for child ${r.child}: reportId=${r.id}`
-            );
+            // // console.log(
+            //   `📋 [loadReportsForClass] Found report for child ${r.child}: reportId=${r.id}`
+            // );
           }
         });
       }
 
-      console.log("📋 [loadReportsForClass] Final maps:", { existingMap, idMap });
+      // // console.log("📋 [loadReportsForClass] Final maps:", { existingMap, idMap });
       setExistingReports(existingMap);
       setReportsMap(idMap);
     } catch (error: any) {
@@ -237,12 +239,12 @@ export default function ReportsScreen() {
   };
 
   const filteredChildren = useMemo(() => {
-    console.log(
-      "🔍 [filteredChildren] childrenList:",
-      childrenList?.length || 0,
-      "filterType:",
-      filterType
-    );
+    // // console.log(
+    //   "🔍 [filteredChildren] childrenList:",
+    //   childrenList?.length || 0,
+    //   "filterType:",
+    //   filterType
+    // );
 
     if (filterType === "club") {
       return childrenList.filter((c) => {
@@ -282,11 +284,11 @@ export default function ReportsScreen() {
 
         if (reportId) {
           // Update existing report
-          console.log("📝 [handleSubmit] Updating existing report for child:", {
-            reportId,
-            childId: child.id,
-            childName: child.name,
-          });
+          // // console.log("📝 [handleSubmit] Updating existing report for child:", {
+          //   reportId,
+          //   childId: child.id,
+          //   childName: child.name,
+          // });
 
           await updateDailyReport(reportId, {
             meal,
@@ -302,15 +304,15 @@ export default function ReportsScreen() {
           newReports[child.id] = reportId;
         } else {
           // Create new report
-          console.log("📝 [handleSubmit] Creating new report for child:", {
-            childId: child.id,
-            childName: child.name,
-            meal: meal || "EMPTY",
-            nap: nap || "EMPTY",
-            behavior: behavior.length > 0 ? behavior.join(", ") : "EMPTY",
-            notes: notes || "EMPTY",
-            mediaCount: mediaList.length,
-          });
+          // // console.log("📝 [handleSubmit] Creating new report for child:", {
+          //   childId: child.id,
+          //   childName: child.name,
+          //   meal: meal || "EMPTY",
+          //   nap: nap || "EMPTY",
+          //   behavior: behavior.length > 0 ? behavior.join(", ") : "EMPTY",
+          //   notes: notes || "EMPTY",
+          //   mediaCount: mediaList.length,
+          // });
 
           const created = await createDailyReport({
             child: child.id,
@@ -360,9 +362,9 @@ export default function ReportsScreen() {
     const reportId = reportsMap[child.id];
     setSelectedChildren([child]);
 
-    console.log("👤 [handleChildSelect] Selected child:", child.id);
-    console.log("📋 [handleChildSelect] reportsMap:", reportsMap);
-    console.log("📋 [handleChildSelect] reportId found:", reportId);
+    // console.log("👤 [handleChildSelect] Selected child:", child.id);
+    // console.log("📋 [handleChildSelect] reportsMap:", reportsMap);
+    // console.log("📋 [handleChildSelect] reportId found:", reportId);
 
     if (reportId) {
       setLoading(true);
@@ -375,7 +377,7 @@ export default function ReportsScreen() {
           reportCacheRef.current[reportId] = report;
         }
 
-        console.log("📋 [handleChildSelect] Loaded report:", report);
+        // console.log("📋 [handleChildSelect] Loaded report:", report);
         setMeal(report.meal || "");
         setNap(report.nap || "");
         setBehavior(report.behavior ? report.behavior.split(", ").filter((b: string) => b) : []);
@@ -484,7 +486,7 @@ export default function ReportsScreen() {
             {Array.isArray(classes) && classes.length > 0 ? (
               <View
                 style={{
-                  backgroundColor: "#F8F8F8",
+                  backgroundColor: colors.cardBackground,
                   borderRadius: 12,
                   borderWidth: 1,
                   borderColor: colors.accent,
@@ -526,7 +528,7 @@ export default function ReportsScreen() {
                         style={{
                           paddingVertical: 8,
                           borderBottomWidth: 0.5,
-                          borderColor: "#E5E7EB",
+                          borderColor: colors.border,
                         }}
                       >
                         <Text
@@ -545,10 +547,10 @@ export default function ReportsScreen() {
             ) : (
               <View
                 style={{
-                  backgroundColor: "#FEF3C7",
+                  backgroundColor: colors.warningLight,
                   borderRadius: 12,
                   borderWidth: 1,
-                  borderColor: "#FBBF24",
+                  borderColor: colors.warningBorder,
                   paddingHorizontal: 12,
                   paddingVertical: 12,
                   alignItems: "center",
@@ -557,7 +559,7 @@ export default function ReportsScreen() {
               >
                 <Text
                   style={{
-                    color: "#D97706",
+                    color: colors.warningDarkText,
                     fontWeight: "500",
                     fontSize: 14,
                   }}
@@ -575,7 +577,7 @@ export default function ReportsScreen() {
             {Array.isArray(clubs) && clubs.length > 0 ? (
               <View
                 style={{
-                  backgroundColor: "#F8F8F8",
+                  backgroundColor: colors.cardBackground,
                   borderRadius: 12,
                   borderWidth: 1,
                   borderColor: colors.accent,
@@ -620,7 +622,7 @@ export default function ReportsScreen() {
                         style={{
                           paddingVertical: 8,
                           borderBottomWidth: 0.5,
-                          borderColor: "#E5E7EB",
+                          borderColor: colors.border,
                         }}
                       >
                         <Text
@@ -639,10 +641,10 @@ export default function ReportsScreen() {
             ) : (
               <View
                 style={{
-                  backgroundColor: "#FEF3C7",
+                  backgroundColor: colors.warningLight,
                   borderRadius: 12,
                   borderWidth: 1,
-                  borderColor: "#FBBF24",
+                  borderColor: colors.warningBorder,
                   paddingHorizontal: 12,
                   paddingVertical: 12,
                   alignItems: "center",
@@ -650,7 +652,7 @@ export default function ReportsScreen() {
               >
                 <Text
                   style={{
-                    color: "#D97706",
+                    color: colors.warningDarkText,
                     fontWeight: "500",
                     fontSize: 14,
                   }}
@@ -679,7 +681,7 @@ export default function ReportsScreen() {
                   setSelectedChildren([]);
                 }}
                 style={{
-                  backgroundColor: groupMode ? colors.accent : "#F8F8F8",
+                  backgroundColor: groupMode ? colors.accent : colors.cardBackground,
                   borderRadius: 10,
                   borderWidth: 1,
                   borderColor: colors.accent,
@@ -708,13 +710,13 @@ export default function ReportsScreen() {
                       backgroundColor: isSelected
                         ? colors.accentLight
                         : hasReport
-                          ? "#E0F7E9"
-                          : "#F8F8F8",
+                          ? colors.successLightGreen
+                          : colors.cardBackground,
                       borderWidth: 1,
                       borderColor: isSelected
                         ? colors.accent
                         : hasReport
-                          ? "#4CAF50"
+                          ? colors.successDark
                           : colors.accent,
                       borderRadius: 10,
                       padding: 12,
@@ -728,7 +730,7 @@ export default function ReportsScreen() {
                     {isSelected ? (
                       <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
                     ) : hasReport ? (
-                      <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
+                      <Ionicons name="checkmark-circle" size={22} color={colors.successDark} />
                     ) : null}
                   </TouchableOpacity>
                 );
@@ -800,10 +802,10 @@ export default function ReportsScreen() {
                 placeholderTextColor={colors.textLight}
                 className="rounded-xl px-4 py-3 text-base"
                 style={{
-                  backgroundColor: "#F8F8F8",
+                  backgroundColor: colors.cardBackground,
                   color: colors.textDark,
                   borderWidth: 1,
-                  borderColor: "#E5E7EB",
+                  borderColor: colors.border,
                 }}
                 value={field.value}
                 onChangeText={field.setter}
@@ -830,7 +832,7 @@ export default function ReportsScreen() {
                       }
                     }}
                     style={{
-                      backgroundColor: isSelected ? colors.accent : "#F3F4F6",
+                      backgroundColor: isSelected ? colors.accent : colors.lightGrayBg,
                       paddingHorizontal: 10,
                       paddingVertical: 6,
                       borderRadius: 10,
@@ -867,10 +869,10 @@ export default function ReportsScreen() {
               placeholderTextColor={colors.textLight}
               className="rounded-xl px-4 py-3 text-base"
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 color: colors.textDark,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
                 textAlignVertical: "top",
               }}
               value={notes}
@@ -880,7 +882,7 @@ export default function ReportsScreen() {
           <TouchableOpacity
             onPress={pickMedia}
             style={{
-              backgroundColor: "#F3F4F6",
+              backgroundColor: colors.lightGrayBg,
               borderRadius: 10,
               padding: 10,
               alignItems: "center",
@@ -911,7 +913,7 @@ export default function ReportsScreen() {
                       if (item.id) {
                         try {
                           await deleteMediaFile(item.id);
-                          console.log("✅ Media deleted from backend:", item.id);
+                          // console.log("✅ Media deleted from backend:", item.id);
                         } catch (err) {
                           console.error("❌ Error deleting media from backend:", err);
                           Alert.alert(t("common.error"), t("reports.error_deleting_media"));

@@ -30,6 +30,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.manage_presence": "Manage daily children attendance.",
     "dashboard.present": "Present",
     "dashboard.absent": "Absent",
+    "dashboard.absence_reports": "Reported Absences",
     "dashboard.extra_hours": "Extra Hours",
     "dashboard.extra_hours_duration": "Duration",
     "dashboard.no_requests": "No requests at the moment.",
@@ -42,7 +43,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Calendar (Admin)
     "calendar.events": "Events",
-    "calendar.weekly_plan": "Weekly Plan",
+    "calendar.weekly_plan": "Schedule",
     "calendar.event_list": "Event List",
     "calendar.new_event": "New Event",
     "calendar.edit_event": "Edit Event",
@@ -178,6 +179,9 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.pending": "Pending",
     "common.approved": "Approved",
     "common.rejected": "Rejected",
+    "common.request": "Request",
+    "common.requests": "Requests",
+    "common.search_by_child": "Search by child name...",
   },
   fr: {
                         "dashboard.absences_unauthorized": "Vous n'êtes pas autorisé à voir les absences. Veuillez vous connecter en tant qu'administrateur.",
@@ -208,6 +212,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.manage_presence": "Gérez la présence quotidienne des enfants.",
     "dashboard.present": "Présents",
     "dashboard.absent": "Absents",
+    "dashboard.absence_reports": "Absences Signalées",
     "dashboard.extra_hours": "Heures Supplémentaires",
     "dashboard.extra_hours_duration": "Durée",
     "dashboard.no_requests": "Aucune demande pour le moment.",
@@ -220,7 +225,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Calendar (Admin)
     "calendar.events": "Événements",
-    "calendar.weekly_plan": "Planning Hebdomadaire",
+    "calendar.weekly_plan": "Emploi",
     "calendar.event_list": "Liste des Événements",
     "calendar.new_event": "Nouvel Événement",
     "calendar.edit_event": "Modifier l'Événement",
@@ -356,6 +361,9 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.pending": "En attente",
     "common.approved": "Approuvé",
     "common.rejected": "Rejeté",
+    "common.request": "Demande",
+    "common.requests": "Demandes",
+    "common.search_by_child": "Rechercher par nom d'enfant...",
   },
   ar: {
                         "dashboard.absences_unauthorized": "ليست لديك صلاحية عرض الغيابات. يرجى تسجيل الدخول كمسؤول.",
@@ -386,6 +394,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "dashboard.manage_presence": "إدارة حضور الأطفال اليومي.",
     "dashboard.present": "حاضرون",
     "dashboard.absent": "غائب",
+    "dashboard.absence_reports": "غيابات مبلغ عنها",
     "dashboard.extra_hours": "ساعات إضافية",
     "dashboard.extra_hours_duration": "المدة",
     "dashboard.no_requests": "لا توجد طلبات في الوقت الحالي.",
@@ -398,7 +407,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Calendar (Admin)
     "calendar.events": "الفعاليات",
-    "calendar.weekly_plan": "الخطة الأسبوعية",
+    "calendar.weekly_plan": "الجدول",
     "calendar.event_list": "قائمة الفعاليات",
     "calendar.new_event": "فعالية جديدة",
     "calendar.edit_event": "تعديل الفعالية",
@@ -534,6 +543,9 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.pending": "قيد الانتظار",
     "common.approved": "موافق عليه",
     "common.rejected": "مرفوض",
+    "common.request": "طلب",
+    "common.requests": "طلبات",
+    "common.search_by_child": "البحث باسم الطفل...",
   },
 };
 

@@ -16,7 +16,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import colors from "../../config/colors";
+import { getColors } from "@/config/colors";
 import Card from "../../components/Card";
 import Row from "../../components/Row";
 import * as ImagePicker from "expo-image-picker";
@@ -24,9 +24,12 @@ import { getMyChild, updateChild, uploadAvatar } from "@/api/children";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { getTranslation } from "@/config/translations";
+import { useAppStore } from "@/store/useAppStore";
 
 export default function Profile() {
   const { language } = useLanguageStore();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   const t = (key: string) => getTranslation(language, key);
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -81,16 +84,16 @@ export default function Profile() {
       try {
         setLoading(true);
         const data = await getMyChild();
-        console.log("🧒 Full Child Data from API:", JSON.stringify(data, null, 2));
-        console.log("🔍 All Available Keys:", Object.keys(data || {}));
-        console.log("📱 has_mobile_app:", data?.has_mobile_app);
-        console.log("👤 parent_user:", data?.parent_user);
-        console.log("👨‍👩‍👧 parent_name:", data?.parent_name);
-        console.log("🔐 parent_credentials:", data?.parent_credentials);
-        console.log(
-          "🔑 parent_credentials keys:",
-          data?.parent_credentials ? Object.keys(data.parent_credentials) : "NO CREDENTIALS"
-        );
+        // console.log("🧒 Full Child Data from API:", JSON.stringify(data, null, 2));
+        // console.log("🔍 All Available Keys:", Object.keys(data || {}));
+        // console.log("📱 has_mobile_app:", data?.has_mobile_app);
+        // console.log("👤 parent_user:", data?.parent_user);
+        // console.log("👨‍👩‍👧 parent_name:", data?.parent_name);
+        // console.log("🔐 parent_credentials:", data?.parent_credentials);
+        // // console.log(
+        //   "🔑 parent_credentials keys:",
+        //   data?.parent_credentials ? Object.keys(data.parent_credentials) : "NO CREDENTIALS"
+        // );
 
         const fullProfile = {
           id: data?.id,
@@ -126,8 +129,8 @@ export default function Profile() {
           parent_credentials: data?.parent_credentials,
         };
 
-        console.log("✅ Full Profile State:", JSON.stringify(fullProfile, null, 2));
-        console.log("🔐 Parent Credentials in fullProfile:", fullProfile.parent_credentials);
+        // console.log("✅ Full Profile State:", JSON.stringify(fullProfile, null, 2));
+        // console.log("🔐 Parent Credentials in fullProfile:", fullProfile.parent_credentials);
         setProfile(fullProfile);
       } catch (error: any) {
         console.error("❌ Erreur de chargement:", error.response?.data || error.message);
@@ -211,6 +214,61 @@ export default function Profile() {
       .catch(() => Alert.alert("Erreur", "Une erreur est survenue lors de l'appel."));
   }, []);
 
+  /** 🧱 Ligne réutilisable */
+  const renderRow = (
+    label: string,
+    key: string,
+    value: string,
+    editable: boolean,
+    onChange: (v: string) => void,
+    onPressPhone?: (v: string) => void
+  ) => {
+    const isPhoneField = label.toLowerCase().includes("téléphone");
+    return (
+      <View className="flex-row justify-between items-start mb-3" style={{ flexWrap: "wrap" }}>
+        <View style={{ flexShrink: 1, flexBasis: "40%" }}>
+          <Text numberOfLines={2} ellipsizeMode="tail" style={{ color: colors.text }}>
+            {label}
+          </Text>
+        </View>
+
+        <View style={{ flexShrink: 1, flexBasis: "58%", alignItems: "flex-end" }}>
+          {editable ? (
+            <TextInput
+              value={value}
+              onChangeText={onChange}
+              keyboardType={isPhoneField ? "phone-pad" : "default"}
+              className="border-b border-gray-300 text-right"
+              style={{ color: colors.textDark, minWidth: 100 }}
+            />
+          ) : isPhoneField && value ? (
+            <TouchableOpacity onPress={() => onPressPhone && onPressPhone(value)}>
+              <Text
+                style={{
+                  color: colors.accent,
+                  textAlign: "right",
+                  textDecorationLine: "underline",
+                }}
+              >
+                {value}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <Text
+              style={{
+                color: value ? colors.textDark : colors.textLight,
+                textAlign: "right",
+                flexWrap: "wrap",
+              }}
+            >
+              {value || "—"}
+            </Text>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   if (loading || !profile) {
     return (
       <View
@@ -230,7 +288,7 @@ export default function Profile() {
       {/* En-tête */}
       <View
         className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
+        style={{ backgroundColor: colors.secondary }}
       >
         <View className="flex-row items-center">
           <TouchableOpacity
@@ -312,7 +370,7 @@ export default function Profile() {
 
           {/* 📏 Informations physiques */}
           <Card title="Informations physiques">
-            <Row label="🎂 Date de naissance">
+            <Row label="🎂 Date de naissance" colors={colors}>
               {isEditing ? (
                 <>
                   <TouchableOpacity
@@ -358,7 +416,7 @@ export default function Profile() {
               updateField("height", v)
             )}
 
-            <Row label="👧 Sexe">
+            <Row label="👧 Sexe" colors={colors}>
               {isEditing ? (
                 <TouchableOpacity
                   onPress={() => setShowGenderDropdown(!showGenderDropdown)}
@@ -510,61 +568,6 @@ export default function Profile() {
           </Card>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
-  );
-}
-
-/** 🧱 Ligne réutilisable */
-function renderRow(
-  label: string,
-  key: string,
-  value: string,
-  editable: boolean,
-  onChange: (v: string) => void,
-  onPressPhone?: (v: string) => void
-) {
-  const isPhoneField = label.toLowerCase().includes("téléphone");
-  return (
-    <View className="flex-row justify-between items-start mb-3" style={{ flexWrap: "wrap" }}>
-      <View style={{ flexShrink: 1, flexBasis: "40%" }}>
-        <Text numberOfLines={2} ellipsizeMode="tail" style={{ color: colors.text }}>
-          {label}
-        </Text>
-      </View>
-
-      <View style={{ flexShrink: 1, flexBasis: "58%", alignItems: "flex-end" }}>
-        {editable ? (
-          <TextInput
-            value={value}
-            onChangeText={onChange}
-            keyboardType={isPhoneField ? "phone-pad" : "default"}
-            className="border-b border-gray-300 text-right"
-            style={{ color: colors.textDark, minWidth: 100 }}
-          />
-        ) : isPhoneField && value ? (
-          <TouchableOpacity onPress={() => onPressPhone && onPressPhone(value)}>
-            <Text
-              style={{
-                color: colors.accent,
-                textAlign: "right",
-                textDecorationLine: "underline",
-              }}
-            >
-              {value}
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <Text
-            style={{
-              color: value ? colors.textDark : colors.textLight,
-              textAlign: "right",
-              flexWrap: "wrap",
-            }}
-          >
-            {value || "—"}
-          </Text>
-        )}
-      </View>
     </View>
   );
 }

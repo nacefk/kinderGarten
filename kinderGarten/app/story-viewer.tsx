@@ -59,18 +59,18 @@ export default function StoryViewer() {
       <TouchableOpacity
         onPress={() => router.replace("/(tabs)/activity")}
         className="absolute top-14 right-5 z-10"
-        style={{ backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 20, padding: 6 }}
+        style={{ backgroundColor: colors.overlayDark, borderRadius: 20, padding: 6 }}
       >
-        <X color="#fff" size={30} />
+        <X color={colors.white} size={30} />
       </TouchableOpacity>
 
       {/* Download Button */}
       <TouchableOpacity
         onPress={handleDownload}
         className="absolute top-14 left-5 z-10"
-        style={{ backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 20, padding: 6 }}
+        style={{ backgroundColor: colors.overlayDark, borderRadius: 20, padding: 6 }}
       >
-        <Download color="#fff" size={28} />
+        <Download color={colors.white} size={28} />
       </TouchableOpacity>
 
       {/* Pagination Info */}
@@ -113,7 +113,7 @@ export default function StoryViewer() {
           onPress={handlePrev}
           className="absolute left-3 z-10 p-2"
           style={{
-            backgroundColor: "rgba(0,0,0,0.3)",
+            backgroundColor: colors.overlayMedium,
             borderRadius: 999,
             top: "60%",
             transform: [{ translateY: -20 }],
@@ -129,7 +129,7 @@ export default function StoryViewer() {
           onPress={handleNext}
           className="absolute right-3 z-10 p-2"
           style={{
-            backgroundColor: "rgba(0,0,0,0.3)",
+            backgroundColor: colors.overlayMedium,
             borderRadius: 999,
             top: "60%",
             transform: [{ translateY: -20 }],

@@ -13,12 +13,12 @@ import {
 import { useLocalSearchParams, Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ChevronLeft, Send } from "lucide-react-native";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
+import { useAppStore } from "@/store/useAppStore";
 
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { getTranslation } from "@/config/translations";
 import { sendMessage, getMessages, getOrCreateConversation } from "@/api/chat";
-import { useAppStore } from "@/store/useAppStore";
 
 type Message = {
   id: string;
@@ -31,14 +31,16 @@ export default function ConversationScreen() {
   // Polling interval in milliseconds
   const POLL_INTERVAL = 8000;
   const userId = useAppStore((state) => state.userId);
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   const { id: paramId, conversation, name, avatar, adminId, parentId } = useLocalSearchParams();
-  console.log("[Conversation] Params received:", {
-    paramId,
-    conversation,
-    name,
-    adminId,
-    parentId,
-  });
+  // // console.log("[Conversation] Params received:", {
+  //   paramId,
+  //   conversation,
+  //   name,
+  //   adminId,
+  //   parentId,
+  // });
 
   // Handle id possibly being string[]
   let id: string | number | null = null;
@@ -55,7 +57,7 @@ export default function ConversationScreen() {
   const [conversationId, setConversationId] = useState<string | number | null>(
     id !== "new" ? id : null
   );
-  console.log("[Conversation] Initial ID:", conversationId);
+  // console.log("[Conversation] Initial ID:", conversationId);
 
   const { language } = useLanguageStore();
   const t = (key: string) => getTranslation(language, key);
@@ -73,14 +75,14 @@ export default function ConversationScreen() {
 
     (async () => {
       try {
-        console.log(
-          "[Conversation] Creating conversation with admin:",
-          adminId,
-          "parent:",
-          parentId
-        );
+        // // console.log(
+        //   "[Conversation] Creating conversation with admin:",
+        //   adminId,
+        //   "parent:",
+        //   parentId
+        // );
         const convo = await getOrCreateConversation(Number(adminId), Number(parentId));
-        console.log("[Conversation] ✅ Conversation created, ID:", convo.id);
+        // // console.log("[Conversation] \u2705 Conversation created, ID:", convo.id);
         setConversationId(convo.id);
       } catch (err: any) {
         console.error("[Conversation] ❌ Failed to create conversation:", err.message);
@@ -97,11 +99,11 @@ export default function ConversationScreen() {
       const fetchMessages = async () => {
         if (!conversationId) return;
         try {
-          console.log("[Conversation] Fetching messages for ID:", conversationId);
+          // console.log("[Conversation] Fetching messages for ID:", conversationId);
           const msgs = await getMessages(conversationId as number);
-          console.log("[Conversation] Raw messages from API:", msgs);
+          // console.log("[Conversation] Raw messages from API:", msgs);
           const formatted = msgs.map((m: any) => {
-            console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
+            // console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
             const isCurrentUser = m.sender?.toString() === userId?.toString();
             return {
               id: m.id.toString(),
@@ -144,15 +146,15 @@ export default function ConversationScreen() {
     const text = input.trim();
     setInput("");
     try {
-      console.log("[Conversation] Sending message to ID:", conversationId);
+      // console.log("[Conversation] Sending message to ID:", conversationId);
       // Save message to backend
       const sendResult = await sendMessage(conversationId as number, text);
-      console.log("[Conversation] ✅ Message sent successfully");
+      // console.log("[Conversation] ✅ Message sent successfully");
       // Fetch updated messages from backend
       const msgs = await getMessages(conversationId as number);
-      console.log("[Conversation] Raw messages after send:", msgs);
+      // console.log("[Conversation] Raw messages after send:", msgs);
       const formatted = msgs.map((m: any) => {
-        console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
+        // console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
         const isCurrentUser = m.sender?.toString() === userId?.toString();
         return {
           id: m.id.toString(),
@@ -164,7 +166,7 @@ export default function ConversationScreen() {
           }),
         };
       });
-      console.log("[Conversation] Updated messages count:", formatted.length);
+      // console.log("[Conversation] Updated messages count:", formatted.length);
       setMessages(formatted);
     } catch (err: any) {
       const errMsg = err.response?.data?.detail || err.response?.data?.error || err.message;
@@ -200,7 +202,7 @@ export default function ConversationScreen() {
         }}
       />
 
-      <View className="flex-1 bg-[#FAF8F5]">
+      <View className="flex-1" style={{ backgroundColor: colors.background }}>
         <View
           className="flex-row items-center justify-between px-5 pt-16 pb-6"
           style={{ backgroundColor: colors.accentLight }}
@@ -210,7 +212,7 @@ export default function ConversationScreen() {
               onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/chat"))}
               className="mr-3"
             >
-              <ChevronLeft color="#374151" size={28} />
+              <ChevronLeft color={colors.textDark} size={28} />
             </TouchableOpacity>
           </View>
         </View>
@@ -226,11 +228,12 @@ export default function ConversationScreen() {
             renderItem={({ item }) => (
               <View className={`px-5 py-2 ${item.sender === "user" ? "items-end" : "items-start"}`}>
                 <View
-                  className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                    item.sender === "user"
-                      ? "bg-[#C6A57B] rounded-br-none"
-                      : "bg-white rounded-bl-none"
-                  }`}
+                  className={`max-w-[80%] rounded-2xl px-4 py-2 rounded-br-none`}
+                  style={{
+                    backgroundColor: item.sender === "user" ? colors.primary : colors.cardBackground,
+                    borderBottomRightRadius: item.sender === "user" ? 0 : 16,
+                    borderBottomLeftRadius: item.sender === "user" ? 16 : 0,
+                  }}
                 >
                   <Text
                     className={`text-base ${
@@ -271,8 +274,8 @@ export default function ConversationScreen() {
                 minHeight: 42, // ensures visibility
               }}
             />
-            <TouchableOpacity onPress={handleSend} className="ml-3 bg-[#C6A57B] rounded-full p-3">
-              <Send color="#fff" size={20} />
+            <TouchableOpacity onPress={handleSend} className="ml-3 rounded-full p-3" style={{ backgroundColor: colors.accent }}>
+              <Send color={colors.white} size={20} />
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

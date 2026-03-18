@@ -18,7 +18,8 @@ import { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
 import { Bell, LogOut, Smile, Utensils, Moon, MessageSquare } from "lucide-react-native";
 import { Ionicons } from "@expo/vector-icons";
-import colors from "@/config/colors";
+import { getColors } from "@/config/colors";
+import { useAppStore } from "@/store/useAppStore";
 import Card from "@/components/Card";
 import { router } from "expo-router";
 import { api } from "@/api/api";
@@ -56,6 +57,8 @@ async function requestPlannedAbsence({
 export default function Home() {
   const { logout } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   const t = (key: string) => getTranslation(language, key);
 
   const [profile, setProfile] = useState<any>(null);
@@ -83,7 +86,7 @@ export default function Home() {
     try {
       // 1️⃣ Get authenticated child profile
       const child = await getMyChild();
-      console.log("[Home] Child object:", child);
+      // // console.log("[Home] Child object:", child);
       const classroomId = child.classroom?.id || child.classroom;
       const classroomName = child.classroom?.name || `Classroom ${classroomId}`;
       const childId = child.id;
@@ -92,7 +95,7 @@ export default function Home() {
       let attendanceStatus = null;
       try {
         attendanceStatus = await getAttendanceForChild(childId);
-        console.log("[Home] Attendance record for child:", attendanceStatus);
+        // // console.log("[Home] Attendance record for child:", attendanceStatus);
       } catch (e) {
         console.error("[Home] Error fetching attendance status:", e);
       }
@@ -123,19 +126,19 @@ export default function Home() {
       // 📊 Log mood and meals data
       if (reports.length > 0) {
         const latestReport = reports[0];
-        console.log("📊 [Home] Latest Report Data:", {
-          reportId: latestReport.id,
-          childName: latestReport.child_name || "Unknown",
-          date: latestReport.date,
-          mood: latestReport.mood || latestReport.behavior || "N/A",
-          eating: latestReport.eating || latestReport.meal || "N/A",
-          sleeping: latestReport.sleeping || latestReport.nap || "N/A",
-          notes: latestReport.notes || "No notes",
-          activities: latestReport.activities || "No activities",
-          mediaCount: latestReport.media_files?.length || 0,
-        });
+        // // console.log("📊 [Home] Latest Report Data:", {
+        //   reportId: latestReport.id,
+        //   childName: latestReport.child_name || "Unknown",
+        //   date: latestReport.date,
+        //   mood: latestReport.mood || latestReport.behavior || "N/A",
+        //   eating: latestReport.eating || latestReport.meal || "N/A",
+        //   sleeping: latestReport.sleeping || latestReport.nap || "N/A",
+        //   notes: latestReport.notes || "No notes",
+        //   activities: latestReport.activities || "No activities",
+        //   mediaCount: latestReport.media_files?.length || 0,
+        // });
       } else {
-        console.log("📊 [Home] No reports available for this child");
+        // // console.log("📊 [Home] No reports available for this child");
       }
       // Find the most recent request for this child (if any)
       const myChildRequest = Array.isArray(allExtraRequests)
@@ -294,7 +297,7 @@ export default function Home() {
       });
 
       // 1️⃣ Set UI to pending immediately (optimistic update)
-      console.log("[ExtraHour] Setting UI to pending...");
+      // console.log("[ExtraHour] Setting UI to pending...");
       setExtraHours({ status: "pending" });
       setSelectedOption(null);
 
@@ -317,7 +320,7 @@ export default function Home() {
             return 0;
           });
           const latest = sorted[0];
-          console.log("[ExtraHour] Backend response status:", latest.status, latest);
+          // console.log("[ExtraHour] Backend response status:", latest.status, latest);
           setExtraHours(latest);
         }
       } catch (fetchErr) {
@@ -408,7 +411,7 @@ export default function Home() {
       {/* Header */}
       <View
         className="flex-row items-center justify-between px-7 pt-16 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
+        style={{ backgroundColor: colors.secondary }}
       >
         <View className="flex-row items-center">
           <Image source={{ uri: profile?.avatar }} className="w-16 h-16 rounded-full mr-5" />
@@ -447,6 +450,19 @@ export default function Home() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
         }
       >
+        {/* Tenant Logo */}
+        {tenant?.logo && (
+          <View
+            className="mt-6 mb-3  p-2 items-center"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
+            <Image
+              source={{ uri: tenant.logo }}
+              style={{ width: 180, height: 90, resizeMode: "contain" }}
+            />
+          </View>
+        )}
+
         {/* ...existing code... */}
         {/* Daily Summary */}
         <Card title={t("home.today_activity")}>
@@ -481,11 +497,11 @@ export default function Home() {
                   alignItems: "center",
                   paddingHorizontal: 12,
                   paddingVertical: 10,
-                  backgroundColor: "#FEF3C7",
+                  backgroundColor: colors.warningLight,
                   borderRadius: 10,
                 }}
               >
-                <Utensils size={24} color="#F59E0B" style={{ marginRight: 12 }} />
+                <Utensils size={24} color={colors.warningAmber} style={{ marginRight: 12 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>
                     {t("reports.meal")}
@@ -504,11 +520,11 @@ export default function Home() {
                     alignItems: "center",
                     paddingHorizontal: 12,
                     paddingVertical: 10,
-                    backgroundColor: "#E0E7FF",
+                    backgroundColor: colors.indigoLight,
                     borderRadius: 10,
                   }}
                 >
-                  <Moon size={24} color="#6366F1" style={{ marginRight: 12 }} />
+                  <Moon size={24} color={colors.indigoDark} style={{ marginRight: 12 }} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: colors.textLight, fontSize: 11, marginBottom: 2 }}>
                       {t("reports.nap")}
@@ -528,7 +544,7 @@ export default function Home() {
                     alignItems: "flex-start",
                     paddingHorizontal: 12,
                     paddingVertical: 10,
-                    backgroundColor: "#F3F4F6",
+                    backgroundColor: colors.lightGrayBg,
                     borderRadius: 10,
                   }}
                 >
@@ -608,7 +624,7 @@ export default function Home() {
                       key={opt}
                       onPress={() => setSelectedOption(opt)}
                       style={{
-                        backgroundColor: isSelected ? colors.accent : "#F3F4F6",
+                        backgroundColor: isSelected ? colors.accent : colors.lightGrayBg,
                         paddingHorizontal: 16,
                         paddingVertical: 10,
                         borderRadius: 12,
@@ -644,7 +660,12 @@ export default function Home() {
                 }}
               >
                 <Text
-                  style={{ color: "#FFF", textAlign: "center", fontWeight: "600", fontSize: 15 }}
+                  style={{
+                    color: colors.cardBackground,
+                    textAlign: "center",
+                    fontWeight: "600",
+                    fontSize: 15,
+                  }}
                 >
                   {t("home.extra_hours")}
                 </Text>
@@ -654,14 +675,14 @@ export default function Home() {
           {extraHours?.status === "pending" && (
             <View
               style={{
-                backgroundColor: "#FEF3C7",
+                backgroundColor: colors.warningLight,
                 paddingVertical: 12,
                 paddingHorizontal: 12,
                 borderRadius: 12,
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: "#D97706", fontWeight: "600", fontSize: 15 }}>
+              <Text style={{ color: colors.warningDarkText, fontWeight: "600", fontSize: 15 }}>
                 {t("home.extra_hours_pending")}
               </Text>
             </View>
@@ -669,14 +690,14 @@ export default function Home() {
           {extraHours?.status === "approved" && (
             <View
               style={{
-                backgroundColor: "#DCFCE7",
+                backgroundColor: colors.greenLight,
                 paddingVertical: 12,
                 paddingHorizontal: 12,
                 borderRadius: 12,
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: "#16A34A", fontWeight: "600", fontSize: 15 }}>
+              <Text style={{ color: colors.success, fontWeight: "600", fontSize: 15 }}>
                 {t("home.extra_hours_approved")}
               </Text>
             </View>
@@ -733,7 +754,7 @@ export default function Home() {
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "rgba(0,0,0,0.25)",
+            backgroundColor: colors.overlayMedium,
           }}
         >
           <View
@@ -890,7 +911,12 @@ export default function Home() {
                 }}
               >
                 <Text
-                  style={{ color: "#FFF", textAlign: "center", fontWeight: "700", fontSize: 16 }}
+                  style={{
+                    color: colors.cardBackground,
+                    textAlign: "center",
+                    fontWeight: "700",
+                    fontSize: 16,
+                  }}
                 >
                   {absenceSubmitting ? t("common.loading") : t("home.submit_absence")}
                 </Text>
@@ -907,7 +933,12 @@ export default function Home() {
                 }}
               >
                 <Text
-                  style={{ color: "#FFF", textAlign: "center", fontWeight: "600", fontSize: 15 }}
+                  style={{
+                    color: colors.cardBackground,
+                    textAlign: "center",
+                    fontWeight: "600",
+                    fontSize: 15,
+                  }}
                 >
                   {t("common.cancel") || "Cancel"}
                 </Text>
@@ -921,7 +952,7 @@ export default function Home() {
       <Modal visible={showLanguageModal} animationType="fade" transparent>
         <View
           className="flex-1 justify-center items-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          style={{ backgroundColor: colors.overlayDark }}
         >
           <View
             className="w-full rounded-2xl p-6"
@@ -939,20 +970,20 @@ export default function Home() {
                 }}
                 className="flex-row items-center p-4 mb-2 rounded-xl"
                 style={{
-                  backgroundColor: language === lang ? "#3B82F6" : colors.background,
+                  backgroundColor: language === lang ? colors.maleBlue : colors.background,
                 }}
               >
                 <Ionicons
                   name="globe-outline"
                   size={20}
-                  color={language === lang ? "#FFF" : colors.textDark}
+                  color={language === lang ? colors.cardBackground : colors.textDark}
                 />
                 <Text
                   style={{
                     marginLeft: 12,
                     fontWeight: "600",
                     fontSize: 16,
-                    color: language === lang ? "#FFF" : colors.textDark,
+                    color: language === lang ? colors.cardBackground : colors.textDark,
                   }}
                 >
                   {lang === "en" ? "English" : lang === "fr" ? "Français" : "العربية"}

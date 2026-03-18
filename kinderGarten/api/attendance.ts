@@ -81,11 +81,12 @@ export async function rejectExtraHour(id: number) {
   return handleExtraHourAction(id, "reject");
 }
 
-/** Get all extra hours (for admin) - ordered by date/time */
-export async function getAllExtraHours() {
+/** Get all extra hours (for admin) - ordered by date/time, optionally filtered by search */
+export async function getAllExtraHours(search?: string) {
   try {
+    const params = search ? { search } : {};
     const response = await withRetry(() =>
-      api.get(API_ENDPOINTS.ATTENDANCE_EXTRA_HOURS)
+      api.get(API_ENDPOINTS.ATTENDANCE_EXTRA_HOURS, { params })
     );
     console.log('[getAllExtraHours] Full response:', response.data);
     // Return the data as-is, sorting happens on client side
@@ -108,7 +109,7 @@ export async function getTodayExtraHours() {
       api.get(API_ENDPOINTS.ATTENDANCE_EXTRA_HOURS)
     );
 
-    console.log('[getTodayExtraHours] Full response:', response.data);
+// console.log('[getTodayExtraHours] Full response:', response.data);
 
     // Get today's date in local timezone (YYYY-MM-DD format)
     const today = new Date();
@@ -127,8 +128,8 @@ export async function getTodayExtraHours() {
       items = Array.isArray(results) ? results : [];
     }
 
-    console.log('[getTodayExtraHours] Parsed items:', items);
-    console.log('[getTodayExtraHours] Today date:', todayFormatted);
+   // console.log('[getTodayExtraHours] Parsed items:', items);
+    // console.log('[getTodayExtraHours] Today date:', todayFormatted);
 
     // Filter by today's date - check multiple possible date fields
     const todayItems = items.filter(item => {
@@ -145,17 +146,17 @@ export async function getTodayExtraHours() {
       }
 
       if (!itemDate) {
-        console.log('[getTodayExtraHours] Item has no date field:', item);
+        // console.log('[getTodayExtraHours] Item has no date field:', item);
         return true; // Include items with no date as fallback
       }
 
       const dateStr = itemDate;
       const matches = dateStr === todayFormatted;
-      console.log('[getTodayExtraHours] Item date:', dateStr, 'matches today:', matches);
+      // console.log('[getTodayExtraHours] Item date:', dateStr, 'matches today:', matches);
       return matches;
     });
 
-    console.log('[getTodayExtraHours] Filtered items count:', todayItems.length);
+    // console.log('[getTodayExtraHours] Filtered items count:', todayItems.length);
 
     // Return in same format as input
     if (Array.isArray(response.data)) {

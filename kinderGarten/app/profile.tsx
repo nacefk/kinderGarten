@@ -140,7 +140,7 @@ export default function Profile() {
         clubs: profile.clubs || [],
         has_mobile_app: profile.hasMobileApp === true,
       };
-      console.log("payload:", payload);
+      // // console.log("payload:", payload);
       await updateChild(childId, payload);
 
       // Re-fetch updated data from the backend
@@ -215,14 +215,14 @@ export default function Profile() {
       setLoading(true);
       try {
         const data = await getChildById(childId);
-        console.log("📋 Full API Response Data:", JSON.stringify(data, null, 2));
-        console.log("🔑 All Available Keys in API Response:", Object.keys(data || {}));
-        console.log("🔐 parent_credentials from API:", data?.parent_credentials);
-        console.log("👤 parent_user from API:", data?.parent_user);
-        console.log(
-          "🔑 parent_user keys:",
-          data?.parent_user ? Object.keys(data.parent_user) : "NO PARENT_USER"
-        );
+        // // console.log("📋 Full API Response Data:", JSON.stringify(data, null, 2));
+        // // console.log("🔑 All Available Keys in API Response:", Object.keys(data || {}));
+        // // console.log("🔐 parent_credentials from API:", data?.parent_credentials);
+        // // console.log("👤 parent_user from API:", data?.parent_user);
+        // // console.log(
+        //   "🔑 parent_user keys:",
+        //   data?.parent_user ? Object.keys(data.parent_user) : "NO PARENT_USER"
+        // );
 
         const filled = {
           id: data?.id || "",
@@ -260,8 +260,8 @@ export default function Profile() {
           parent_email: data?.parent_user?.email,
           parent_credentials: data?.parent_credentials,
         };
-        console.log("✅ parent_credentials in profile state:", filled.parent_credentials);
-        console.log("📦 Full filled profile:", JSON.stringify(filled, null, 2));
+        // // console.log("✅ parent_credentials in profile state:", filled.parent_credentials);
+        // // console.log("📦 Full filled profile:", JSON.stringify(filled, null, 2));
         setProfile(filled);
       } catch (e: any) {
         console.error("❌ Error fetching child:", e.response?.data || e.message);
@@ -375,11 +375,11 @@ export default function Profile() {
     const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return { label: "En retard", color: "#DC2626" };
+      return { label: "En retard", color: colors.error };
     } else if (diffDays <= 3) {
-      return { label: "Paiement proche", color: "#F59E0B" };
+      return { label: "Paiement proche", color: colors.warningAmber };
     } else {
-      return { label: "Régulier", color: "#16A34A" };
+      return { label: "Régulier", color: colors.success };
     }
   };
 
@@ -448,7 +448,7 @@ export default function Profile() {
                         padding: 5,
                       }}
                     >
-                      <Pencil size={14} color="#FFF" />
+                      <Pencil size={14} color={colors.cardBackground} />
                     </View>
                   )}
                 </View>
@@ -526,9 +526,9 @@ export default function Profile() {
             <View
               className="flex-row justify-between items-center mb-5 px-4 py-2.5 rounded-xl"
               style={{
-                backgroundColor: "#F8F8F8",
+                backgroundColor: colors.cardBackground,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: colors.border,
               }}
             >
               <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 14.5 }}>
@@ -585,7 +585,7 @@ export default function Profile() {
                     width: 46,
                     height: 26,
                     borderRadius: 13,
-                    backgroundColor: profile.hasMobileApp ? colors.accent : "#D1D5DB",
+                    backgroundColor: profile.hasMobileApp ? colors.accent : colors.disabled,
                     justifyContent: "center",
                     paddingHorizontal: 3,
                   }}
@@ -595,9 +595,9 @@ export default function Profile() {
                       width: 20,
                       height: 20,
                       borderRadius: 10,
-                      backgroundColor: "#FFF",
+                      backgroundColor: colors.cardBackground,
                       transform: [{ translateX: profile.hasMobileApp ? 20 : 0 }],
-                      shadowColor: "#000",
+                      shadowColor: colors.shadow,
                       shadowOpacity: 0.15,
                       shadowRadius: 2,
                       elevation: 3,
@@ -621,7 +621,7 @@ export default function Profile() {
               <View
                 className="p-4 rounded-xl mb-5"
                 style={{
-                  backgroundColor: "#F0F9FF",
+                  backgroundColor: colors.lightBlue,
                   borderWidth: 1,
                   borderColor: colors.accent,
                 }}
@@ -634,7 +634,7 @@ export default function Profile() {
                     <Text style={{ color: colors.textLight, fontSize: 12 }}>Nom d'utilisateur</Text>
                     <View
                       className="flex-row items-center justify-between px-3 py-2 rounded-lg mt-1"
-                      style={{ backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E5E7EB" }}
+                      style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
                     >
                       <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                         {profile.username}
@@ -655,7 +655,7 @@ export default function Profile() {
                     <Text style={{ color: colors.textLight, fontSize: 12 }}>Mot de passe</Text>
                     <View
                       className="flex-row items-center justify-between px-3 py-2 rounded-lg mt-1"
-                      style={{ backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E5E7EB" }}
+                      style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
                     >
                       <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                         {profile.password}
@@ -1010,7 +1010,7 @@ export default function Profile() {
               <View
                 style={{
                   padding: 16,
-                  backgroundColor: "#F0F9FF",
+                  backgroundColor: colors.lightBlue,
                   borderLeftWidth: 4,
                   borderLeftColor: colors.accent,
                   borderRadius: 8,
@@ -1073,7 +1073,7 @@ export default function Profile() {
                           borderRadius: 8,
                           paddingHorizontal: 12,
                           paddingVertical: 10,
-                          backgroundColor: "#F9FAFB",
+                          backgroundColor: colors.pureWhiteGray,
                         }}
                       >
                         <Text
@@ -1152,13 +1152,13 @@ export default function Profile() {
                   style={{
                     marginTop: 12,
                     padding: 12,
-                    backgroundColor: "#FEF3C7",
+                    backgroundColor: colors.warningLight,
                     borderLeftWidth: 3,
-                    borderLeftColor: "#F59E0B",
+                    borderLeftColor: colors.warningAmber,
                     borderRadius: 8,
                   }}
                 >
-                  <Text style={{ color: "#92400E", fontSize: 12, lineHeight: 18 }}>
+                  <Text style={{ color: colors.warningAmberDark, fontSize: 12, lineHeight: 18 }}>
                     ℹ️ Ces identifiants permettent au parent d'accéder à l'application mobile pour
                     suivre le profil de son enfant.
                   </Text>
