@@ -43,16 +43,6 @@ export default function DashboardScreen() {
   const tenant = useAppStore((state) => state.tenant);
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
 
-  // Debug: Log when colors update
-  useEffect(() => {
-    console.log("🎯 [Dashboard] Colors updated:", {
-      primary: colors.primary,
-      secondary: colors.secondary,
-      tenant_primary: tenant?.primary_color,
-      tenant_secondary: tenant?.secondary_color,
-    });
-  }, [colors, tenant]);
-
   const t = (key: string) => getTranslation(language, key);
   const languages: Language[] = ["en", "fr", "ar"];
   const [presence, setPresence] = useState({ present: 0, absent: 0 });

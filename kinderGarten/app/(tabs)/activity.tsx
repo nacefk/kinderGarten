@@ -14,11 +14,21 @@ import {
 import { getColors } from "@/config/colors";
 import Card from "../../components/Card";
 import TimelineItem from "../../components/TimelineItem";
-import LiveView from "@/components/LiveView";
 import { getMyChild } from "@/api/children";
 import { getPlans, getEvents } from "@/api/planning";
 import { getReports } from "@/api/report";
 import { useAppStore } from "@/store/useAppStore";
+
+// Day name mapping constant
+const DAY_MAP: Record<string, string> = {
+  Monday: "Lundi",
+  Tuesday: "Mardi",
+  Wednesday: "Mercredi",
+  Thursday: "Jeudi",
+  Friday: "Vendredi",
+  Saturday: "Samedi",
+  Sunday: "Dimanche",
+};
 
 export default function Activity() {
   const tenant = useAppStore((state) => state.tenant);
@@ -53,16 +63,10 @@ export default function Activity() {
     [router]
   );
 
-  /** 📅 Toggle day dropdown */
-  const handleDayDropdownToggle = useCallback(() => {
-    setShowDayDropdown((prev) => !prev);
-  }, []);
-
-  /** 📅 Select day from dropdown */
-  const handleSelectDay = useCallback((day: string) => {
-    setSelectedDay(day);
-    setShowDayDropdown(false);
-  }, []);
+  /** Memoized sorted events */
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [events]);
 
   /** 📦 Load activity data (plans, events, reports) */
   const loadActivityData = useCallback(async () => {
@@ -76,41 +80,78 @@ export default function Activity() {
       }
       const classId = child.classroom?.id || child.classroom;
       const childId = child.id;
-      // 2️⃣ Fetch plans, events, and reports concurrently with error boundaries
+
+      // 2️⃣ Fetch plans, events, and reports concurrently
       let plansData = [];
       let eventsData = [];
       let reportsData = [];
 
       try {
         [plansData, eventsData, reportsData] = await Promise.all([
-          getPlans({ classroom: classId }).catch((err) => {
-            console.warn("⚠️ Error loading plans:", err.message);
-            return [];
-          }),
-          getEvents({ classroom: classId }).catch((err) => {
-            console.warn("⚠️ Error loading events:", err.message);
-            return [];
-          }),
-          getReports(childId).catch((err) => {
-            console.warn("⚠️ Error loading reports:", err.message);
-            return [];
-          }),
+          getPlans({ classroom: classId }).catch(() => []),
+          getEvents({ classroom: classId }).catch(() => []),
+          getReports(childId).catch(() => []),
         ]);
       } catch (err) {
-        console.error("❌ Error fetching activity data:", err);
+        console.error("Error fetching activity data:", err);
       }
 
       // 3️⃣ Group class plans by day with safety checks
       const grouped: Record<string, any[]> = {};
+      const today = new Date();
+
       if (Array.isArray(plansData)) {
-        plansData.forEach((plan: any) => {
-          if (plan && plan.day) {
-            const day = plan.day || "Lundi";
+        plansData.forEach((item: any) => {
+          // Handle flat activity format from API
+          if (item && item.starts_at && item.ends_at) {
+            const startDate = new Date(item.starts_at);
+            const endDate = new Date(item.ends_at);
+
+            const day = startDate.toLocaleDateString("en-US", { weekday: "long" });
+            const frenchDay = DAY_MAP[day] || day;
+            const startTime = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+            const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+
+            if (!grouped[frenchDay]) grouped[frenchDay] = [];
+            grouped[frenchDay].push({
+              startTime,
+              endTime,
+              title: item.title || "Untitled",
+              detail: item.description || "",
+              icon: "🧩",
+            });
+          }
+          // Handle nested activities array format
+          else if (Array.isArray(item.activities) && item.activities.length > 0) {
+            item.activities.forEach((activity: any) => {
+              if (!activity.starts_at || !activity.ends_at) return;
+
+              const startDate = new Date(activity.starts_at);
+              const endDate = new Date(activity.ends_at);
+
+              const day = startDate.toLocaleDateString("en-US", { weekday: "long" });
+              const frenchDay = DAY_MAP[day] || day;
+              const startTime = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
+              const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+
+              if (!grouped[frenchDay]) grouped[frenchDay] = [];
+              grouped[frenchDay].push({
+                startTime,
+                endTime,
+                title: activity.title || "Untitled",
+                detail: activity.description || "",
+                icon: "🧩",
+              });
+            });
+          }
+          // Handle old format with day/time fields
+          else if (item && item.day) {
+            const day = item.day || "Lundi";
             if (!grouped[day]) grouped[day] = [];
             grouped[day].push({
-              time: plan.time || "N/A",
-              title: plan.title || "Untitled",
-              detail: plan.description || "",
+              time: item.time || "N/A",
+              title: item.title || "Untitled",
+              detail: item.description || "",
               icon: "🧩",
             });
           }
@@ -118,7 +159,13 @@ export default function Activity() {
       }
 
       setTimelineByDay(grouped);
-      setWeekDays(Object.keys(grouped).length ? Object.keys(grouped) : ["Lundi"]);
+      // Set all 7 days of the week in French
+      const allWeekDays = Object.values(DAY_MAP);
+      setWeekDays(allWeekDays);
+      // Set first day (Monday) as default if not already selected
+      if (!selectedDay || selectedDay === "Lundi") {
+        setSelectedDay("Lundi");
+      }
 
       // 4️⃣ Format media galleries from reports with safety checks
       const formattedStories = (Array.isArray(reportsData) ? reportsData : [])
@@ -136,7 +183,6 @@ export default function Activity() {
         );
 
       setGalleryItems(formattedStories);
-      // Store gallery items in app store for story-viewer
       setData("galleryItems", formattedStories);
 
       // 5️⃣ Upcoming Events with safety checks
@@ -147,27 +193,25 @@ export default function Activity() {
           title: e.title || "Event",
           detail: e.description || "",
           date: e.date,
-        }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        }));
 
       setEvents(formattedEvents);
     } catch (error: any) {
-      console.error("❌ Error loading activity data:", error.message);
+      console.error("Error loading activity data:", error.message);
       Alert.alert("Erreur", "Impossible de charger les activités. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
   }, [setData]);
 
-  /** 📦 Load data on mount */
+  /** Load data on mount */
   useEffect(() => {
     loadActivityData();
   }, [loadActivityData]);
 
-  /** 📦 Refresh data when screen comes into focus */
+  /** Refresh data when screen comes into focus */
   useFocusEffect(
     useCallback(() => {
-      // // console.log("📱 Activity screen focused - refreshing data");
       loadActivityData();
     }, [loadActivityData])
   );
@@ -245,17 +289,69 @@ export default function Activity() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 80 }}
       >
-        {/* 📅 AUJOURD’HUI */}
+        {/* TODAY - Programme du jour */}
         {selectedFilter === "today" && (
           <>
-            <LiveView />
             <Card title="Programme du jour">
               {todayTimeline.length > 0 ? (
-                todayTimeline.map((item, index) => <TimelineItem key={index} item={item} />)
+                <View className="space-y-2">
+                  {todayTimeline.map((item, index) => (
+                    <View
+                      key={index}
+                      className="flex-row items-start p-4 rounded-xl border-l-4"
+                      style={{
+                        backgroundColor: colors.cardBackground,
+                        borderLeftColor: colors.accent,
+                        shadowColor: "#000",
+                        shadowOpacity: 0.06,
+                        shadowRadius: 2,
+                        elevation: 1,
+                      }}
+                    >
+                      <Text className="text-2xl mr-3 mt-1">{item.icon}</Text>
+                      <View className="flex-1">
+                        <Text className="font-semibold text-base mb-2" style={{ color: colors.textDark }}>
+                          {item.title}
+                        </Text>
+                        <View className="flex-row items-center gap-2 mb-2">
+                          <View
+                            className="px-3 py-1 rounded-lg"
+                            style={{ backgroundColor: colors.accent }}
+                          >
+                            <Text className="text-xs font-bold" style={{ color: "#fff" }}>
+                              {item.startTime}
+                            </Text>
+                          </View>
+                          <Text style={{ color: colors.textLight }}>→</Text>
+                          <View
+                            className="px-3 py-1 rounded-lg"
+                            style={{ backgroundColor: colors.accentLight }}
+                          >
+                            <Text className="text-xs font-bold" style={{ color: colors.accent }}>
+                              {item.endTime}
+                            </Text>
+                          </View>
+                        </View>
+                        {item.detail && (
+                          <Text
+                            className="text-xs"
+                            numberOfLines={2}
+                            style={{ color: colors.textLight, lineHeight: 16 }}
+                          >
+                            {item.detail}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
               ) : (
-                <Text className="text-center py-4" style={{ color: colors.textLight }}>
-                  Aucune activité enregistrée aujourd’hui.
-                </Text>
+                <View className="items-center py-8">
+                  <Text className="text-4xl mb-3">📅</Text>
+                  <Text className="text-center" style={{ color: colors.textLight }}>
+                    Aucune activité prévu aujourd'hui
+                  </Text>
+                </View>
               )}
             </Card>
 
@@ -302,11 +398,11 @@ export default function Activity() {
           </>
         )}
 
-        {/* 📆 CETTE SEMAINE */}
+        {/* WEEK */}
         {selectedFilter === "week" && (
           <View className="mt-6">
             <TouchableOpacity
-              onPress={handleDayDropdownToggle}
+              onPress={() => setShowDayDropdown(!showDayDropdown)}
               className="flex-row justify-between items-center rounded-2xl p-4 shadow-sm"
               style={{ backgroundColor: colors.cardBackground }}
             >
@@ -324,7 +420,10 @@ export default function Activity() {
                 {weekDays.map((day) => (
                   <TouchableOpacity
                     key={day}
-                    onPress={() => handleSelectDay(day)}
+                    onPress={() => {
+                      setSelectedDay(day);
+                      setShowDayDropdown(false);
+                    }}
                     className="py-2 rounded-xl"
                     style={{
                       backgroundColor: selectedDay === day ? colors.accentLight : "transparent",
@@ -346,13 +445,64 @@ export default function Activity() {
 
             <Card title={`Programme du ${selectedDay}`}>
               {timelineByDay?.[selectedDay]?.length > 0 ? (
-                timelineByDay[selectedDay].map((item, index) => (
-                  <TimelineItem key={index} item={item} />
-                ))
+                <View className="space-y-2">
+                  {timelineByDay[selectedDay].map((item, index) => (
+                    <View
+                      key={index}
+                      className="flex-row items-start p-4 rounded-xl border-l-4"
+                      style={{
+                        backgroundColor: colors.cardBackground,
+                        borderLeftColor: colors.accent,
+                        shadowColor: "#000",
+                        shadowOpacity: 0.06,
+                        shadowRadius: 2,
+                        elevation: 1,
+                      }}
+                    >
+                      <Text className="text-2xl mr-3 mt-1">{item.icon}</Text>
+                      <View className="flex-1">
+                        <Text className="font-semibold text-base mb-2" style={{ color: colors.textDark }}>
+                          {item.title}
+                        </Text>
+                        <View className="flex-row items-center gap-2 mb-2">
+                          <View
+                            className="px-3 py-1 rounded-lg"
+                            style={{ backgroundColor: colors.accent }}
+                          >
+                            <Text className="text-xs font-bold" style={{ color: "#fff" }}>
+                              {item.startTime}
+                            </Text>
+                          </View>
+                          <Text style={{ color: colors.textLight }}>→</Text>
+                          <View
+                            className="px-3 py-1 rounded-lg"
+                            style={{ backgroundColor: colors.accentLight }}
+                          >
+                            <Text className="text-xs font-bold" style={{ color: colors.accent }}>
+                              {item.endTime}
+                            </Text>
+                          </View>
+                        </View>
+                        {item.detail && (
+                          <Text
+                            className="text-xs"
+                            numberOfLines={2}
+                            style={{ color: colors.textLight, lineHeight: 16 }}
+                          >
+                            {item.detail}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
               ) : (
-                <Text className="text-center py-4" style={{ color: colors.textLight }}>
-                  Aucune activité enregistrée pour {selectedDay}.
-                </Text>
+                <View className="items-center py-8">
+                  <Text className="text-4xl mb-3">📅</Text>
+                  <Text className="text-center" style={{ color: colors.textLight }}>
+                    Aucune activité pour {selectedDay}
+                  </Text>
+                </View>
               )}
             </Card>
           </View>

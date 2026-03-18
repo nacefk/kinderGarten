@@ -29,6 +29,12 @@ import {
 } from "@/api/planning";
 import { getClassrooms, getMyChild } from "@/api/children";
 import { useAuthStore } from "@/store/useAuthStore";
+import {
+  savePlanTemplate,
+  getAllTemplates,
+  deleteTemplate,
+  PlanTemplate,
+} from "@/utils/planTemplates";
 
 // ---------- TYPES ----------
 interface ClassItem {
@@ -409,6 +415,82 @@ export default function CalendarScreen() {
   const [newPlanStartTime, setNewPlanStartTime] = useState("08:00");
   const [newPlanEndTime, setNewPlanEndTime] = useState("09:00");
   const [newPlanTitle, setNewPlanTitle] = useState("");
+  
+  // Visual timetable state
+  const [selectedStartTime, setSelectedStartTime] = useState<string | null>(null);
+  const [selectedEndTime, setSelectedEndTime] = useState<string | null>(null);
+  const [useTimePicker, setUseTimePicker] = useState(true); // true = visual timetable, false = text input
+
+  // Template management state
+  const [showTemplateList, setShowTemplateList] = useState(false);
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [showSelectDayForLoad, setShowSelectDayForLoad] = useState(false);
+  const [templates, setTemplates] = useState<PlanTemplate[]>([]);
+  const [templateName, setTemplateName] = useState("");
+  const [allWeekPlanActivities, setAllWeekPlanActivities] = useState<
+    Array<{ title: string; day: string; time: string; endTime?: string }>
+  >([]);
+  const [selectedDayForTemplate, setSelectedDayForTemplate] = useState<string | null>(null);
+  const [selectedDayForLoad, setSelectedDayForLoad] = useState<string | null>(null);
+
+  // Load templates on mount or when template list is shown
+  useEffect(() => {
+    if (showTemplateList) {
+      loadTemplates();
+    }
+  }, [showTemplateList]);
+
+  const loadTemplates = async () => {
+    try {
+      const loadedTemplates = await getAllTemplates();
+      setTemplates(loadedTemplates);
+    } catch (error) {
+      console.error("Error loading templates:", error);
+      Alert.alert("Erreur", "Impossible de charger les templates.");
+    }
+  };
+
+  // Generate time slots (7:00 AM to 6:00 PM in 30-min increments)
+  const generateTimeSlots = () => {
+    const slots: string[] = [];
+    for (let hour = 7; hour <= 18; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        if (hour === 18 && minute > 0) break; // Stop at 18:00
+        const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+        slots.push(timeStr);
+      }
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
+
+  // Check if a time is in the selected range
+  const isTimeInRange = (time: string): boolean => {
+    if (!selectedStartTime || !selectedEndTime) return false;
+    if (selectedStartTime <= selectedEndTime) {
+      return time >= selectedStartTime && time < selectedEndTime;
+    } else {
+      return time >= selectedEndTime && time < selectedStartTime;
+    }
+  };
+
+  // Handle time slot selection
+  const handleTimeSlotPress = (time: string) => {
+    if (!selectedStartTime) {
+      setSelectedStartTime(time);
+    } else if (!selectedEndTime) {
+      if (time === selectedStartTime) {
+        setSelectedStartTime(null);
+      } else {
+        setSelectedEndTime(time);
+      }
+    } else {
+      // Reset and start new selection
+      setSelectedStartTime(time);
+      setSelectedEndTime(null);
+    }
+  };
 
   const openEditPlan = (plan: PlanActivity) => {
     setEditingPlan(plan);
@@ -416,6 +498,8 @@ export default function CalendarScreen() {
     setNewPlanStartTime(plan.time);
     setNewPlanEndTime(plan.endTime || plan.time); // Use endTime if available, else fallback to start time
     setNewPlanTitle(plan.title);
+    setSelectedStartTime(plan.time);
+    setSelectedEndTime(plan.endTime || plan.time);
     setShowPlanModal(true);
   };
 
@@ -429,17 +513,26 @@ export default function CalendarScreen() {
       return;
     }
 
+    // Use selected times from timetable if available
+    const startTime = selectedStartTime || newPlanStartTime;
+    const endTime = selectedEndTime || newPlanEndTime;
+
+    if (!startTime || !endTime) {
+      Alert.alert("Horaire manquant", "Veuillez sélectionner l'heure de début et de fin.");
+      return;
+    }
+
     const payload = {
       title: newPlanTitle.trim(),
       day: newPlanDay,
-      time: newPlanStartTime, // Keep for backward compatibility in API
+      time: startTime, // Keep for backward compatibility in API
       class_name: selectedClass.id,
       activities: [
         {
           title: newPlanTitle.trim(),
           day: newPlanDay,
-          time: newPlanStartTime,
-          endTime: newPlanEndTime, // Pass end time
+          time: startTime,
+          endTime: endTime, // Pass end time
           // starts_at and ends_at will be calculated by the API
         },
       ],
@@ -468,8 +561,8 @@ export default function CalendarScreen() {
                   ...p,
                   ...newItem,
                   title: newPlanTitle.trim(),
-                  time: newPlanStartTime,
-                  endTime: newPlanEndTime,
+                  time: startTime,
+                  endTime: endTime,
                 }
               : p
           );
@@ -477,8 +570,8 @@ export default function CalendarScreen() {
           updated[className][newPlanDay].push({
             id: newItem.id,
             title: newPlanTitle.trim(),
-            time: newPlanStartTime,
-            endTime: newPlanEndTime,
+            time: startTime,
+            endTime: endTime,
             day: newPlanDay,
           });
         }
@@ -495,21 +588,38 @@ export default function CalendarScreen() {
       setNewPlanTitle("");
       setNewPlanStartTime("08:00");
       setNewPlanEndTime("09:00");
+      setSelectedStartTime(null);
+      setSelectedEndTime(null);
     } catch (e: any) {
       console.error("❌ Error saving plan:", e);
+      console.error("📋 Payload was:", JSON.stringify(payload));
+      console.error("📋 Error response data:", JSON.stringify(e.response?.data));
+      
       // Show detailed error message
       let errorMessage = "Impossible d'enregistrer l'activité.";
+      
       if (e.message) {
         errorMessage = e.message;
       } else if (e.response?.data?.detail) {
         errorMessage = e.response.data.detail;
       } else if (e.response?.data?.activities) {
-        errorMessage = Array.isArray(e.response.data.activities)
-          ? e.response.data.activities[0]
-          : e.response.data.activities;
+        const activitiesError = e.response.data.activities;
+        if (Array.isArray(activitiesError) && activitiesError.length > 0) {
+          errorMessage = `Activité: ${JSON.stringify(activitiesError[0])}`;
+        } else if (typeof activitiesError === 'string') {
+          errorMessage = activitiesError;
+        } else {
+          errorMessage = `Activité: ${JSON.stringify(activitiesError)}`;
+        }
       } else if (e.response?.data?.non_field_errors) {
-        errorMessage = e.response.data.non_field_errors[0];
+        const errors = e.response.data.non_field_errors;
+        errorMessage = Array.isArray(errors) ? errors[0] : errors;
+      } else if (e.response?.data?.classroom_id) {
+        errorMessage = `Classe: ${e.response.data.classroom_id}`;
+      } else if (typeof e.response?.data === 'object') {
+        errorMessage = JSON.stringify(e.response.data);
       }
+      
       Alert.alert("Erreur", errorMessage);
     }
   };
@@ -535,6 +645,165 @@ export default function CalendarScreen() {
         },
       },
     ]);
+  };
+
+  // Collect all current activities for the week
+  const collectWeekActivities = () => {
+    const activities: Array<{ title: string; day: string; time: string; endTime?: string }> = [];
+    const className = selectedClass?.name;
+
+    if (className && weeklyPlans[className]) {
+      Object.entries(weeklyPlans[className]).forEach(([day, dayActivities]: [string, any]) => {
+        if (Array.isArray(dayActivities)) {
+          dayActivities.forEach((activity: any) => {
+            activities.push({
+              title: activity.title,
+              day,
+              time: activity.time,
+              endTime: activity.endTime,
+            });
+          });
+        }
+      });
+    }
+
+    return activities;
+  };
+
+  // Collect activities for a specific day
+  const collectDayActivities = (day: string) => {
+    const activities: Array<{ title: string; day: string; time: string; endTime?: string }> = [];
+    const className = selectedClass?.name;
+
+    if (className && weeklyPlans[className] && weeklyPlans[className][day]) {
+      const dayActivities = weeklyPlans[className][day];
+      if (Array.isArray(dayActivities)) {
+        dayActivities.forEach((activity: any) => {
+          activities.push({
+            title: activity.title,
+            day,
+            time: activity.time,
+            endTime: activity.endTime,
+          });
+        });
+      }
+    }
+
+    return activities;
+  };
+
+  // Save current week as a template
+  const handleSaveAsTemplate = async (day?: string) => {
+    let activities;
+
+    if (day) {
+      // Save only the selected day
+      activities = collectDayActivities(day);
+      setSelectedDayForTemplate(day);
+    } else {
+      // Save entire week
+      activities = collectWeekActivities();
+      setSelectedDayForTemplate(null);
+    }
+
+    if (activities.length === 0) {
+      Alert.alert(
+        "Aucune activité",
+        day
+          ? `Aucune activité pour ${day}. Veuillez en ajouter avant de sauvegarder.`
+          : "Veuillez ajouter au moins une activité avant de sauvegarder."
+      );
+      return;
+    }
+
+    setAllWeekPlanActivities(activities);
+    setShowSaveTemplateModal(true);
+  };
+
+  // Confirm save template
+  const handleConfirmSaveTemplate = async () => {
+    if (!templateName.trim()) {
+      Alert.alert("Nom manquant", "Veuillez entrer un nom pour le template.");
+      return;
+    }
+
+    try {
+      await savePlanTemplate(templateName, allWeekPlanActivities);
+      Alert.alert("Succès ✅", `Template "${templateName}" sauvegardé.`);
+      setShowSaveTemplateModal(false);
+      setTemplateName("");
+      setAllWeekPlanActivities([]);
+    } catch (error) {
+      console.error("Error saving template:", error);
+      Alert.alert("Erreur", "Impossible de sauvegarder le template.");
+    }
+  };
+
+  // Load a template into a specific day
+  const handleLoadTemplate = async (template: PlanTemplate) => {
+    if (!selectedDayForLoad) {
+      Alert.alert("Erreur", "Veuillez sélectionner un jour.");
+      return;
+    }
+
+    Alert.alert(
+      "Charger le template",
+      `Êtes-vous sûr de vouloir charger le template "${template.name}" dans ${selectedDayForLoad} ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Charger",
+          onPress: async () => {
+            try {
+              if (!selectedClass) {
+                Alert.alert("Erreur", "Veuillez sélectionner une classe.");
+                return;
+              }
+
+              // Create plans from template for the selected day only
+              for (const activity of template.activities) {
+                await createPlan({
+                  title: activity.title,
+                  day: selectedDayForLoad,
+                  time: activity.time,
+                  class_name: selectedClass.id,
+                  activities: [
+                    {
+                      title: activity.title,
+                      day: selectedDayForLoad,
+                      time: activity.time,
+                      endTime: activity.endTime,
+                    },
+                  ],
+                });
+              }
+
+              // Refresh data
+              await fetchData(selectedClass.id);
+              setShowTemplateList(false);
+              setShowSelectDayForLoad(false);
+              setSelectedDayForLoad(null);
+              Alert.alert("Succès ✅", `Template "${template.name}" chargé dans ${selectedDayForLoad}.`);
+            } catch (error) {
+              console.error("Error loading template:", error);
+              Alert.alert("Erreur", "Impossible de charger le template.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Delete a template
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      await deleteTemplate(templateId);
+      setTemplates(templates.filter((t) => t.id !== templateId));
+      Alert.alert("Supprimé ✅", "Template supprimé.");
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      Alert.alert("Erreur", "Impossible de supprimer le template.");
+    }
   };
 
   // ---------- RENDER ----------
@@ -588,22 +857,33 @@ export default function CalendarScreen() {
     return (
       <View
         key={day}
-        className="rounded-2xl p-4 mb-4"
+        className="rounded-2xl p-4 mb-4 mx-5"
         style={{ backgroundColor: colors.cardBackground }}
       >
-        <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+        <View className="flex-row justify-between items-center mb-3">
+          <Text className="text-lg font-semibold flex-1" style={{ color: colors.textDark }}>
             {day}
           </Text>
-          <TouchableOpacity
-            onPress={() => {
-              setEditingPlan(null);
-              setNewPlanDay(day);
-              setShowPlanModal(true);
-            }}
-          >
-            <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
-          </TouchableOpacity>
+          <View className="flex-row gap-2">
+            {dailyItems.length > 0 && !isParent && (
+              <TouchableOpacity
+                onPress={() => handleSaveAsTemplate(day)}
+                className="px-2 py-1"
+                style={{ backgroundColor: colors.accentLight }}
+              >
+                <Ionicons name="save" size={18} color={colors.accent} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => {
+                setEditingPlan(null);
+                setNewPlanDay(day);
+                setShowPlanModal(true);
+              }}
+            >
+              <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {dailyItems.length > 0 ? (
@@ -741,6 +1021,30 @@ export default function CalendarScreen() {
               </TouchableOpacity>
             )}
           </View>
+
+          {!isParent && (
+            <View className="flex-row gap-2 px-5 mb-4">
+              <TouchableOpacity
+                onPress={handleSaveAsTemplate}
+                className="flex-1 rounded-xl py-2"
+                style={{ backgroundColor: colors.accentLight }}
+              >
+                <Text className="text-center font-medium text-sm" style={{ color: colors.accent }}>
+                  💾 Sauvegarder
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setShowSelectDayForLoad(true)}
+                className="flex-1 rounded-xl py-2"
+                style={{ backgroundColor: colors.accentLight }}
+              >
+                <Text className="text-center font-medium text-sm" style={{ color: colors.accent }}>
+                  📋 Charger
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {daysOfWeek.map((day) => renderDayPlan(day))}
@@ -997,43 +1301,57 @@ export default function CalendarScreen() {
                 : `${t("calendar.new_activity")} (${newPlanDay})`}
             </Text>
 
-            <View className="flex-row gap-3 mb-3">
-              <View className="flex-1">
-                <Text className="text-xs font-semibold mb-1" style={{ color: colors.textLight }}>
-                  Début
-                </Text>
-                <TextInput
-                  placeholder="08:00"
-                  value={newPlanStartTime}
-                  onChangeText={setNewPlanStartTime}
-                  className="rounded-xl px-4 py-3 text-base"
-                  placeholderTextColor={colors.textLight}
-                  style={{
-                    backgroundColor: colors.cardBackground,
-                    color: colors.textDark,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="text-xs font-semibold mb-1" style={{ color: colors.textLight }}>
-                  Fin
-                </Text>
-                <TextInput
-                  placeholder="09:00"
-                  value={newPlanEndTime}
-                  onChangeText={setNewPlanEndTime}
-                  className="rounded-xl px-4 py-3 text-base"
-                  placeholderTextColor={colors.textLight}
-                  style={{
-                    backgroundColor: colors.cardBackground,
-                    color: colors.textDark,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                />
-              </View>
+            {/* Visual Timetable */}
+            <View className="mb-5">
+              <Text className="text-xs font-semibold mb-2" style={{ color: colors.textLight }}>
+                Sélectionner les horaires
+              </Text>
+              <ScrollView 
+                className="rounded-xl p-3 max-h-48"
+                style={{ backgroundColor: colors.lightGrayBg }}
+              >
+                {timeSlots.map((time, index) => {
+                  const isStart = time === selectedStartTime;
+                  const isEnd = time === selectedEndTime;
+                  const inRange = isTimeInRange(time);
+
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => handleTimeSlotPress(time)}
+                      className="py-2 px-3 mb-1 rounded-lg flex-row items-center"
+                      style={{
+                        backgroundColor: isStart || isEnd
+                          ? colors.accent
+                          : inRange
+                          ? colors.accentLight
+                          : "transparent",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: isStart || isEnd ? "#fff" : inRange ? colors.accent : colors.textDark,
+                          fontWeight: isStart || isEnd ? "600" : "400",
+                          flex: 1,
+                        }}
+                      >
+                        {time}
+                      </Text>
+                      {isStart && <Text style={{ color: "#fff" }}>🔴</Text>}
+                      {isEnd && <Text style={{ color: "#fff" }}>🟢</Text>}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              {/* Selected time display */}
+              {selectedStartTime && (
+                <View className="mt-3 p-3 rounded-lg" style={{ backgroundColor: colors.lightGrayBg }}>
+                  <Text style={{ color: colors.textDark, fontWeight: "600" }}>
+                    {selectedStartTime} {selectedEndTime ? `→ ${selectedEndTime}` : "→ ?"}
+                  </Text>
+                </View>
+              )}
             </View>
 
             <TextInput
@@ -1086,6 +1404,203 @@ export default function CalendarScreen() {
               >
                 <Text className="text-white font-medium text-center">
                   {editingPlan ? t("common.edit") : t("common.add")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {!editingPlan && (
+              <TouchableOpacity
+                onPress={handleSaveAsTemplate}
+                className="mt-3 rounded-xl py-2"
+                style={{ backgroundColor: colors.accentLight }}
+              >
+                <Text className="text-center font-medium text-sm" style={{ color: colors.accent }}>
+                  💾 Sauvegarder comme template
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* SAVE TEMPLATE MODAL */}
+      <Modal visible={showSaveTemplateModal} animationType="fade" transparent>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: colors.overlayDark }}
+        >
+          <View
+            className="w-full rounded-2xl p-6"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
+            <Text className="text-lg font-semibold mb-4" style={{ color: colors.textDark }}>
+              {selectedDayForTemplate
+                ? `Sauvegarder ${selectedDayForTemplate}`
+                : "Sauvegarder la semaine"}
+            </Text>
+
+            <Text className="text-sm mb-3" style={{ color: colors.textLight }}>
+              Nombre d'activités: {allWeekPlanActivities.length}
+            </Text>
+
+            <TextInput
+              placeholder={
+                selectedDayForTemplate
+                  ? "Ex: Matinée type lundi"
+                  : "Ex: Semaine type"
+              }
+              value={templateName}
+              onChangeText={setTemplateName}
+              className="rounded-xl px-4 py-3 text-base mb-5"
+              placeholderTextColor={colors.textLight}
+              style={{
+                backgroundColor: colors.cardBackground,
+                color: colors.textDark,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            />
+
+            <View className="flex-row justify-between">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowSaveTemplateModal(false);
+                  setTemplateName("");
+                  setSelectedDayForTemplate(null);
+                }}
+                className="flex-1 rounded-xl py-3 mr-2"
+                style={{ backgroundColor: colors.lightGrayBg }}
+              >
+                <Text style={{ color: colors.text, textAlign: "center" }}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleConfirmSaveTemplate}
+                className="flex-1 rounded-xl py-3"
+                style={{ backgroundColor: colors.accent }}
+              >
+                <Text className="text-white font-medium text-center">Sauvegarder</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* SELECT DAY FOR LOAD MODAL */}
+      <Modal visible={showSelectDayForLoad} animationType="fade" transparent>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: colors.overlayDark }}
+        >
+          <View
+            className="w-full max-h-96 rounded-2xl"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
+            <View className="p-6 border-b" style={{ borderBottomColor: colors.border }}>
+              <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+                Sélectionner un jour
+              </Text>
+            </View>
+
+            <ScrollView className="p-4">
+              {daysOfWeek.map((day) => (
+                <TouchableOpacity
+                  key={day}
+                  onPress={() => {
+                    setSelectedDayForLoad(day);
+                    setShowSelectDayForLoad(false);
+                    loadTemplates();
+                    setShowTemplateList(true);
+                  }}
+                  className="p-4 rounded-xl mb-3"
+                  style={{ backgroundColor: colors.lightGrayBg }}
+                >
+                  <Text className="font-semibold text-center" style={{ color: colors.textDark }}>
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View className="p-4 border-t" style={{ borderTopColor: colors.border }}>
+              <TouchableOpacity
+                onPress={() => setShowSelectDayForLoad(false)}
+                className="rounded-xl py-3"
+                style={{ backgroundColor: colors.lightGrayBg }}
+              >
+                <Text style={{ color: colors.text, textAlign: "center" }}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* TEMPLATE LIST MODAL */}
+      <Modal visible={showTemplateList && selectedDayForLoad !== null} animationType="fade" transparent>
+        <View
+          className="flex-1 justify-center items-center px-6"
+          style={{ backgroundColor: colors.overlayDark }}
+        >
+          <View
+            className="w-full max-h-96 rounded-2xl"
+            style={{ backgroundColor: colors.cardBackground }}
+          >
+            <View className="p-6 border-b" style={{ borderBottomColor: colors.border }}>
+              <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+                Templates pour {selectedDayForLoad}
+              </Text>
+              <Text className="text-sm" style={{ color: colors.textLight }}>
+                ({templates.length} templates)
+              </Text>
+            </View>
+
+            {templates.length > 0 ? (
+              <ScrollView className="p-4">
+                {templates.map((template) => (
+                  <TouchableOpacity
+                    key={template.id}
+                    onPress={() => handleLoadTemplate(template)}
+                    className="p-4 rounded-xl mb-3 flex-row justify-between items-center"
+                    style={{ backgroundColor: colors.lightGrayBg }}
+                  >
+                    <View className="flex-1">
+                      <Text className="font-semibold" style={{ color: colors.textDark }}>
+                        {template.name}
+                      </Text>
+                      <Text className="text-xs mt-1" style={{ color: colors.textLight }}>
+                        {template.activities.length} activités
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteTemplate(template.id)}
+                      className="ml-2"
+                    >
+                      <Ionicons name="trash" size={18} color={colors.redDark} />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View className="p-6 items-center">
+                <Text style={{ color: colors.textLight }}>Aucun template sauvegardé</Text>
+              </View>
+            )}
+
+            <View className="p-4 border-t" style={{ borderTopColor: colors.border }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowTemplateList(false);
+                  setSelectedDayForLoad(null);
+                }}
+                className="rounded-xl py-3"
+                style={{ backgroundColor: colors.lightGrayBg }}
+              >
+                <Text style={{ color: colors.text, textAlign: "center" }}>
+                  {t("common.cancel")}
                 </Text>
               </TouchableOpacity>
             </View>

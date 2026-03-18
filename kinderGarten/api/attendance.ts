@@ -1,11 +1,11 @@
 /** Parent: get all extra hour requests for their children */
 export async function getMyExtraHourRequests() {
-  console.log('[getMyExtraHourRequests] Fetching parent requests...');
+ // console.log('[getMyExtraHourRequests] Fetching parent requests...');
   try {
     const response = await withRetry(() =>
       api.get("attendance/my-requests/")
     );
-    console.log('[getMyExtraHourRequests] Response:', response.data);
+   // console.log('[getMyExtraHourRequests] Response:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('[getMyExtraHourRequests] Error:', error.message);

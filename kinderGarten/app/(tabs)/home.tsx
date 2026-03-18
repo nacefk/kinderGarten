@@ -178,33 +178,62 @@ export default function Home() {
         throw new Error("Invalid className");
       }
 
-      const today = new Date().toLocaleDateString("fr-FR", { weekday: "long" });
-      const dayKey = today.charAt(0).toUpperCase() + today.slice(1);
+      const today = new Date();
+      const todayFrench = today.toLocaleDateString("fr-FR", { weekday: "long" });
+      const dayKey = todayFrench.charAt(0).toUpperCase() + todayFrench.slice(1);
 
-      // Safe data access
-      const classPlan = Array.isArray(plans?.[className]?.[dayKey])
-        ? plans[className][dayKey]
-        : Array.isArray(plans)
-          ? plans.filter((p: any) => p.day === dayKey)
-          : [];
+      // Extract today's activities from plans
+      let todayActivities: any[] = [];
+
+      if (Array.isArray(plans)) {
+        plans.forEach((plan: any) => {
+          // 🔥 Handle new format with activities array
+          if (Array.isArray(plan.activities) && plan.activities.length > 0) {
+            plan.activities.forEach((activity: any) => {
+              if (!activity.starts_at) return;
+              const actDate = new Date(activity.starts_at);
+              // Check if activity is today
+              if (
+                actDate.getFullYear() === today.getFullYear() &&
+                actDate.getMonth() === today.getMonth() &&
+                actDate.getDate() === today.getDate()
+              ) {
+                const time = `${String(actDate.getHours()).padStart(2, "0")}:${String(actDate.getMinutes()).padStart(2, "0")}`;
+                todayActivities.push({
+                  title: activity.title || "Activity",
+                  time,
+                  starts_at: activity.starts_at,
+                });
+              }
+            });
+          }
+          // 🔥 Handle old format with day/time fields
+          else if (plan && plan.day === dayKey && plan.time && plan.title) {
+            todayActivities.push({
+              title: plan.title,
+              time: plan.time,
+            });
+          }
+        });
+      }
 
       const now = new Date();
       const nowMins = now.getHours() * 60 + now.getMinutes();
       let lastActivity = null;
       let nextActivity = null;
 
-      for (const plan of classPlan) {
-        if (!plan.time || typeof plan.time !== "string") continue;
+      for (const activity of todayActivities) {
+        if (!activity.time || typeof activity.time !== "string") continue;
 
-        const timeParts = plan.time.split(":");
+        const timeParts = activity.time.split(":");
         if (timeParts.length !== 2) continue;
 
         const [h, m] = timeParts.map(Number);
         if (isNaN(h) || isNaN(m)) continue;
 
         const mins = h * 60 + m;
-        if (mins <= nowMins) lastActivity = plan;
-        if (!nextActivity && mins > nowMins) nextActivity = plan;
+        if (mins <= nowMins) lastActivity = activity;
+        if (!nextActivity && mins > nowMins) nextActivity = activity;
       }
 
       setTimeline(

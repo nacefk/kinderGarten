@@ -82,7 +82,7 @@ export function getColors(tenantPrimaryColor?: string | null, tenantSecondaryCol
   const validPrimary = isValidColor(tenantPrimaryColor) ? tenantPrimaryColor : PRIMARY;
   const validSecondary = isValidColor(tenantSecondaryColor) ? tenantSecondaryColor : SECONDARY;
 
-  console.log("🎨 [Colors] Using - Primary:", validPrimary, "| Secondary:", validSecondary);
+ // console.log("🎨 [Colors] Using - Primary:", validPrimary, "| Secondary:", validSecondary);
 
   return {
     ...COLORS,

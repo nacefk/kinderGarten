@@ -11,11 +11,11 @@ export async function getEvents(filter?: { classroom?: number }) {
   const params: any = {};
   if (filter?.classroom) params.classroom = filter.classroom;
 
-  console.log("🔍 getEvents called with params:", params);
+// console.log("🔍 getEvents called with params:", params);
   const res = await api.get(API_ENDPOINTS.PLANNING_EVENTS, {
     params: Object.keys(params).length ? params : {},
   });
-  console.log("📊 getEvents response:", res.data);
+// console.log("📊 getEvents response:", res.data);
 
   let results = res.data?.results || res.data || [];
 
@@ -25,7 +25,7 @@ export async function getEvents(filter?: { classroom?: number }) {
       const eventClassId = event.classroom_detail?.id || event.classroom_id;
       return eventClassId === filter.classroom;
     });
-    console.log("✅ Filtered events for classroom", filter.classroom, ":", results.length, "events");
+ // console.log("✅ Filtered events for classroom", filter.classroom, ":", results.length, "events");
   }
 
   // ✅ Extract results array from paginated response
@@ -287,15 +287,30 @@ export async function createPlan({
     throw new Error("At least one activity with title is required");
   }
 
-  const requestPayload = {
+  const requestPayload: any = {
     classroom_id: final_classroom_id,
     activities: finalActivities,
   };
-  console.log("🚀 Sending to backend:", requestPayload);
 
-  const res = await api.post(API_ENDPOINTS.PLANNING_PLANS, requestPayload);
-  console.log("✅ Backend response:", res.data);
-  return res.data;
+  // Add title to payload if provided (backend might require it)
+  if (title?.trim()) {
+    requestPayload.title = title.trim();
+  }
+
+  console.log("🚀 Sending to backend:", JSON.stringify(requestPayload, null, 2));
+
+  try {
+    const res = await api.post(API_ENDPOINTS.PLANNING_PLANS, requestPayload);
+    console.log("✅ Backend response:", res.data);
+    return res.data;
+  } catch (error: any) {
+    console.error("❌ API Error Details:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      payload: requestPayload,
+    });
+    throw error;
+  }
 }
 
 /**
@@ -310,6 +325,11 @@ export async function updatePlan(id: string, data: any) {
   if (data.classroom_id) updateData.classroom_id = data.classroom_id;
   if (data.class_name) {
     updateData.classroom_id = typeof data.class_name === 'string' ? parseInt(data.class_name) : data.class_name;
+  }
+
+  // Add title if provided
+  if (data.title?.trim()) {
+    updateData.title = data.title.trim();
   }
 
   // Map activities with validation
@@ -360,8 +380,20 @@ export async function updatePlan(id: string, data: any) {
     throw new Error("At least one activity with title is required");
   }
 
-  const res = await api.put(`${API_ENDPOINTS.PLANNING_PLANS}${id}/`, updateData);
-  return res.data;
+  console.log("🚀 Updating plan with:", JSON.stringify(updateData, null, 2));
+  
+  try {
+    const res = await api.put(`${API_ENDPOINTS.PLANNING_PLANS}${id}/`, updateData);
+    console.log("✅ Update response:", res.data);
+    return res.data;
+  } catch (error: any) {
+    console.error("❌ Update Error Details:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      payload: updateData,
+    });
+    throw error;
+  }
 }
 
 /**

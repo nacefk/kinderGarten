@@ -22,15 +22,15 @@ export async function getTenant(): Promise<TenantResponse | null> {
     // Check if user is authenticated before fetching tenant
     const userToken = await secureStorage.getAccessToken();
     if (!userToken) {
-      console.log("ℹ️ [getTenant] User not authenticated - skipping tenant fetch");
+     // console.log("ℹ️ [getTenant] User not authenticated - skipping tenant fetch");
       return null;
     }
 
-    console.log("🔐 [getTenant] User authenticated, fetching from API...");
+   // console.log("🔐 [getTenant] User authenticated, fetching from API...");
     const response = await api.get<TenantResponse>("/tenant/");
-    console.log("✅ Tenant fetched:", response.data);
-    console.log("🎨 [getTenant] Full Response:", JSON.stringify(response.data, null, 2));
-    console.log("🎨 Tenant Branding - Primary (buttons/icons):", response.data.primary_color, "| Secondary (header):", response.data.secondary_color, "| Logo:", response.data.logo);
+  //  console.log("✅ Tenant fetched:", response.data);
+  //  console.log("🎨 [getTenant] Full Response:", JSON.stringify(response.data, null, 2));
+   // console.log("🎨 Tenant Branding - Primary (buttons/icons):", response.data.primary_color, "| Secondary (header):", response.data.secondary_color, "| Logo:", response.data.logo);
     return response.data;
   } catch (error: any) {
     if (error.response?.status === 404) {
