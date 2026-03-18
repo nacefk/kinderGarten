@@ -310,7 +310,10 @@ export default function Activity() {
                     >
                       <Text className="text-2xl mr-3 mt-1">{item.icon}</Text>
                       <View className="flex-1">
-                        <Text className="font-semibold text-base mb-2" style={{ color: colors.textDark }}>
+                        <Text
+                          className="font-semibold text-base mb-2"
+                          style={{ color: colors.textDark }}
+                        >
                           {item.title}
                         </Text>
                         <View className="flex-row items-center gap-2 mb-2">
@@ -461,7 +464,10 @@ export default function Activity() {
                     >
                       <Text className="text-2xl mr-3 mt-1">{item.icon}</Text>
                       <View className="flex-1">
-                        <Text className="font-semibold text-base mb-2" style={{ color: colors.textDark }}>
+                        <Text
+                          className="font-semibold text-base mb-2"
+                          style={{ color: colors.textDark }}
+                        >
                           {item.title}
                         </Text>
                         <View className="flex-row items-center gap-2 mb-2">

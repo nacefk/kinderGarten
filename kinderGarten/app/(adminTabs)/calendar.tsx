@@ -415,7 +415,7 @@ export default function CalendarScreen() {
   const [newPlanStartTime, setNewPlanStartTime] = useState("08:00");
   const [newPlanEndTime, setNewPlanEndTime] = useState("09:00");
   const [newPlanTitle, setNewPlanTitle] = useState("");
-  
+
   // Visual timetable state
   const [selectedStartTime, setSelectedStartTime] = useState<string | null>(null);
   const [selectedEndTime, setSelectedEndTime] = useState<string | null>(null);
@@ -594,10 +594,10 @@ export default function CalendarScreen() {
       console.error("❌ Error saving plan:", e);
       console.error("📋 Payload was:", JSON.stringify(payload));
       console.error("📋 Error response data:", JSON.stringify(e.response?.data));
-      
+
       // Show detailed error message
       let errorMessage = "Impossible d'enregistrer l'activité.";
-      
+
       if (e.message) {
         errorMessage = e.message;
       } else if (e.response?.data?.detail) {
@@ -606,7 +606,7 @@ export default function CalendarScreen() {
         const activitiesError = e.response.data.activities;
         if (Array.isArray(activitiesError) && activitiesError.length > 0) {
           errorMessage = `Activité: ${JSON.stringify(activitiesError[0])}`;
-        } else if (typeof activitiesError === 'string') {
+        } else if (typeof activitiesError === "string") {
           errorMessage = activitiesError;
         } else {
           errorMessage = `Activité: ${JSON.stringify(activitiesError)}`;
@@ -616,10 +616,10 @@ export default function CalendarScreen() {
         errorMessage = Array.isArray(errors) ? errors[0] : errors;
       } else if (e.response?.data?.classroom_id) {
         errorMessage = `Classe: ${e.response.data.classroom_id}`;
-      } else if (typeof e.response?.data === 'object') {
+      } else if (typeof e.response?.data === "object") {
         errorMessage = JSON.stringify(e.response.data);
       }
-      
+
       Alert.alert("Erreur", errorMessage);
     }
   };
@@ -783,7 +783,10 @@ export default function CalendarScreen() {
               setShowTemplateList(false);
               setShowSelectDayForLoad(false);
               setSelectedDayForLoad(null);
-              Alert.alert("Succès ✅", `Template "${template.name}" chargé dans ${selectedDayForLoad}.`);
+              Alert.alert(
+                "Succès ✅",
+                `Template "${template.name}" chargé dans ${selectedDayForLoad}.`
+              );
             } catch (error) {
               console.error("Error loading template:", error);
               Alert.alert("Erreur", "Impossible de charger le template.");
@@ -1306,7 +1309,7 @@ export default function CalendarScreen() {
               <Text className="text-xs font-semibold mb-2" style={{ color: colors.textLight }}>
                 Sélectionner les horaires
               </Text>
-              <ScrollView 
+              <ScrollView
                 className="rounded-xl p-3 max-h-48"
                 style={{ backgroundColor: colors.lightGrayBg }}
               >
@@ -1321,16 +1324,18 @@ export default function CalendarScreen() {
                       onPress={() => handleTimeSlotPress(time)}
                       className="py-2 px-3 mb-1 rounded-lg flex-row items-center"
                       style={{
-                        backgroundColor: isStart || isEnd
-                          ? colors.accent
-                          : inRange
-                          ? colors.accentLight
-                          : "transparent",
+                        backgroundColor:
+                          isStart || isEnd
+                            ? colors.accent
+                            : inRange
+                              ? colors.accentLight
+                              : "transparent",
                       }}
                     >
                       <Text
                         style={{
-                          color: isStart || isEnd ? "#fff" : inRange ? colors.accent : colors.textDark,
+                          color:
+                            isStart || isEnd ? "#fff" : inRange ? colors.accent : colors.textDark,
                           fontWeight: isStart || isEnd ? "600" : "400",
                           flex: 1,
                         }}
@@ -1346,7 +1351,10 @@ export default function CalendarScreen() {
 
               {/* Selected time display */}
               {selectedStartTime && (
-                <View className="mt-3 p-3 rounded-lg" style={{ backgroundColor: colors.lightGrayBg }}>
+                <View
+                  className="mt-3 p-3 rounded-lg"
+                  style={{ backgroundColor: colors.lightGrayBg }}
+                >
                   <Text style={{ color: colors.textDark, fontWeight: "600" }}>
                     {selectedStartTime} {selectedEndTime ? `→ ${selectedEndTime}` : "→ ?"}
                   </Text>
@@ -1444,11 +1452,7 @@ export default function CalendarScreen() {
             </Text>
 
             <TextInput
-              placeholder={
-                selectedDayForTemplate
-                  ? "Ex: Matinée type lundi"
-                  : "Ex: Semaine type"
-              }
+              placeholder={selectedDayForTemplate ? "Ex: Matinée type lundi" : "Ex: Semaine type"}
               value={templateName}
               onChangeText={setTemplateName}
               className="rounded-xl px-4 py-3 text-base mb-5"
@@ -1540,7 +1544,11 @@ export default function CalendarScreen() {
       </Modal>
 
       {/* TEMPLATE LIST MODAL */}
-      <Modal visible={showTemplateList && selectedDayForLoad !== null} animationType="fade" transparent>
+      <Modal
+        visible={showTemplateList && selectedDayForLoad !== null}
+        animationType="fade"
+        transparent
+      >
         <View
           className="flex-1 justify-center items-center px-6"
           style={{ backgroundColor: colors.overlayDark }}

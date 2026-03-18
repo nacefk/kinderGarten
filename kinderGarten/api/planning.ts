@@ -381,7 +381,7 @@ export async function updatePlan(id: string, data: any) {
   }
 
   console.log("🚀 Updating plan with:", JSON.stringify(updateData, null, 2));
-  
+
   try {
     const res = await api.put(`${API_ENDPOINTS.PLANNING_PLANS}${id}/`, updateData);
     console.log("✅ Update response:", res.data);
