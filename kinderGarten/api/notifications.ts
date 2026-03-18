@@ -17,7 +17,7 @@ export async function sendNotification({
 }) {
   try {
     console.log("📤 Sending notification:", { recipients, title, body, data });
-    
+
     const res = await api.post("/api/notifications/send/", {
       recipients: recipients === "all" ? "all" : recipients,
       title,
@@ -49,7 +49,7 @@ export async function sendClassroomNotification({
 }) {
   try {
     console.log("📤 Sending classroom notification:", { classroom_id, title, body });
-    
+
     const res = await api.post("/api/notifications/send/", {
       recipients: "classroom",
       classroom_id,
@@ -80,7 +80,7 @@ export async function sendAnnouncementToParents({
 }) {
   try {
     console.log("📤 Sending announcement to parents:", { title, body });
-    
+
     const res = await api.post("/api/notifications/send/", {
       recipients: "parents",
       title,

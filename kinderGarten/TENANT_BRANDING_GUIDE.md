@@ -114,13 +114,13 @@ getColors(tenant?.primary_color) for styling
 
 ```ts
 interface TenantData {
-  id: number;                    // Tenant ID
-  name: string;                  // Tenant name
-  slug: string;                  // URL-friendly name
-  created_at: string;            // Creation date
-  is_active: boolean;            // Is tenant active
-  logo: string | null;           // URL to logo image
-  primary_color: string | null;  // Hex color code (e.g., "#FF5733")
+  id: number; // Tenant ID
+  name: string; // Tenant name
+  slug: string; // URL-friendly name
+  created_at: string; // Creation date
+  is_active: boolean; // Is tenant active
+  logo: string | null; // URL to logo image
+  primary_color: string | null; // Hex color code (e.g., "#FF5733")
 }
 ```
 
@@ -159,10 +159,7 @@ export function HeaderWithBranding() {
   return (
     <View style={{ backgroundColor: colors.accent, padding: 16 }}>
       {tenant?.logo && (
-        <Image
-          source={{ uri: tenant.logo }}
-          style={{ width: 150, height: 60, marginBottom: 16 }}
-        />
+        <Image source={{ uri: tenant.logo }} style={{ width: 150, height: 60, marginBottom: 16 }} />
       )}
       <Text style={{ color: "#FFF", fontSize: 20, fontWeight: "bold" }}>
         Welcome to {tenant?.name}
@@ -194,12 +191,8 @@ export function ThemedCard({ title, children }) {
         marginVertical: 8,
       }}
     >
-      <Text style={{ color: colors.textDark, fontWeight: "bold" }}>
-        {title}
-      </Text>
-      <Text style={{ color: colors.text, marginTop: 8 }}>
-        {children}
-      </Text>
+      <Text style={{ color: colors.textDark, fontWeight: "bold" }}>{title}</Text>
+      <Text style={{ color: colors.text, marginTop: 8 }}>{children}</Text>
     </View>
   );
 }

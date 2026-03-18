@@ -697,7 +697,9 @@ export default function ChildrenScreen() {
           }}
         >
           <Ionicons name="add-circle-outline" size={20} color={colors.cardBackground} />
-          <Text style={{ color: colors.cardBackground, fontWeight: "600", fontSize: 14 }}>{t("common.club")}</Text>
+          <Text style={{ color: colors.cardBackground, fontWeight: "600", fontSize: 14 }}>
+            {t("common.club")}
+          </Text>
         </TouchableOpacity>
 
         {/* Add Class Button */}
@@ -756,7 +758,7 @@ export default function ChildrenScreen() {
         >
           <View
             className="w-full rounded-2xl p-6"
-            style={{ backgroundColor: colors.cardBackground} }
+            style={{ backgroundColor: colors.cardBackground }}
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
               {t("children.new_class")}
@@ -802,7 +804,7 @@ export default function ChildrenScreen() {
         >
           <View
             className="w-full rounded-2xl p-6"
-            style={{ backgroundColor: colors.cardBackground} }
+            style={{ backgroundColor: colors.cardBackground }}
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
               {t("children.new_club")}
@@ -848,7 +850,7 @@ export default function ChildrenScreen() {
         >
           <View
             className="w-full rounded-2xl p-6"
-            style={{ backgroundColor: colors.cardBackground} }
+            style={{ backgroundColor: colors.cardBackground }}
           >
             <Text className="text-xl font-bold mb-4 text-center" style={{ color: colors.textDark }}>
               {t("children.new_child")}
@@ -1012,7 +1014,8 @@ export default function ChildrenScreen() {
                   height: 48,
                   paddingVertical: 0,
                   borderRadius: 12,
-                  backgroundColor: childGender === "female" ? colors.femalePink : colors.cardBackground,
+                  backgroundColor:
+                    childGender === "female" ? colors.femalePink : colors.cardBackground,
                   borderWidth: 2,
                   borderColor: colors.femalePink,
                 }}

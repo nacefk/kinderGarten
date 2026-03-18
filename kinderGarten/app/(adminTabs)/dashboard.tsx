@@ -42,17 +42,17 @@ export default function DashboardScreen() {
   const { language, setLanguage } = useLanguageStore();
   const tenant = useAppStore((state) => state.tenant);
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
-  
+
   // Debug: Log when colors update
   useEffect(() => {
     console.log("🎯 [Dashboard] Colors updated:", {
       primary: colors.primary,
       secondary: colors.secondary,
       tenant_primary: tenant?.primary_color,
-      tenant_secondary: tenant?.secondary_color
+      tenant_secondary: tenant?.secondary_color,
     });
   }, [colors, tenant]);
-  
+
   const t = (key: string) => getTranslation(language, key);
   const languages: Language[] = ["en", "fr", "ar"];
   const [presence, setPresence] = useState({ present: 0, absent: 0 });
@@ -464,7 +464,8 @@ export default function DashboardScreen() {
           <View style={{ marginTop: 8 }}>
             <View style={{ marginBottom: 12 }}>
               <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 14 }}>
-                {extraHours.length} {t(extraHours.length === 1 ? "common.request" : "common.requests")}
+                {extraHours.length}{" "}
+                {t(extraHours.length === 1 ? "common.request" : "common.requests")}
               </Text>
             </View>
             {extraHours.slice(0, 3).map((req) => (

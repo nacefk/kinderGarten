@@ -19,13 +19,13 @@ export default function HeaderBar({ title, showBack = false, onBackPress }: Head
   const pathname = usePathname();
   const { userRole } = useAuthStore();
   const tenant = useAppStore((state) => state.tenant);
-  
+
   // Debug: Log tenant colors
-  console.log("🎨 [Header] Tenant data:", { 
-    primary_color: tenant?.primary_color, 
-    secondary_color: tenant?.secondary_color 
+  console.log("🎨 [Header] Tenant data:", {
+    primary_color: tenant?.primary_color,
+    secondary_color: tenant?.secondary_color,
   });
-  
+
   // Get colors with tenant branding
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
 

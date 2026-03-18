@@ -230,7 +230,8 @@ export default function ConversationScreen() {
                 <View
                   className={`max-w-[80%] rounded-2xl px-4 py-2 rounded-br-none`}
                   style={{
-                    backgroundColor: item.sender === "user" ? colors.primary : colors.cardBackground,
+                    backgroundColor:
+                      item.sender === "user" ? colors.primary : colors.cardBackground,
                     borderBottomRightRadius: item.sender === "user" ? 0 : 16,
                     borderBottomLeftRadius: item.sender === "user" ? 16 : 0,
                   }}
@@ -274,7 +275,11 @@ export default function ConversationScreen() {
                 minHeight: 42, // ensures visibility
               }}
             />
-            <TouchableOpacity onPress={handleSend} className="ml-3 rounded-full p-3" style={{ backgroundColor: colors.accent }}>
+            <TouchableOpacity
+              onPress={handleSend}
+              className="ml-3 rounded-full p-3"
+              style={{ backgroundColor: colors.accent }}
+            >
               <Send color={colors.white} size={20} />
             </TouchableOpacity>
           </View>

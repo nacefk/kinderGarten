@@ -22,11 +22,11 @@ let messaging: any;
 try {
   app = initializeApp(firebaseConfig);
   console.log("✅ Firebase initialized");
-  
+
   // Initialize Cloud Messaging
   messaging = getMessaging(app);
   console.log("✅ Cloud Messaging initialized");
-  
+
   // Analytics (optional)
   if (typeof window !== "undefined") {
     try {

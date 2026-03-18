@@ -195,7 +195,8 @@ export default function Chat() {
                   <View
                     className={`max-w-[80%] rounded-2xl px-4 py-2`}
                     style={{
-                      backgroundColor: item.sender === "user" ? colors.primary : colors.cardBackground,
+                      backgroundColor:
+                        item.sender === "user" ? colors.primary : colors.cardBackground,
                       borderBottomRightRadius: item.sender === "user" ? 0 : 16,
                       borderBottomLeftRadius: item.sender === "user" ? 16 : 0,
                     }}
@@ -228,7 +229,11 @@ export default function Chat() {
                 placeholder="Écrire un message..."
                 className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-gray-800"
               />
-              <TouchableOpacity onPress={handleSend} className="ml-3 rounded-full p-2" style={{ backgroundColor: colors.accent }}>
+              <TouchableOpacity
+                onPress={handleSend}
+                className="ml-3 rounded-full p-2"
+                style={{ backgroundColor: colors.accent }}
+              >
                 <Send color="#fff" size={20} />
               </TouchableOpacity>
             </View>

@@ -239,7 +239,7 @@ export async function createPlan({
     // endTime might come from activities array or as a separate parameter
     const activityEndTime = activities?.[0]?.endTime;
     const { starts_at, ends_at } = dayAndTimeToISO(activityDay, activityTime, activityEndTime);
-    
+
     const activity = {
       title: title.trim(),
       starts_at,
@@ -350,7 +350,7 @@ export async function updatePlan(id: string, data: any) {
     const activityTime = data.time || "09:00";
     const activityEndTime = data.endTime;
     const { starts_at, ends_at } = dayAndTimeToISO(activityDay, activityTime, activityEndTime);
-    
+
     updateData.activities = [{
       title: data.title.trim(),
       starts_at,

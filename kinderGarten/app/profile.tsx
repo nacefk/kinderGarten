@@ -634,7 +634,11 @@ export default function Profile() {
                     <Text style={{ color: colors.textLight, fontSize: 12 }}>Nom d'utilisateur</Text>
                     <View
                       className="flex-row items-center justify-between px-3 py-2 rounded-lg mt-1"
-                      style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
+                      style={{
+                        backgroundColor: colors.cardBackground,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
                     >
                       <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                         {profile.username}
@@ -655,7 +659,11 @@ export default function Profile() {
                     <Text style={{ color: colors.textLight, fontSize: 12 }}>Mot de passe</Text>
                     <View
                       className="flex-row items-center justify-between px-3 py-2 rounded-lg mt-1"
-                      style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
+                      style={{
+                        backgroundColor: colors.cardBackground,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
                     >
                       <Text style={{ color: colors.textDark, fontWeight: "500" }}>
                         {profile.password}

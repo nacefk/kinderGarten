@@ -19,18 +19,18 @@ const COLORS = {
   text: TEXT,
   white: "#FFFFFF",
   black: "#000000",
-  
+
   // All backgrounds are WHITE
   background: "#FFFFFF",
   cardBackground: "#FFFFFF",
-  
+
   // Borders are light gray
   border: "#E5E7EB",
-  
+
   // Overlays (semi-transparent black for modals)
   overlay: "rgba(0,0,0,0.25)",
   overlayDark: "rgba(0,0,0,0.4)",
-  
+
   // Aliases - all point to the 5 core colors, NO NEW COLORS
   accent: PRIMARY,
   textDark: TEXT,
@@ -46,8 +46,8 @@ const COLORS = {
   errorLight: "#FFFFFF",
   successDark: SUCCESS,
   successLight: "#FFFFFF",
-  
-  // Additional colors for specific features  
+
+  // Additional colors for specific features
   maleBlue: "#3B82F6",
   femalePink: "#EC4899",
   mediumGray: "#6B7280",
@@ -78,12 +78,12 @@ export function getColors(tenantPrimaryColor?: string | null, tenantSecondaryCol
     if (!color) return false;
     return /^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/.test(color);
   };
-  
+
   const validPrimary = isValidColor(tenantPrimaryColor) ? tenantPrimaryColor : PRIMARY;
   const validSecondary = isValidColor(tenantSecondaryColor) ? tenantSecondaryColor : SECONDARY;
-  
+
   console.log("🎨 [Colors] Using - Primary:", validPrimary, "| Secondary:", validSecondary);
-  
+
   return {
     ...COLORS,
     primary: validPrimary,

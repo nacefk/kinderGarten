@@ -152,7 +152,11 @@ export default function CalendarScreen() {
       const ALL_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
       const groupedPlans = plansData.reduce((acc: any, plan: any) => {
-        const className = plan.classroom_detail?.name || plan.class_name_detail?.name || plan.class_name?.name || "Inconnu";
+        const className =
+          plan.classroom_detail?.name ||
+          plan.class_name_detail?.name ||
+          plan.class_name?.name ||
+          "Inconnu";
         // console.log("🔍 Processing plan ID:", plan.id, "| Class:", className, "| Has starts_at?", !!plan.starts_at, "| Starts_at:", plan.starts_at);
 
         // 🔥 First time we encounter a class → pre-fill all 7 days
@@ -166,28 +170,28 @@ export default function CalendarScreen() {
         // 🔥 Handle new format: flat plan with starts_at/ends_at (backend returns single plan as activity)
         if (plan.starts_at && plan.ends_at && plan.title) {
           // console.log("📦 Processing plan with ISO times:", plan.id, plan.starts_at);
-          
+
           // Convert ISO datetime to day and time
           const startDate = new Date(plan.starts_at);
           const endDate = new Date(plan.ends_at);
           // console.log("⏰ ISO datetime:", plan.starts_at, "→ Parsed date:", startDate, "→ Day:", startDate.toLocaleDateString("en-US", { weekday: "long" }));
-          
+
           const day = startDate.toLocaleDateString("en-US", { weekday: "long" });
           // Map English day names to French
           const dayMap: Record<string, string> = {
-            "Monday": "Lundi",
-            "Tuesday": "Mardi",
-            "Wednesday": "Mercredi",
-            "Thursday": "Jeudi",
-            "Friday": "Vendredi",
-            "Saturday": "Samedi",
-            "Sunday": "Dimanche",
+            Monday: "Lundi",
+            Tuesday: "Mardi",
+            Wednesday: "Mercredi",
+            Thursday: "Jeudi",
+            Friday: "Vendredi",
+            Saturday: "Samedi",
+            Sunday: "Dimanche",
           };
           const frenchDay = dayMap[day] || day;
-          
+
           const time = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
           const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
-          
+
           const activityItem = {
             id: plan.id,
             time,
@@ -204,23 +208,23 @@ export default function CalendarScreen() {
           // console.log("📦 Processing activities array for plan:", plan.id, plan.activities);
           plan.activities.forEach((activity: any) => {
             if (!activity.starts_at || !activity.ends_at) return;
-            
+
             const startDate = new Date(activity.starts_at);
             const endDate = new Date(activity.ends_at);
             const day = startDate.toLocaleDateString("en-US", { weekday: "long" });
             const dayMap: Record<string, string> = {
-              "Monday": "Lundi",
-              "Tuesday": "Mardi",
-              "Wednesday": "Mercredi",
-              "Thursday": "Jeudi",
-              "Friday": "Vendredi",
-              "Saturday": "Samedi",
-              "Sunday": "Dimanche",
+              Monday: "Lundi",
+              Tuesday: "Mardi",
+              Wednesday: "Mercredi",
+              Thursday: "Jeudi",
+              Friday: "Vendredi",
+              Saturday: "Samedi",
+              Sunday: "Dimanche",
             };
             const frenchDay = dayMap[day] || day;
             const time = `${String(startDate.getHours()).padStart(2, "0")}:${String(startDate.getMinutes()).padStart(2, "0")}`;
             const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
-            
+
             acc[className][frenchDay].push({
               id: plan.id,
               time,
@@ -437,8 +441,8 @@ export default function CalendarScreen() {
           time: newPlanStartTime,
           endTime: newPlanEndTime, // Pass end time
           // starts_at and ends_at will be calculated by the API
-        }
-      ]
+        },
+      ],
     };
     // console.log("📋 Payload being sent to createPlan/updatePlan:", payload);
     try {
@@ -460,7 +464,13 @@ export default function CalendarScreen() {
         if (editingPlan?.id) {
           updated[className][newPlanDay] = updated[className][newPlanDay].map((p: any) =>
             p.id === editingPlan.id
-              ? { ...p, ...newItem, title: newPlanTitle.trim(), time: newPlanStartTime, endTime: newPlanEndTime }
+              ? {
+                  ...p,
+                  ...newItem,
+                  title: newPlanTitle.trim(),
+                  time: newPlanStartTime,
+                  endTime: newPlanEndTime,
+                }
               : p
           );
         } else {
@@ -494,8 +504,8 @@ export default function CalendarScreen() {
       } else if (e.response?.data?.detail) {
         errorMessage = e.response.data.detail;
       } else if (e.response?.data?.activities) {
-        errorMessage = Array.isArray(e.response.data.activities) 
-          ? e.response.data.activities[0] 
+        errorMessage = Array.isArray(e.response.data.activities)
+          ? e.response.data.activities[0]
           : e.response.data.activities;
       } else if (e.response?.data?.non_field_errors) {
         errorMessage = e.response.data.non_field_errors[0];
@@ -632,7 +642,7 @@ export default function CalendarScreen() {
       <HeaderBar title="Calendrier" showBack={true} />
 
       {/* Tabs */}
-      <View 
+      <View
         className="flex-row mb-6 bg-white rounded-2xl p-1 mx-5 mt-4"
         style={{
           shadowColor: "#000",
@@ -774,7 +784,11 @@ export default function CalendarScreen() {
                 <TouchableOpacity
                   onPress={() => setShowClassPicker(!showClassPicker)}
                   className="rounded-xl px-4 py-3 mb-3 flex-row items-center justify-between"
-                  style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
+                  style={{
+                    backgroundColor: colors.cardBackground,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
                 >
                   <Text style={{ color: colors.text }}>
                     {selectedEventClass?.name || "Sélectionner une classe"}
@@ -789,7 +803,11 @@ export default function CalendarScreen() {
                 {showClassPicker && (
                   <View
                     className="mb-3 rounded-xl"
-                    style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
+                    style={{
+                      backgroundColor: colors.cardBackground,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
                   >
                     <TouchableOpacity
                       onPress={() => {
@@ -852,7 +870,11 @@ export default function CalendarScreen() {
             {isParent && (
               <View
                 className="rounded-xl px-4 py-3 mb-3"
-                style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
+                style={{
+                  backgroundColor: colors.cardBackground,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
               >
                 <Text style={{ color: colors.text }}>{selectedClass?.name}</Text>
               </View>
@@ -862,7 +884,11 @@ export default function CalendarScreen() {
             <TouchableOpacity
               onPress={() => setShowPicker("date")}
               className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
-              style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
+              style={{
+                backgroundColor: colors.cardBackground,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
             >
               <Text style={{ color: colors.text }}>{newDate.toLocaleDateString("fr-FR")}</Text>
               <Ionicons name="calendar-outline" size={20} color={colors.textLight} />
@@ -872,7 +898,11 @@ export default function CalendarScreen() {
             <TouchableOpacity
               onPress={() => setShowPicker("time")}
               className="flex-row items-center justify-between rounded-xl px-4 py-3 mb-3"
-              style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
+              style={{
+                backgroundColor: colors.cardBackground,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
             >
               <Text style={{ color: colors.text }}>
                 {newDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
@@ -917,7 +947,9 @@ export default function CalendarScreen() {
                   className="rounded-xl py-3 px-5"
                   style={{ backgroundColor: colors.redLight }}
                 >
-                  <Text style={{ color: colors.redDark, fontWeight: "500" }}>{t("common.delete")}</Text>
+                  <Text style={{ color: colors.redDark, fontWeight: "500" }}>
+                    {t("common.delete")}
+                  </Text>
                 </TouchableOpacity>
               )}
 

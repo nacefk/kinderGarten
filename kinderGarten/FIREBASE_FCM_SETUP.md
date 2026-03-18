@@ -1,6 +1,7 @@
 # Firebase Cloud Messaging (FCM) Setup Guide
 
 ## Overview
+
 This guide walks you through setting up Firebase Cloud Messaging with your Expo React Native app.
 
 ## Step 1: Create Firebase Project
@@ -85,6 +86,7 @@ Add your project ID to `app.json`:
 ```
 
 To get your EAS Project ID:
+
 1. Run: `eas project:info`
 2. Copy the Project ID
 
@@ -95,6 +97,7 @@ npm install expo-notifications expo-device firebase
 ```
 
 Or with yarn:
+
 ```bash
 yarn add expo-notifications expo-device firebase
 ```
@@ -354,23 +357,26 @@ await sendClassroomNotification({
   classroom_id: 1,
   title: "Activity Update",
   body: "New activity added to the schedule",
-  data: { screen: "calendar" }
+  data: { screen: "calendar" },
 });
 ```
 
 ## Troubleshooting
 
 ### Token not registering
+
 - ✅ Ensure you're running on physical device (simulator doesn't get tokens)
 - ✅ Check notification permissions are granted
 - ✅ Verify EAS project ID in `app.json`
 
 ### Notifications not receiving
+
 - ✅ Check device token is saved in database
 - ✅ Verify Firebase credentials on backend
 - ✅ Check your Firebase project limits haven't been exceeded
 
 ### Device token keeps changing
+
 - This is normal; tokens can refresh. Your backend should update existing device.
 
 ## Next Steps

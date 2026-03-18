@@ -39,7 +39,7 @@ await sendClassroomNotification({
   classroom_id: 1,
   title: "Activity Added",
   body: "New activity scheduled",
-  data: { screen: "calendar" }
+  data: { screen: "calendar" },
 });
 ```
 
@@ -51,7 +51,7 @@ import { sendAnnouncementToParents } from "@/api/notifications";
 await sendAnnouncementToParents({
   title: "School Closed Tomorrow",
   body: "School will be closed for holiday",
-  data: { type: "announcement" }
+  data: { type: "announcement" },
 });
 ```
 
@@ -64,7 +64,7 @@ await sendNotification({
   recipients: [1, 2, 3], // user IDs
   title: "Personal Message",
   body: "You have a new message",
-  data: { screen: "messages" }
+  data: { screen: "messages" },
 });
 ```
 
@@ -93,6 +93,7 @@ Automatic setup in `initializeNotifications()` - just set it up once in your app
 ### Handle Notification Taps
 
 In `setupNotificationListeners()`)`:
+
 - Receives notification data when user taps
 - Can navigate to specific screens
 - Handles foreground and background notifications
@@ -165,13 +166,13 @@ utils/
 
 ## 🆘 Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| No token on simulator | Use physical device only |
-| Permission denied | User rejected notification permission |
-| No messages received | Check Firebase credentials on backend |
-| Token keeps changing | This is normal - backend should update it |
-| Backend not initialized | Check FIREBASE_CREDENTIALS_PATH env var |
+| Issue                   | Solution                                  |
+| ----------------------- | ----------------------------------------- |
+| No token on simulator   | Use physical device only                  |
+| Permission denied       | User rejected notification permission     |
+| No messages received    | Check Firebase credentials on backend     |
+| Token keeps changing    | This is normal - backend should update it |
+| Backend not initialized | Check FIREBASE_CREDENTIALS_PATH env var   |
 
 ## 💡 Pro Tips
 

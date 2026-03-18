@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  TextInput,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "@/config/colors";
 import { useRouter } from "expo-router";
@@ -368,7 +376,11 @@ export default function ExtraHoursScreen() {
                       }}
                     >
                       {filteredGroupedData[date].length}{" "}
-                      {t(filteredGroupedData[date].length === 1 ? "common.request" : "common.requests")}
+                      {t(
+                        filteredGroupedData[date].length === 1
+                          ? "common.request"
+                          : "common.requests"
+                      )}
                     </Text>
                   </View>
                 </View>
@@ -407,7 +419,14 @@ export default function ExtraHoursScreen() {
                     </View>
 
                     {/* Right side: Stacked (Duration on top, Status & Actions below) */}
-                    <View style={{ flexDirection: "column", marginLeft: 12, gap: 6, justifyContent: "space-between" }}>
+                    <View
+                      style={{
+                        flexDirection: "column",
+                        marginLeft: 12,
+                        gap: 6,
+                        justifyContent: "space-between",
+                      }}
+                    >
                       {/* Duration Badge - Top */}
                       <View
                         style={{
