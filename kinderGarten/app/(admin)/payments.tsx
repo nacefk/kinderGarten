@@ -336,7 +336,6 @@ export default function PaymentsScreen() {
                       {payment.date_of_payment}
                     </Text>
                   </View>
-
                 </View>
 
                 {/* Amount + Status */}
@@ -415,7 +414,9 @@ export default function PaymentsScreen() {
             </Text>
 
             {/* Date Field */}
-            <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 13, marginBottom: 6 }}>
+            <Text
+              style={{ color: colors.textDark, fontWeight: "600", fontSize: 13, marginBottom: 6 }}
+            >
               {t("payments.date")}
             </Text>
             <TextInput
@@ -435,7 +436,9 @@ export default function PaymentsScreen() {
             />
 
             {/* Amount Field */}
-            <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 13, marginBottom: 6 }}>
+            <Text
+              style={{ color: colors.textDark, fontWeight: "600", fontSize: 13, marginBottom: 6 }}
+            >
               {t("payments.amount")} ({t("payments.currency")})
             </Text>
             <TextInput
@@ -461,7 +464,9 @@ export default function PaymentsScreen() {
             />
 
             {/* Status Selector */}
-            <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 13, marginBottom: 8 }}>
+            <Text
+              style={{ color: colors.textDark, fontWeight: "600", fontSize: 13, marginBottom: 8 }}
+            >
               {t("payments.status")}
             </Text>
             <View style={{ flexDirection: "row", marginBottom: 20 }}>

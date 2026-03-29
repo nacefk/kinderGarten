@@ -472,7 +472,12 @@ export default function DashboardScreen() {
           <ActivityIndicator color={colors.accent} size="small" />
         ) : unpaidCount === 0 ? (
           <View style={{ alignItems: "center", marginTop: 8, marginBottom: 4 }}>
-            <Ionicons name="checkmark-circle-outline" size={32} color={colors.success} style={{ marginBottom: 4 }} />
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={32}
+              color={colors.success}
+              style={{ marginBottom: 4 }}
+            />
             <Text style={{ color: colors.textLight, textAlign: "center", fontSize: 15 }}>
               {t("payments.no_payments")}
             </Text>

@@ -57,15 +57,22 @@ export default function ChatListScreen() {
       const parentChildMap = new Map<string, ChildInfo>();
       for (const c of children) {
         if (c.parent_name) {
-          parentChildMap.set(c.parent_name.toLowerCase(), { name: c.name, avatar: c.avatar || null });
+          parentChildMap.set(c.parent_name.toLowerCase(), {
+            name: c.name,
+            avatar: c.avatar || null,
+          });
         }
         if (c.parent_user_name) {
-          parentChildMap.set(c.parent_user_name.toLowerCase(), { name: c.name, avatar: c.avatar || null });
+          parentChildMap.set(c.parent_user_name.toLowerCase(), {
+            name: c.name,
+            avatar: c.avatar || null,
+          });
         }
       }
 
       const mapped = (data.results || []).map((conv: any) => {
-        const parentName = conv.other_user_name || conv.name || conv.parent_name || "Parent inconnu";
+        const parentName =
+          conv.other_user_name || conv.name || conv.parent_name || "Parent inconnu";
         const childMatch =
           parentChildMap.get(parentName.toLowerCase()) ||
           parentChildMap.get((conv.other_user_username || "").toLowerCase()) ||
@@ -145,10 +152,7 @@ export default function ChatListScreen() {
       }}
     >
       {item.child?.avatar ? (
-        <Image
-          source={{ uri: item.child.avatar }}
-          className="w-12 h-12 rounded-full mr-3"
-        />
+        <Image source={{ uri: item.child.avatar }} className="w-12 h-12 rounded-full mr-3" />
       ) : (
         <View
           style={{
