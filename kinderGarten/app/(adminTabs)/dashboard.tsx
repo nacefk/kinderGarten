@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getTodayAbsences } from "@/api/absence";
+import { getAllPayments } from "@/api/payment";
 // Absences Today State and Fetch
 
 import {
@@ -53,6 +54,27 @@ export default function DashboardScreen() {
   type AbsencesTodayType = any[] | { error: string };
   const [absencesToday, setAbsencesToday] = useState<AbsencesTodayType>([]);
   const [loadingAbsences, setLoadingAbsences] = useState(true);
+  const [unpaidCount, setUnpaidCount] = useState(0);
+  const [loadingPayments, setLoadingPayments] = useState(true);
+
+  // ✅ Fetch unpaid children count
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingPayments(true);
+        const payments = await getAllPayments("pending");
+        // Count unique children with pending payments
+        const uniqueChildren = new Set(payments.map((p) => p.child));
+        setUnpaidCount(uniqueChildren.size);
+      } catch (err: any) {
+        console.error("❌ Error loading payments:", err?.message || err);
+        setUnpaidCount(0);
+      } finally {
+        setLoadingPayments(false);
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -423,6 +445,49 @@ export default function DashboardScreen() {
           </View>
         )}
       </View>
+
+      {/* --- Unpaid Children Bloc --- */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => router.push("/(admin)/payments")}
+        className="rounded-2xl p-5 mb-6 mx-5"
+        style={{
+          backgroundColor: colors.cardBackground,
+          shadowColor: "#000",
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
+          elevation: 2,
+        }}
+      >
+        <View className="flex-row items-center justify-between mb-2">
+          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+            {t("payments.unpaid_children")}
+          </Text>
+          <Ionicons name="card-outline" size={22} color={colors.accent} />
+        </View>
+        <Text className="text-sm mb-3" style={{ color: colors.text }}>
+          {t("payments.unpaid_description")}
+        </Text>
+        {loadingPayments ? (
+          <ActivityIndicator color={colors.accent} size="small" />
+        ) : unpaidCount === 0 ? (
+          <View style={{ alignItems: "center", marginTop: 8, marginBottom: 4 }}>
+            <Ionicons name="checkmark-circle-outline" size={32} color={colors.success} style={{ marginBottom: 4 }} />
+            <Text style={{ color: colors.textLight, textAlign: "center", fontSize: 15 }}>
+              {t("payments.no_payments")}
+            </Text>
+          </View>
+        ) : (
+          <View className="flex-row items-center mt-2">
+            <Text className="text-3xl font-bold" style={{ color: colors.error }}>
+              {unpaidCount}
+            </Text>
+            <Text style={{ color: colors.textLight, marginLeft: 8, fontSize: 14 }}>
+              {t("payments.filter_pending")}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
 
       {/* --- Extra Hours Bloc --- */}
       <TouchableOpacity

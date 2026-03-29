@@ -14,7 +14,11 @@ export const api: AxiosInstance = axios.create({
 /**
  * ✅ Setup auth interceptors for token refresh
  */
+let interceptorsSetup = false;
 export const setupAxiosInterceptors = () => {
+  if (interceptorsSetup) return;
+  interceptorsSetup = true;
+
   // Request interceptor: attach token
   api.interceptors.request.use(
     async (config) => {

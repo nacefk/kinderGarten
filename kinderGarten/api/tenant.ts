@@ -37,6 +37,10 @@ export async function getTenant(): Promise<TenantResponse | null> {
       console.log("ℹ️ [getTenant] Tenant endpoint not available (404)");
       return null;
     }
+    if (error.response?.status === 401) {
+      console.log("ℹ️ [getTenant] Not authorized (token expired) - skipping tenant fetch");
+      return null;
+    }
     console.error("❌ [getTenant] Failed to fetch tenant:", error.message);
     console.error("❌ [getTenant] Error details:", error.response?.data || error);
     return null;

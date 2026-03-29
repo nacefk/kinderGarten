@@ -1,35 +1,57 @@
 import { Redirect } from "expo-router";
-import LottieView from "lottie-react-native";
-import { useEffect, useRef, useState } from "react";
-import { Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Image, View } from "react-native";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export default function Index() {
   const { isAuthenticated, isLoading, userRole } = useAuthStore();
   const [showSplash, setShowSplash] = useState(true);
-  const animationRef = useRef(null);
+  const [progress, setProgress] = useState(0);
 
-  // Show splash for 3.5 seconds
+  // Show splash for 3.5 seconds with progress animation
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 3500);
-    return () => clearTimeout(timer);
+    const splashDuration = 3500;
+    const startTime = Date.now();
+
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progressPercent = Math.min((elapsed / splashDuration) * 100, 100);
+      setProgress(progressPercent);
+
+      if (elapsed >= splashDuration) {
+        clearInterval(progressInterval);
+        setShowSplash(false);
+      }
+    }, 50);
+
+    return () => clearInterval(progressInterval);
   }, []);
 
   // Still loading
   if (isLoading || showSplash) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <LottieView
-          ref={animationRef}
-          source={require("../assets/animations/splash.json")}
-          autoPlay
-          loop={true}
+      <View className="flex-1 justify-center items-center bg-white px-6">
+        {/* Image */}
+        <Image
+          source={require("../assets/images/sghiri-splash.png")}
           resizeMode="contain"
-          style={{ width: "90%", height: "40%" }}
+          style={{ width: 450, height: (420 * 1024) / 1536, marginBottom: 40 }}
         />
-        <Text className="text-2xl font-bold mt-10">Welcome to the App</Text>
+
+        {/* Progress Bar Container */}
+        <View style={{ width: "100%", maxWidth: 300 }}>
+          {/* Background bar */}
+          <View className="bg-gray-200 rounded-full overflow-hidden" style={{ height: 8 }}>
+            {/* Progress fill */}
+            <View
+              className="bg-red-500 rounded-full"
+              style={{
+                height: 8,
+                width: `${progress}%`,
+              }}
+            />
+          </View>
+        </View>
       </View>
     );
   }

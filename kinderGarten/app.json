@@ -4,7 +4,7 @@
     "slug": "kinderGarten",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/appIcon.png",
     "scheme": "kindergarten",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

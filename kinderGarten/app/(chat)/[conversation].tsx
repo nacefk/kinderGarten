@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ChevronLeft, Send } from "lucide-react-native";
 import { getColors } from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { getTranslation } from "@/config/translations";
@@ -99,11 +100,8 @@ export default function ConversationScreen() {
       const fetchMessages = async () => {
         if (!conversationId) return;
         try {
-          // console.log("[Conversation] Fetching messages for ID:", conversationId);
           const msgs = await getMessages(conversationId as number);
-          // console.log("[Conversation] Raw messages from API:", msgs);
           const formatted = msgs.map((m: any) => {
-            // console.log("[DEBUG] userId:", userId, "m.sender:", m.sender, "m:", m);
             const isCurrentUser = m.sender?.toString() === userId?.toString();
             return {
               id: m.id.toString(),
@@ -117,6 +115,14 @@ export default function ConversationScreen() {
           });
           if (isMounted) {
             setMessages(formatted);
+            // Mark conversation as read by saving current message count
+            try {
+              const key = "chat_read_state";
+              const raw = await AsyncStorage.getItem(key);
+              const readState = raw ? JSON.parse(raw) : {};
+              readState[conversationId.toString()] = msgs.length;
+              await AsyncStorage.setItem(key, JSON.stringify(readState));
+            } catch {}
           }
         } catch (err: any) {
           console.error("[Conversation] ❌ Failed to fetch messages:", err.message);

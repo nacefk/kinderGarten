@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
   PLANNING_EVENTS: "planning/events/",
   PLANNING_PLANS: "planning/plans/",
   REPORTS: "reports/",
+  CHILDREN_PAYMENTS: "children/payments/",
   AUTH_LOGIN: "accounts/login/",
   AUTH_REFRESH: "accounts/refresh/",
 };

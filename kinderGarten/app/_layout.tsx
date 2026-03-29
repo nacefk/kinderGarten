@@ -8,23 +8,27 @@ import { useAppStore } from "@/store/useAppStore";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function RootLayout() {
-  const { checkAuth } = useAuthStore();
+  const { checkAuth, isAuthenticated } = useAuthStore();
   const { initLanguage } = useLanguageStore();
   const { actions } = useAppStore();
 
   useEffect(() => {
+    // ✅ Setup axios interceptors first (idempotent)
+    setupAxiosInterceptors();
+
     // ✅ Initialize auth on app startup
     checkAuth();
 
     // ✅ Initialize language preference from storage
     initLanguage();
-
-    // ✅ Setup axios interceptors for token refresh
-    setupAxiosInterceptors();
-
-    // ✅ Fetch tenant data (logo, primary_color)
-    actions.fetchTenant();
   }, []);
+
+  useEffect(() => {
+    // ✅ Fetch tenant data only when authenticated
+    if (isAuthenticated) {
+      actions.fetchTenant();
+    }
+  }, [isAuthenticated]);
 
   return (
     <ErrorBoundary>

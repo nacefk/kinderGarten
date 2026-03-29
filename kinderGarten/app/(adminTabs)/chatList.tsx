@@ -1,20 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View, Text, FlatList, TouchableOpacity, Image, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getColors } from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
-import { ChevronLeft } from "lucide-react-native";
 import HeaderBar from "@/components/Header";
 import { getConversations, deleteConversation } from "@/api/chat";
+import { getChildren } from "@/api/children";
+
+const READ_STORAGE_KEY = "chat_read_state";
+
+type ChildInfo = {
+  name: string;
+  avatar: string | null;
+};
 
 type ParentPreview = {
   id: string;
   name: string;
-  lastMessage: string;
   time: string;
   avatar: string;
-  unread: number;
+  unread: boolean;
+  child: ChildInfo | null;
 };
 
 export default function ChatListScreen() {
@@ -25,26 +34,62 @@ export default function ChatListScreen() {
   const [conversations, setConversations] = useState<ParentPreview[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getReadState = async (): Promise<Record<string, number>> => {
+    try {
+      const raw = await AsyncStorage.getItem(READ_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  };
+
   const fetchConversations = async () => {
     setLoading(true);
     try {
-      const data = await getConversations();
-      // // console.log("[Conversations API] Raw data:", data);
-      // Map API data to ParentPreview type (handle paginated response)
-      const mapped = (data.results || []).map((conv: any) => ({
-        id: conv.id?.toString() || "",
-        name: conv.other_user_name || conv.name || conv.parent_name || "Parent inconnu",
-        lastMessage: conv.last_message?.text || "",
-        time: conv.last_message?.timestamp
-          ? new Date(conv.last_message.timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "",
-        avatar: conv.other_user_avatar || "https://i.pravatar.cc/150?img=5",
-        unread: conv.unread_count || 0,
-      }));
-      // console.log("[Conversations] Mapped:", mapped);
+      const [data, childrenData, readState] = await Promise.all([
+        getConversations(),
+        getChildren(),
+        getReadState(),
+      ]);
+      const children = Array.isArray(childrenData) ? childrenData : [];
+
+      // Build lookup: parent_name / parent_user_name -> child
+      const parentChildMap = new Map<string, ChildInfo>();
+      for (const c of children) {
+        if (c.parent_name) {
+          parentChildMap.set(c.parent_name.toLowerCase(), { name: c.name, avatar: c.avatar || null });
+        }
+        if (c.parent_user_name) {
+          parentChildMap.set(c.parent_user_name.toLowerCase(), { name: c.name, avatar: c.avatar || null });
+        }
+      }
+
+      const mapped = (data.results || []).map((conv: any) => {
+        const parentName = conv.other_user_name || conv.name || conv.parent_name || "Parent inconnu";
+        const childMatch =
+          parentChildMap.get(parentName.toLowerCase()) ||
+          parentChildMap.get((conv.other_user_username || "").toLowerCase()) ||
+          null;
+
+        const convId = conv.id?.toString() || "";
+        const messageCount = conv.message_count ?? conv.messages_count ?? 0;
+        const lastReadCount = readState[convId] ?? 0;
+        const hasUnread = messageCount > lastReadCount || (conv.unread_count ?? 0) > 0;
+
+        return {
+          id: convId,
+          name: parentName,
+          time: conv.last_message?.timestamp
+            ? new Date(conv.last_message.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
+          avatar: conv.other_user_avatar || "",
+          unread: hasUnread,
+          child: childMatch,
+        };
+      });
       setConversations(mapped);
     } catch (e) {
       setConversations([]);
@@ -53,9 +98,12 @@ export default function ChatListScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchConversations();
-  }, []);
+  // Refresh conversations every time the screen is focused (coming back from chat)
+  useFocusEffect(
+    useCallback(() => {
+      fetchConversations();
+    }, [])
+  );
 
   const renderParent = ({ item }: { item: ParentPreview }) => (
     <TouchableOpacity
@@ -65,8 +113,8 @@ export default function ChatListScreen() {
           pathname: "/(chat)/:conversation",
           params: {
             id: item.id,
-            name: item.name,
-            avatar: item.avatar,
+            name: item.child?.name || item.name,
+            avatar: item.child?.avatar || item.avatar,
           },
         })
       }
@@ -96,14 +144,30 @@ export default function ChatListScreen() {
         elevation: 2,
       }}
     >
-      <Image source={{ uri: item.avatar }} className="w-12 h-12 rounded-full mr-3" />
+      {item.child?.avatar ? (
+        <Image
+          source={{ uri: item.child.avatar }}
+          className="w-12 h-12 rounded-full mr-3"
+        />
+      ) : (
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: colors.accentLight,
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 12,
+          }}
+        >
+          <Ionicons name="person-outline" size={24} color={colors.mediumGray} />
+        </View>
+      )}
 
-      <View className="flex-1">
+      <View className="flex-1 justify-center">
         <Text className="text-base font-semibold" style={{ color: colors.textDark }}>
-          {item.name}
-        </Text>
-        <Text className="text-sm mt-1" style={{ color: colors.textLight }} numberOfLines={1}>
-          {item.lastMessage}
+          {item.child?.name || item.name}
         </Text>
       </View>
 
@@ -111,10 +175,16 @@ export default function ChatListScreen() {
         <Text className="text-xs mb-1" style={{ color: colors.textLight }}>
           {item.time}
         </Text>
-        {item.unread > 0 && (
-          <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: colors.primary }}>
-            <Text className="text-white text-xs font-medium">{item.unread}</Text>
-          </View>
+        {item.unread && (
+          <View
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: colors.accent || "#C6A57B",
+              marginTop: 4,
+            }}
+          />
         )}
       </View>
     </TouchableOpacity>
