@@ -8,8 +8,8 @@ export default function Card({ title, children }: { title?: string; children: Re
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
   return (
     <View
-      className="rounded-2xl shadow-sm p-5 mt-6"
-      style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: "#e5e7eb" }}
+      className="rounded-2xl p-5 mt-6"
+      style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
     >
       {title ? (
         <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>

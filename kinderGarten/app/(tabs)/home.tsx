@@ -455,7 +455,8 @@ export default function Home() {
                 backgroundColor: "#fff",
               }}
             >
-              ● {profile?.present ? t("dashboard.present_singular") : t("dashboard.absent_singular")}
+              ●{" "}
+              {profile?.present ? t("dashboard.present_singular") : t("dashboard.absent_singular")}
             </Text>
           </View>
         </View>
@@ -485,8 +486,8 @@ export default function Home() {
         {/* Tenant Logo */}
         {tenant?.logo && (
           <View
-            className="mt-6 mb-3  p-2 items-center"
-            style={{ backgroundColor: colors.cardBackground }}
+            className="mt-6 mb-3 p-2 items-center rounded-2xl"
+            style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
           >
             <Image
               source={{ uri: tenant.logo }}
@@ -738,6 +739,16 @@ export default function Home() {
 
         {/* Planned Absence Card - styled to match other views */}
         <Card title={t("home.report_planned_absence") || "Report Planned Absence"}>
+          <Text
+            style={{
+              color: colors.text,
+              fontSize: 15,
+              marginBottom: 12,
+            }}
+          >
+            {t("home.absence_section_hint") ||
+              "Let us know if your child will be absent for one or more days."}
+          </Text>
           <TouchableOpacity
             onPress={() => setShowAbsenceModal(true)}
             style={{
@@ -747,9 +758,6 @@ export default function Home() {
               borderRadius: 12,
               paddingVertical: 14,
               paddingHorizontal: 18,
-              marginBottom: 8,
-              borderWidth: 1,
-              borderColor: colors.border,
             }}
           >
             <Ionicons name="calendar-outline" size={22} color="#fff" style={{ marginRight: 10 }} />
@@ -763,17 +771,6 @@ export default function Home() {
               {t("home.absence_button_pick_absence_dates") || "Pick absence dates"}
             </Text>
           </TouchableOpacity>
-          <Text
-            style={{
-              color: colors.textLight,
-              fontSize: 13,
-              marginLeft: 2,
-              marginBottom: 2,
-            }}
-          >
-            {t("home.absence_section_hint") ||
-              "Let us know if your child will be absent for one or more days."}
-          </Text>
         </Card>
       </ScrollView>
 

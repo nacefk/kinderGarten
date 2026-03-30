@@ -298,11 +298,7 @@ export default function Profile() {
                 else setIsEditing(true);
               }}
             >
-              {isEditing ? (
-                <Check color="#fff" size={26} />
-              ) : (
-                <Pencil color="#fff" size={24} />
-              )}
+              {isEditing ? <Check color="#fff" size={26} /> : <Pencil color="#fff" size={24} />}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleLogout}>
