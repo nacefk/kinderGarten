@@ -453,9 +453,9 @@ export default function CalendarScreen() {
   // Generate time slots (7:00 AM to 6:00 PM in 30-min increments)
   const generateTimeSlots = () => {
     const slots: string[] = [];
-    for (let hour = 7; hour <= 18; hour++) {
+    for (let hour = 5; hour <= 21; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        if (hour === 18 && minute > 0) break; // Stop at 18:00
+        if (hour === 21 && minute > 0) break; // Stop at 21:00
         const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
         slots.push(timeStr);
       }
@@ -464,6 +464,18 @@ export default function CalendarScreen() {
   };
 
   const timeSlots = generateTimeSlots();
+
+  // Check if a time slot is occupied by an existing activity
+  const isTimeOccupied = (time: string): boolean => {
+    if (!selectedClass) return false;
+    const existingActivities = weeklyPlans[selectedClass.name]?.[newPlanDay] || [];
+    return existingActivities.some((activity: PlanActivity) => {
+      if (editingPlan?.id && activity.id === editingPlan.id) return false;
+      const aStart = activity.time;
+      const aEnd = activity.endTime || activity.time;
+      return time >= aStart && time < aEnd;
+    });
+  };
 
   // Check if a time is in the selected range
   const isTimeInRange = (time: string): boolean => {
@@ -482,6 +494,10 @@ export default function CalendarScreen() {
     } else if (!selectedEndTime) {
       if (time === selectedStartTime) {
         setSelectedStartTime(null);
+      } else if (time < selectedStartTime) {
+        // Swap so earlier time is always start
+        setSelectedEndTime(selectedStartTime);
+        setSelectedStartTime(time);
       } else {
         setSelectedEndTime(time);
       }
@@ -519,6 +535,25 @@ export default function CalendarScreen() {
 
     if (!startTime || !endTime) {
       Alert.alert("Horaire manquant", "Veuillez sélectionner l'heure de début et de fin.");
+      return;
+    }
+
+    // Check for time overlap with existing activities
+    const existingActivities = weeklyPlans[selectedClass.name]?.[newPlanDay] || [];
+    const overlap = existingActivities.find((activity: PlanActivity) => {
+      // Skip the activity being edited
+      if (editingPlan?.id && activity.id === editingPlan.id) return false;
+      const aStart = activity.time;
+      const aEnd = activity.endTime || activity.time;
+      // Overlap: newStart < existingEnd AND newEnd > existingStart
+      return startTime < aEnd && endTime > aStart;
+    });
+
+    if (overlap) {
+      Alert.alert(
+        "Conflit d'horaire",
+        `L'activité "${overlap.title}" (${overlap.time} - ${overlap.endTime || overlap.time}) chevauche cet horaire.`
+      );
       return;
     }
 
@@ -760,6 +795,18 @@ export default function CalendarScreen() {
                 return;
               }
 
+              // Delete existing activities for the selected day first
+              const existingActivities = weeklyPlans[selectedClass.name]?.[selectedDayForLoad] || [];
+              for (const activity of existingActivities) {
+                if (activity.id) {
+                  try {
+                    await deletePlan(activity.id);
+                  } catch (err) {
+                    console.error("Error deleting existing plan:", err);
+                  }
+                }
+              }
+
               // Create plans from template for the selected day only
               for (const activity of template.activities) {
                 await createPlan({
@@ -819,10 +866,8 @@ export default function CalendarScreen() {
         className="rounded-2xl p-5 mb-4 mx-5"
         style={{
           backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowRadius: 4,
-          elevation: 2,
+          borderWidth: 1,
+          borderColor: colors.border,
         }}
       >
         <View className="flex-row justify-between items-center mb-2">
@@ -928,11 +973,8 @@ export default function CalendarScreen() {
       <View
         className="flex-row mb-6 bg-white rounded-2xl p-1 mx-5 mt-4"
         style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 8,
-          elevation: 5,
+          borderWidth: 1,
+          borderColor: colors.border,
         }}
       >
         {["events", "plan"].map((tab) => (
@@ -1027,16 +1069,6 @@ export default function CalendarScreen() {
 
           {!isParent && (
             <View className="flex-row gap-2 px-5 mb-4">
-              <TouchableOpacity
-                onPress={handleSaveAsTemplate}
-                className="flex-1 rounded-xl py-2"
-                style={{ backgroundColor: colors.accentLight }}
-              >
-                <Text className="text-center font-medium text-sm" style={{ color: colors.accent }}>
-                  💾 Sauvegarder
-                </Text>
-              </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={() => setShowSelectDayForLoad(true)}
                 className="flex-1 rounded-xl py-2"
@@ -1317,26 +1349,32 @@ export default function CalendarScreen() {
                   const isStart = time === selectedStartTime;
                   const isEnd = time === selectedEndTime;
                   const inRange = isTimeInRange(time);
+                  const occupied = isTimeOccupied(time);
 
                   return (
                     <TouchableOpacity
                       key={index}
-                      onPress={() => handleTimeSlotPress(time)}
+                      onPress={() => !occupied && handleTimeSlotPress(time)}
+                      disabled={occupied}
                       className="py-2 px-3 mb-1 rounded-lg flex-row items-center"
                       style={{
-                        backgroundColor:
-                          isStart || isEnd
+                        backgroundColor: occupied
+                          ? colors.lightGrayBg
+                          : isStart || isEnd
                             ? colors.accent
                             : inRange
                               ? colors.accentLight
                               : "transparent",
+                        opacity: occupied ? 0.5 : 1,
                       }}
                     >
                       <Text
                         style={{
-                          color:
-                            isStart || isEnd ? "#fff" : inRange ? colors.accent : colors.textDark,
+                          color: occupied
+                            ? colors.textLight
+                            : isStart || isEnd ? "#fff" : inRange ? colors.accent : colors.textDark,
                           fontWeight: isStart || isEnd ? "600" : "400",
+                          textDecorationLine: occupied ? "line-through" : "none",
                           flex: 1,
                         }}
                       >
@@ -1415,18 +1453,6 @@ export default function CalendarScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-
-            {!editingPlan && (
-              <TouchableOpacity
-                onPress={handleSaveAsTemplate}
-                className="mt-3 rounded-xl py-2"
-                style={{ backgroundColor: colors.accentLight }}
-              >
-                <Text className="text-center font-medium text-sm" style={{ color: colors.accent }}>
-                  💾 Sauvegarder comme template
-                </Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       </Modal>

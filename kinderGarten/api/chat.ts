@@ -65,3 +65,14 @@ export async function sendMessage(conversationId: number, text: string) {
     throw error;
   }
 }
+
+export async function deleteConversation(conversationId: number) {
+  try {
+    await api.delete(`${API_ENDPOINTS.CHAT_CONVERSATIONS}${conversationId}/`);
+  } catch (error: any) {
+    const status = error.response?.status;
+    const errorMsg = error.response?.data?.detail || error.response?.data?.error || "Unknown error";
+    console.error(`[API] ❌ Failed to delete conversation (${status}):`, errorMsg);
+    throw error;
+  }
+}

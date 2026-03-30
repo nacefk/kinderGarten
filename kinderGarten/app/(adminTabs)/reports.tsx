@@ -402,18 +402,19 @@ export default function ReportsScreen() {
     <ScrollView
       className="flex-1"
       style={{ backgroundColor: colors.background }}
+      contentContainerStyle={{ paddingBottom: 40 }}
       showsVerticalScrollIndicator={false}
     >
       <HeaderBar title={t("reports.title")} showBack={true} />
 
       {/* Step 1: Class selection */}
       {/* 🧩 Filter by Class OR Club */}
-      <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
-        <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
+      <View className="rounded-2xl p-4 mb-3" style={{ backgroundColor: colors.cardBackground }}>
+        <Text className="text-lg font-semibold mb-2" style={{ color: colors.textDark }}>
           {t("reports.filter_by")}
         </Text>
         {/* Filter Type Selector */}
-        <View className="flex-row justify-center mb-5">
+        <View className="flex-row justify-center mb-3">
           {[
             { key: "class", label: t("reports.class"), icon: "school-outline" },
             { key: "club", label: t("reports.club"), icon: "musical-notes-outline" },
@@ -669,7 +670,7 @@ export default function ReportsScreen() {
       {loading ? (
         <ActivityIndicator color={colors.accent} size="large" />
       ) : selectedClass || selectedClub ? (
-        <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
+        <View className="rounded-2xl p-4 mb-3" style={{ backgroundColor: colors.cardBackground }}>
           {filteredChildren.length === 0 ? (
             <Text style={{ color: colors.textLight }}>{t("reports.no_children_found")}</Text>
           ) : (
@@ -762,7 +763,7 @@ export default function ReportsScreen() {
 
       {/* Modal */}
       <Modal visible={showModal} animationType="slide" onRequestClose={() => setShowModal(false)}>
-        <ScrollView className="flex-1 px-5 pt-20" style={{ backgroundColor: colors.background }}>
+        <ScrollView className="flex-1 px-5 pt-12" style={{ backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 60 }}>
           <View className="flex-row items-center justify-between mb-6">
             <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
               {selectedChildren.length > 1
@@ -791,10 +792,10 @@ export default function ReportsScreen() {
           ].map((field, i) => (
             <View
               key={i}
-              className="rounded-2xl p-5 mb-5"
+              className="rounded-2xl p-4 mb-3"
               style={{ backgroundColor: colors.cardBackground }}
             >
-              <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
+              <Text className="text-base font-semibold mb-2" style={{ color: colors.textDark }}>
                 {field.label}
               </Text>
               <TextInput
@@ -814,8 +815,8 @@ export default function ReportsScreen() {
           ))}
 
           {/* Behavior */}
-          <View className="rounded-2xl p-5 mb-5" style={{ backgroundColor: colors.cardBackground }}>
-            <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
+          <View className="rounded-2xl p-4 mb-3" style={{ backgroundColor: colors.cardBackground }}>
+            <Text className="text-base font-semibold mb-2" style={{ color: colors.textDark }}>
               {t("reports.behavior")}
             </Text>
             <View className="flex-row flex-wrap">
@@ -858,8 +859,8 @@ export default function ReportsScreen() {
           </View>
 
           {/* Notes */}
-          <View className="rounded-2xl p-5 mb-8" style={{ backgroundColor: colors.cardBackground }}>
-            <Text className="text-lg font-semibold mb-3" style={{ color: colors.textDark }}>
+          <View className="rounded-2xl p-4 mb-3" style={{ backgroundColor: colors.cardBackground }}>
+            <Text className="text-base font-semibold mb-2" style={{ color: colors.textDark }}>
               {t("reports.notes")}
             </Text>
             <TextInput

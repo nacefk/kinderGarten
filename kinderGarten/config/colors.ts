@@ -34,7 +34,7 @@ const COLORS = {
   // Aliases - all point to the 5 core colors, NO NEW COLORS
   accent: PRIMARY,
   textDark: TEXT,
-  textLight: TEXT,
+  textLight: "#9CA3AF",
   accentLight: "#F5F5F5",
   lightGray: "#F5F5F5",
   lightGrayBg: "#F3F4F6",
