@@ -394,10 +394,8 @@ export default function ChildrenScreen() {
       className="flex-row items-center mb-3 p-3 rounded-2xl"
       style={{
         backgroundColor: colors.cardBackground,
-        shadowColor: "#000",
-        shadowOpacity: 0.04,
-        shadowRadius: 3,
-        elevation: 2,
+        borderWidth: 1,
+        borderColor: "#e5e7eb",
       }}
       onPress={() => router.push(`/profile?id=${item.id}`)}
       onLongPress={() => handleDeleteChild(item.id)}
@@ -682,7 +680,10 @@ export default function ChildrenScreen() {
       <View className="absolute bottom-8 right-8 gap-2">
         {/* Add Club Button */}
         <TouchableOpacity
-          onPress={() => setShowAddClub(true)}
+          onPress={() => {
+            setNewClubName("");
+            setShowAddClub(true);
+          }}
           style={{
             backgroundColor: colors.accent,
             borderRadius: 50,
@@ -704,9 +705,12 @@ export default function ChildrenScreen() {
 
         {/* Add Class Button */}
         <TouchableOpacity
-          onPress={() => setShowAddClass(true)}
+          onPress={() => {
+            setNewClassName("");
+            setShowAddClass(true);
+          }}
           style={{
-            backgroundColor: colors.maleBlue,
+            backgroundColor: colors.accent,
             borderRadius: 50,
             paddingHorizontal: 20,
             paddingVertical: 12,
@@ -731,7 +735,7 @@ export default function ChildrenScreen() {
             resetChildForm();
           }}
           style={{
-            backgroundColor: colors.successGreen,
+            backgroundColor: colors.accent,
             borderRadius: 50,
             paddingHorizontal: 20,
             paddingVertical: 12,
@@ -979,7 +983,7 @@ export default function ChildrenScreen() {
                   alignItems: "center",
                   justifyContent: "center",
                   width: 120,
-                  height: 48,
+                  height: 40,
                   paddingVertical: 0,
                   borderRadius: 12,
                   backgroundColor: childGender === "male" ? colors.maleBlue : colors.cardBackground,
@@ -1011,7 +1015,7 @@ export default function ChildrenScreen() {
                   alignItems: "center",
                   justifyContent: "center",
                   width: 120,
-                  height: 48,
+                  height: 40,
                   paddingVertical: 0,
                   borderRadius: 12,
                   backgroundColor:

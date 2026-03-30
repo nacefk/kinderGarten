@@ -216,7 +216,7 @@ export default function DashboardScreen() {
   const formatTime = (time: string) => time.slice(0, 5); // "17:00"
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
       {/* Header */}
@@ -227,12 +227,14 @@ export default function DashboardScreen() {
         <View className="flex-row items-center" />
         <View className="flex-1" />
         <TouchableOpacity onPress={() => setShowLanguageModal(true)} className="p-1 mr-3">
-          <Ionicons name="globe-outline" size={28} color={colors.textDark} />
+          <Ionicons name="globe-outline" size={28} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace("/login")} className="p-1">
-          <LogOut color={colors.textDark} size={28} />
+          <LogOut color="#fff" size={28} />
         </TouchableOpacity>
       </View>
+
+      <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
 
       {/* --- Presence Summary Bloc --- */}
       <TouchableOpacity
@@ -251,58 +253,45 @@ export default function DashboardScreen() {
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
             {t("dashboard.presence_today")}
           </Text>
-          <Ionicons name="people-outline" size={22} color={colors.accent} />
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </View>
-
-        <Text className="text-sm mb-3" style={{ color: colors.text }}>
-          {t("dashboard.manage_presence")}
-        </Text>
 
         {loadingPresence ? (
           <ActivityIndicator color={colors.accent} size="small" />
         ) : presence.present === 0 && presence.absent === 0 ? (
           <View
             style={{
-              backgroundColor: colors.lightGray,
-              borderRadius: 14,
-              padding: 18,
+              backgroundColor: colors.background,
+              borderRadius: 16,
+              paddingVertical: 20,
+              paddingHorizontal: 16,
               alignItems: "center",
-              marginTop: 12,
-              marginBottom: 8,
+              marginTop: 8,
             }}
           >
-            <Ionicons
-              name="checkbox-outline"
-              size={32}
-              color={colors.accent}
-              style={{ marginBottom: 6 }}
-            />
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: colors.accentLight || `${colors.accent}15`,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 10,
+              }}
+            >
+              <Ionicons name="checkbox-outline" size={24} color={colors.accent} />
+            </View>
             <Text
               style={{
-                color: colors.textDark,
-                fontWeight: "600",
+                color: colors.textLight,
+                fontWeight: "500",
                 fontSize: 15,
                 textAlign: "center",
-                marginBottom: 6,
               }}
             >
               {t("dashboard.no_attendance_marked")}
             </Text>
-            <TouchableOpacity
-              onPress={() => router.push("/presence")}
-              style={{
-                backgroundColor: colors.accent,
-                borderRadius: 8,
-                paddingVertical: 8,
-                paddingHorizontal: 20,
-                marginTop: 2,
-              }}
-              activeOpacity={0.9}
-            >
-              <Text style={{ color: "#fff", fontWeight: "500", fontSize: 14 }}>
-                {t("dashboard.mark_attendance_now")}
-              </Text>
-            </TouchableOpacity>
           </View>
         ) : (
           <View className="flex-row justify-between items-center mt-3">
@@ -337,7 +326,6 @@ export default function DashboardScreen() {
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
             {t("dashboard.absence_reports")} {t("dashboard.today")}
           </Text>
-          <Ionicons name="alert-circle-outline" size={22} color={colors.accent} />
         </View>
         {loadingAbsences ? (
           <ActivityIndicator color={colors.accent} size="small" />
@@ -432,14 +420,30 @@ export default function DashboardScreen() {
             })}
           </View>
         ) : (
-          <View style={{ alignItems: "center", marginTop: 16, marginBottom: 8 }}>
-            <Ionicons
-              name="happy-outline"
-              size={36}
-              color={colors.accent}
-              style={{ marginBottom: 4 }}
-            />
-            <Text style={{ color: colors.textLight, textAlign: "center", fontSize: 15 }}>
+          <View
+            style={{
+              backgroundColor: colors.background,
+              borderRadius: 16,
+              paddingVertical: 20,
+              paddingHorizontal: 16,
+              alignItems: "center",
+              marginTop: 8,
+            }}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: colors.accentLight || `${colors.accent}15`,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 10,
+              }}
+            >
+              <Ionicons name="happy-outline" size={24} color={colors.accent} />
+            </View>
+            <Text style={{ color: colors.textLight, fontWeight: "500", fontSize: 15, textAlign: "center" }}>
               {typeof t === "function" ? t("dashboard.no_absences_today") : "No absences today."}
             </Text>
           </View>
@@ -463,22 +467,35 @@ export default function DashboardScreen() {
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
             {t("payments.unpaid_children")}
           </Text>
-          <Ionicons name="card-outline" size={22} color={colors.accent} />
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </View>
-        <Text className="text-sm mb-3" style={{ color: colors.text }}>
-          {t("payments.unpaid_description")}
-        </Text>
         {loadingPayments ? (
           <ActivityIndicator color={colors.accent} size="small" />
         ) : unpaidCount === 0 ? (
-          <View style={{ alignItems: "center", marginTop: 8, marginBottom: 4 }}>
-            <Ionicons
-              name="checkmark-circle-outline"
-              size={32}
-              color={colors.success}
-              style={{ marginBottom: 4 }}
-            />
-            <Text style={{ color: colors.textLight, textAlign: "center", fontSize: 15 }}>
+          <View
+            style={{
+              backgroundColor: colors.background,
+              borderRadius: 16,
+              paddingVertical: 20,
+              paddingHorizontal: 16,
+              alignItems: "center",
+              marginTop: 8,
+            }}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: colors.accentLight || `${colors.accent}15`,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 10,
+              }}
+            >
+              <Ionicons name="checkmark-circle-outline" size={24} color={colors.accent} />
+            </View>
+            <Text style={{ color: colors.textLight, fontWeight: "500", fontSize: 15, textAlign: "center" }}>
               {t("payments.no_payments")}
             </Text>
           </View>
@@ -511,15 +528,39 @@ export default function DashboardScreen() {
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
             {t("dashboard.extra_hours")}
           </Text>
-          <Ionicons name="time-outline" size={22} color={colors.accent} />
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </View>
 
         {loadingExtra ? (
           <ActivityIndicator color={colors.accent} size="small" />
         ) : !Array.isArray(extraHours) || extraHours.length === 0 ? (
-          <Text style={{ color: colors.textLight, textAlign: "center", marginTop: 10 }}>
-            {t("dashboard.no_requests")}
-          </Text>
+          <View
+            style={{
+              backgroundColor: colors.background,
+              borderRadius: 16,
+              paddingVertical: 20,
+              paddingHorizontal: 16,
+              alignItems: "center",
+              marginTop: 8,
+            }}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: colors.accentLight || `${colors.accent}15`,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 10,
+              }}
+            >
+              <Ionicons name="time-outline" size={24} color={colors.accent} />
+            </View>
+            <Text style={{ color: colors.textLight, fontWeight: "500", fontSize: 15, textAlign: "center" }}>
+              {t("dashboard.no_requests")}
+            </Text>
+          </View>
         ) : (
           <View style={{ marginTop: 8 }}>
             <View style={{ marginBottom: 12 }}>
@@ -563,6 +604,8 @@ export default function DashboardScreen() {
           </View>
         )}
       </TouchableOpacity>
+
+    </ScrollView>
 
       {/* Language Selection Modal */}
       <Modal visible={showLanguageModal} animationType="fade" transparent>
@@ -618,6 +661,6 @@ export default function DashboardScreen() {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }

@@ -11,9 +11,10 @@ interface HeaderBarProps {
   title: string;
   showBack?: boolean;
   onBackPress?: () => void;
+  rightElement?: React.ReactNode;
 }
 
-export default function HeaderBar({ title, showBack = false, onBackPress }: HeaderBarProps) {
+export default function HeaderBar({ title, showBack = false, onBackPress, rightElement }: HeaderBarProps) {
   const router = useRouter();
   const navigation = useNavigation();
   const pathname = usePathname();
@@ -66,8 +67,8 @@ export default function HeaderBar({ title, showBack = false, onBackPress }: Head
           </Text>
         </View>
 
-        {/* Placeholder for symmetry */}
-        <View className="w-8" />
+        {/* Right element or placeholder for symmetry */}
+        <View className="w-8">{rightElement}</View>
       </View>
     </SafeAreaView>
   );

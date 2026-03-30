@@ -83,6 +83,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "children.create_club_to_start": "Create a club to get started",
     "children.no_child_found": "No child found.",
     "children.mobile_app_access": "Mobile app access",
+    "children.gender_male": "Boy",
+    "children.gender_female": "Girl",
 
     // Chat Screen
     "chat.send_message": "Send a message...",
@@ -142,6 +144,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Parent - Profile Screen
     "profile.my_profile": "My Profile",
     "profile.child_info": "Child Information",
+    "profile.child_profile": "Child Profile",
     "profile.physical_info": "Physical Information",
     "profile.birthdate": "Birthdate",
     "profile.weight": "Weight",
@@ -282,6 +285,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "children.create_club_to_start": "Créez un club pour commencer",
     "children.no_child_found": "Aucun enfant trouvé.",
     "children.mobile_app_access": "Accès à l'application mobile",
+    "children.gender_male": "Garçon",
+    "children.gender_female": "Fille",
 
     // Chat Screen
     "chat.send_message": "Écrire un message...",
@@ -341,6 +346,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Parent - Profile Screen
     "profile.my_profile": "Mon Profil",
     "profile.child_info": "Informations de l'Enfant",
+    "profile.child_profile": "Profil de l'Enfant",
     "profile.physical_info": "Informations Physiques",
     "profile.birthdate": "Date de Naissance",
     "profile.weight": "Poids",
@@ -481,6 +487,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "children.create_club_to_start": "أنشئ نادياً للبدء",
     "children.no_child_found": "لم يتم العثور على طفل.",
     "children.mobile_app_access": "الوصول إلى تطبيق الهاتف المحمول",
+    "children.gender_male": "ولد",
+    "children.gender_female": "بنت",
 
     // Chat Screen
     "chat.send_message": "اكتب رسالة...",
@@ -540,6 +548,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Parent - Profile Screen
     "profile.my_profile": "ملفي الشخصي",
     "profile.child_info": "معلومات الطفل",
+    "profile.child_profile": "ملف الطفل",
     "profile.physical_info": "المعلومات الجسدية",
     "profile.birthdate": "تاريخ الميلاد",
     "profile.weight": "الوزن",

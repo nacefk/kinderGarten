@@ -16,9 +16,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import colors from "../config/colors";
+import { getColors } from "../config/colors";
 import Card from "../components/Card";
 import Row from "../components/Row";
+import HeaderBar from "../components/Header";
 import {
   getChildById,
   getClassrooms,
@@ -29,10 +30,17 @@ import {
 } from "@/api/children";
 import * as ImagePicker from "expo-image-picker";
 import { uploadAvatar } from "@/api/children";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
+import { useAppStore } from "@/store/useAppStore";
 
 export default function Profile() {
   const { id } = useLocalSearchParams();
   const childId = Array.isArray(id) ? id[0] : id;
+  const { language } = useLanguageStore();
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
+  const t = (key: string) => getTranslation(language, key);
 
   const [profile, setProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -389,25 +397,19 @@ export default function Profile() {
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
-      {/* Header */}
-      <View
-        className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.accentLight }}
-      >
-        <TouchableOpacity
-          onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/home"))}
-          className="mr-3"
-        >
-          <ChevronLeft color={colors.textDark} size={28} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => (isEditing ? saveProfile() : setIsEditing(true))}>
-          {isEditing ? (
-            <Check color={colors.textDark} size={26} />
-          ) : (
-            <Pencil color={colors.textDark} size={24} />
-          )}
-        </TouchableOpacity>
-      </View>
+      <HeaderBar
+        title={t("profile.child_profile")}
+        showBack
+        rightElement={
+          <TouchableOpacity onPress={() => (isEditing ? saveProfile() : setIsEditing(true))}>
+            {isEditing ? (
+              <Check color="#fff" size={24} />
+            ) : (
+              <Pencil color="#fff" size={22} />
+            )}
+          </TouchableOpacity>
+        }
+      />
 
       {/* Scroll */}
       <KeyboardAvoidingView
@@ -1189,6 +1191,7 @@ function renderRow(
   onChange: (v: string) => void,
   onPressPhone?: (v: string) => void
 ) {
+  const colors = getColors();
   const displayValue = value ? value : "";
   const isPhoneField = label.toLowerCase().includes("téléphone");
   const isWeightField = label.toLowerCase().includes("poids");
