@@ -14,7 +14,12 @@ interface HeaderBarProps {
   rightElement?: React.ReactNode;
 }
 
-export default function HeaderBar({ title, showBack = false, onBackPress, rightElement }: HeaderBarProps) {
+export default function HeaderBar({
+  title,
+  showBack = false,
+  onBackPress,
+  rightElement,
+}: HeaderBarProps) {
   const router = useRouter();
   const navigation = useNavigation();
   const pathname = usePathname();

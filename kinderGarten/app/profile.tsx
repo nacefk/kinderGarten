@@ -402,11 +402,7 @@ export default function Profile() {
         showBack
         rightElement={
           <TouchableOpacity onPress={() => (isEditing ? saveProfile() : setIsEditing(true))}>
-            {isEditing ? (
-              <Check color="#fff" size={24} />
-            ) : (
-              <Pencil color="#fff" size={22} />
-            )}
+            {isEditing ? <Check color="#fff" size={24} /> : <Pencil color="#fff" size={22} />}
           </TouchableOpacity>
         }
       />

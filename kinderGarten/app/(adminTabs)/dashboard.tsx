@@ -235,377 +235,401 @@ export default function DashboardScreen() {
       </View>
 
       <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
+        {/* --- Presence Summary Bloc --- */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/presence")}
+          className="rounded-2xl p-5 mb-6 mx-5 mt-5"
+          style={{
+            backgroundColor: colors.cardBackground,
+            shadowColor: "#000",
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <View className="flex-row justify-between items-center mb-2">
+            <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+              {t("dashboard.presence_today")}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+          </View>
 
-      {/* --- Presence Summary Bloc --- */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => router.push("/presence")}
-        className="rounded-2xl p-5 mb-6 mx-5 mt-5"
-        style={{
-          backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            {t("dashboard.presence_today")}
-          </Text>
-          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-        </View>
-
-        {loadingPresence ? (
-          <ActivityIndicator color={colors.accent} size="small" />
-        ) : presence.present === 0 && presence.absent === 0 ? (
-          <View
-            style={{
-              backgroundColor: colors.background,
-              borderRadius: 16,
-              paddingVertical: 20,
-              paddingHorizontal: 16,
-              alignItems: "center",
-              marginTop: 8,
-            }}
-          >
+          {loadingPresence ? (
+            <ActivityIndicator color={colors.accent} size="small" />
+          ) : presence.present === 0 && presence.absent === 0 ? (
             <View
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: colors.accentLight || `${colors.accent}15`,
+                backgroundColor: colors.background,
+                borderRadius: 16,
+                paddingVertical: 20,
+                paddingHorizontal: 16,
                 alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 10,
+                marginTop: 8,
               }}
             >
-              <Ionicons name="checkbox-outline" size={24} color={colors.accent} />
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.accentLight || `${colors.accent}15`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <Ionicons name="checkbox-outline" size={24} color={colors.accent} />
+              </View>
+              <Text
+                style={{
+                  color: colors.textLight,
+                  fontWeight: "500",
+                  fontSize: 15,
+                  textAlign: "center",
+                }}
+              >
+                {t("dashboard.no_attendance_marked")}
+              </Text>
             </View>
-            <Text
-              style={{
-                color: colors.textLight,
-                fontWeight: "500",
-                fontSize: 15,
-                textAlign: "center",
-              }}
-            >
-              {t("dashboard.no_attendance_marked")}
+          ) : (
+            <View className="flex-row justify-between items-center mt-3">
+              <View>
+                <Text className="text-3xl font-bold" style={{ color: colors.accent }}>
+                  {presence.present}
+                </Text>
+                <Text style={{ color: colors.textLight }}>{t("dashboard.present")}</Text>
+              </View>
+              <View>
+                <Text className="text-3xl font-bold" style={{ color: colors.errorDark }}>
+                  {presence.absent}
+                </Text>
+                <Text style={{ color: colors.textLight }}>{t("dashboard.absent")}</Text>
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* --- Absences Today Bloc (Modernized) --- */}
+        <View
+          className="rounded-2xl p-5 mb-6 mx-5"
+          style={{
+            backgroundColor: colors.cardBackground,
+            shadowColor: "#000",
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+              {t("dashboard.absence_reports")} {t("dashboard.today")}
             </Text>
           </View>
-        ) : (
-          <View className="flex-row justify-between items-center mt-3">
-            <View>
-              <Text className="text-3xl font-bold" style={{ color: colors.accent }}>
-                {presence.present}
-              </Text>
-              <Text style={{ color: colors.textLight }}>{t("dashboard.present")}</Text>
-            </View>
-            <View>
-              <Text className="text-3xl font-bold" style={{ color: colors.errorDark }}>
-                {presence.absent}
-              </Text>
-              <Text style={{ color: colors.textLight }}>{t("dashboard.absent")}</Text>
-            </View>
-          </View>
-        )}
-      </TouchableOpacity>
-
-      {/* --- Absences Today Bloc (Modernized) --- */}
-      <View
-        className="rounded-2xl p-5 mb-6 mx-5"
-        style={{
-          backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            {t("dashboard.absence_reports")} {t("dashboard.today")}
-          </Text>
-        </View>
-        {loadingAbsences ? (
-          <ActivityIndicator color={colors.accent} size="small" />
-        ) : absencesToday &&
-          !Array.isArray(absencesToday) &&
-          absencesToday.error === "unauthorized" ? (
-          <Text style={{ color: colors.error, textAlign: "center", marginTop: 10 }}>
-            {typeof t === "function"
-              ? t("dashboard.absences_unauthorized")
-              : "You are not authorized to view absences. Please log in as an admin."}
-          </Text>
-        ) : Array.isArray(absencesToday) && absencesToday?.length > 0 ? (
-          <View style={{ marginTop: 8 }}>
-            {absencesToday.map((abs, idx) => {
-              const name = abs.child_name || abs.child || "Unknown";
-              const initials = name
-                .split(" ")
-                .map((n: string) => n[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase();
-              return (
-                <View
-                  key={abs.id || idx}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    backgroundColor: colors.lightTan,
-                    borderRadius: 16,
-                    paddingVertical: 12,
-                    paddingHorizontal: 14,
-                    marginBottom: 10,
-                    shadowColor: colors.accent,
-                    shadowOpacity: 0.08,
-                    shadowRadius: 2,
-                    elevation: 1,
-                  }}
-                >
-                  {/* Avatar/Initials */}
+          {loadingAbsences ? (
+            <ActivityIndicator color={colors.accent} size="small" />
+          ) : absencesToday &&
+            !Array.isArray(absencesToday) &&
+            absencesToday.error === "unauthorized" ? (
+            <Text style={{ color: colors.error, textAlign: "center", marginTop: 10 }}>
+              {typeof t === "function"
+                ? t("dashboard.absences_unauthorized")
+                : "You are not authorized to view absences. Please log in as an admin."}
+            </Text>
+          ) : Array.isArray(absencesToday) && absencesToday?.length > 0 ? (
+            <View style={{ marginTop: 8 }}>
+              {absencesToday.map((abs, idx) => {
+                const name = abs.child_name || abs.child || "Unknown";
+                const initials = name
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase();
+                return (
                   <View
+                    key={abs.id || idx}
                     style={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: 19,
-                      backgroundColor: colors.accentLight,
+                      flexDirection: "row",
                       alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 12,
+                      backgroundColor: colors.lightTan,
+                      borderRadius: 16,
+                      paddingVertical: 12,
+                      paddingHorizontal: 14,
+                      marginBottom: 10,
+                      shadowColor: colors.accent,
+                      shadowOpacity: 0.08,
+                      shadowRadius: 2,
+                      elevation: 1,
                     }}
                   >
-                    <Text style={{ color: colors.accent, fontWeight: "bold", fontSize: 16 }}>
-                      {initials}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    {/* Name */}
-                    <Text
-                      numberOfLines={1}
-                      style={{ color: colors.textDark, fontWeight: "700", fontSize: 15 }}
+                    {/* Avatar/Initials */}
+                    <View
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 19,
+                        backgroundColor: colors.accentLight,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 12,
+                      }}
                     >
-                      {name}
-                    </Text>
-                    {/* Reason Title */}
-                    <Text
-                      style={{ color: colors.text, fontWeight: "600", fontSize: 12, marginTop: 1 }}
-                    >
-                      {t("dashboard.reason_title")}
-                    </Text>
-                    {/* Reason */}
-                    <Text
-                      numberOfLines={2}
-                      style={{ color: colors.textLight, fontSize: 12, marginTop: 1 }}
-                    >
-                      {abs.reason || t("dashboard.no_reason")}
-                    </Text>
-                    {/* Full Period */}
-                    {abs.start_date && abs.end_date && (
-                      <Text style={{ color: colors.warning, fontSize: 11, marginTop: 2 }}>
-                        {t("dashboard.absence_period")}: {abs.start_date} → {abs.end_date}
+                      <Text style={{ color: colors.accent, fontWeight: "bold", fontSize: 16 }}>
+                        {initials}
                       </Text>
-                    )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      {/* Name */}
+                      <Text
+                        numberOfLines={1}
+                        style={{ color: colors.textDark, fontWeight: "700", fontSize: 15 }}
+                      >
+                        {name}
+                      </Text>
+                      {/* Reason Title */}
+                      <Text
+                        style={{
+                          color: colors.text,
+                          fontWeight: "600",
+                          fontSize: 12,
+                          marginTop: 1,
+                        }}
+                      >
+                        {t("dashboard.reason_title")}
+                      </Text>
+                      {/* Reason */}
+                      <Text
+                        numberOfLines={2}
+                        style={{ color: colors.textLight, fontSize: 12, marginTop: 1 }}
+                      >
+                        {abs.reason || t("dashboard.no_reason")}
+                      </Text>
+                      {/* Full Period */}
+                      {abs.start_date && abs.end_date && (
+                        <Text style={{ color: colors.warning, fontSize: 11, marginTop: 2 }}>
+                          {t("dashboard.absence_period")}: {abs.start_date} → {abs.end_date}
+                        </Text>
+                      )}
+                    </View>
+                    {/* Status Icon */}
+                    <Ionicons
+                      name="remove-circle"
+                      size={18}
+                      color={colors.error}
+                      style={{ marginLeft: 10, alignSelf: "flex-start", marginTop: 2 }}
+                    />
                   </View>
-                  {/* Status Icon */}
-                  <Ionicons
-                    name="remove-circle"
-                    size={18}
-                    color={colors.error}
-                    style={{ marginLeft: 10, alignSelf: "flex-start", marginTop: 2 }}
-                  />
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View
-            style={{
-              backgroundColor: colors.background,
-              borderRadius: 16,
-              paddingVertical: 20,
-              paddingHorizontal: 16,
-              alignItems: "center",
-              marginTop: 8,
-            }}
-          >
+                );
+              })}
+            </View>
+          ) : (
             <View
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: colors.accentLight || `${colors.accent}15`,
+                backgroundColor: colors.background,
+                borderRadius: 16,
+                paddingVertical: 20,
+                paddingHorizontal: 16,
                 alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 10,
+                marginTop: 8,
               }}
             >
-              <Ionicons name="happy-outline" size={24} color={colors.accent} />
-            </View>
-            <Text style={{ color: colors.textLight, fontWeight: "500", fontSize: 15, textAlign: "center" }}>
-              {typeof t === "function" ? t("dashboard.no_absences_today") : "No absences today."}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* --- Unpaid Children Bloc --- */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => router.push("/(admin)/payments")}
-        className="rounded-2xl p-5 mb-6 mx-5"
-        style={{
-          backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            {t("payments.unpaid_children")}
-          </Text>
-          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-        </View>
-        {loadingPayments ? (
-          <ActivityIndicator color={colors.accent} size="small" />
-        ) : unpaidCount === 0 ? (
-          <View
-            style={{
-              backgroundColor: colors.background,
-              borderRadius: 16,
-              paddingVertical: 20,
-              paddingHorizontal: 16,
-              alignItems: "center",
-              marginTop: 8,
-            }}
-          >
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: colors.accentLight || `${colors.accent}15`,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 10,
-              }}
-            >
-              <Ionicons name="checkmark-circle-outline" size={24} color={colors.accent} />
-            </View>
-            <Text style={{ color: colors.textLight, fontWeight: "500", fontSize: 15, textAlign: "center" }}>
-              {t("payments.no_payments")}
-            </Text>
-          </View>
-        ) : (
-          <View className="flex-row items-center mt-2">
-            <Text className="text-3xl font-bold" style={{ color: colors.error }}>
-              {unpaidCount}
-            </Text>
-            <Text style={{ color: colors.textLight, marginLeft: 8, fontSize: 14 }}>
-              {t("payments.filter_pending")}
-            </Text>
-          </View>
-        )}
-      </TouchableOpacity>
-
-      {/* --- Extra Hours Bloc --- */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => router.push("/(admin)/extra-hours")}
-        className="rounded-2xl p-5 mb-10 mx-5"
-        style={{
-          backgroundColor: colors.cardBackground,
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            {t("dashboard.extra_hours")}
-          </Text>
-          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-        </View>
-
-        {loadingExtra ? (
-          <ActivityIndicator color={colors.accent} size="small" />
-        ) : !Array.isArray(extraHours) || extraHours.length === 0 ? (
-          <View
-            style={{
-              backgroundColor: colors.background,
-              borderRadius: 16,
-              paddingVertical: 20,
-              paddingHorizontal: 16,
-              alignItems: "center",
-              marginTop: 8,
-            }}
-          >
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: colors.accentLight || `${colors.accent}15`,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 10,
-              }}
-            >
-              <Ionicons name="time-outline" size={24} color={colors.accent} />
-            </View>
-            <Text style={{ color: colors.textLight, fontWeight: "500", fontSize: 15, textAlign: "center" }}>
-              {t("dashboard.no_requests")}
-            </Text>
-          </View>
-        ) : (
-          <View style={{ marginTop: 8 }}>
-            <View style={{ marginBottom: 12 }}>
-              <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 14 }}>
-                {extraHours.length}{" "}
-                {t(extraHours.length === 1 ? "common.request" : "common.requests")}
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.accentLight || `${colors.accent}15`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <Ionicons name="happy-outline" size={24} color={colors.accent} />
+              </View>
+              <Text
+                style={{
+                  color: colors.textLight,
+                  fontWeight: "500",
+                  fontSize: 15,
+                  textAlign: "center",
+                }}
+              >
+                {typeof t === "function" ? t("dashboard.no_absences_today") : "No absences today."}
               </Text>
             </View>
-            {extraHours.slice(0, 3).map((req) => (
+          )}
+        </View>
+
+        {/* --- Unpaid Children Bloc --- */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/(admin)/payments")}
+          className="rounded-2xl p-5 mb-6 mx-5"
+          style={{
+            backgroundColor: colors.cardBackground,
+            shadowColor: "#000",
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+              {t("payments.unpaid_children")}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+          </View>
+          {loadingPayments ? (
+            <ActivityIndicator color={colors.accent} size="small" />
+          ) : unpaidCount === 0 ? (
+            <View
+              style={{
+                backgroundColor: colors.background,
+                borderRadius: 16,
+                paddingVertical: 20,
+                paddingHorizontal: 16,
+                alignItems: "center",
+                marginTop: 8,
+              }}
+            >
               <View
-                key={(req.request_id || req.id) ?? Math.random()}
-                className="flex-row items-center justify-between mb-3 border-b pb-2"
-                style={{ borderColor: "#eee" }}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.accentLight || `${colors.accent}15`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 10,
+                }}
               >
-                <View>
-                  <Text className="font-medium" style={{ color: colors.textDark }}>
-                    {typeof req.child === "string"
-                      ? req.child
-                      : req.child?.name || req.child_name || "Unknown"}
-                  </Text>
-                  <Text className="text-sm" style={{ color: colors.textLight }}>
-                    {t("dashboard.extra_hours_duration")}: {req.duration ?? 0} min
-                  </Text>
-                </View>
+                <Ionicons name="checkmark-circle-outline" size={24} color={colors.accent} />
               </View>
-            ))}
-            {extraHours.length > 3 && (
-              <View style={{ marginTop: 8 }}>
-                <Text
-                  style={{
-                    color: colors.accent,
-                    fontWeight: "600",
-                    fontSize: 13,
-                    textAlign: "center",
-                  }}
-                >
-                  +{extraHours.length - 3} more
+              <Text
+                style={{
+                  color: colors.textLight,
+                  fontWeight: "500",
+                  fontSize: 15,
+                  textAlign: "center",
+                }}
+              >
+                {t("payments.no_payments")}
+              </Text>
+            </View>
+          ) : (
+            <View className="flex-row items-center mt-2">
+              <Text className="text-3xl font-bold" style={{ color: colors.error }}>
+                {unpaidCount}
+              </Text>
+              <Text style={{ color: colors.textLight, marginLeft: 8, fontSize: 14 }}>
+                {t("payments.filter_pending")}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* --- Extra Hours Bloc --- */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push("/(admin)/extra-hours")}
+          className="rounded-2xl p-5 mb-10 mx-5"
+          style={{
+            backgroundColor: colors.cardBackground,
+            shadowColor: "#000",
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
+              {t("dashboard.extra_hours")}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+          </View>
+
+          {loadingExtra ? (
+            <ActivityIndicator color={colors.accent} size="small" />
+          ) : !Array.isArray(extraHours) || extraHours.length === 0 ? (
+            <View
+              style={{
+                backgroundColor: colors.background,
+                borderRadius: 16,
+                paddingVertical: 20,
+                paddingHorizontal: 16,
+                alignItems: "center",
+                marginTop: 8,
+              }}
+            >
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.accentLight || `${colors.accent}15`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <Ionicons name="time-outline" size={24} color={colors.accent} />
+              </View>
+              <Text
+                style={{
+                  color: colors.textLight,
+                  fontWeight: "500",
+                  fontSize: 15,
+                  textAlign: "center",
+                }}
+              >
+                {t("dashboard.no_requests")}
+              </Text>
+            </View>
+          ) : (
+            <View style={{ marginTop: 8 }}>
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ color: colors.accent, fontWeight: "600", fontSize: 14 }}>
+                  {extraHours.length}{" "}
+                  {t(extraHours.length === 1 ? "common.request" : "common.requests")}
                 </Text>
               </View>
-            )}
-          </View>
-        )}
-      </TouchableOpacity>
-
-    </ScrollView>
+              {extraHours.slice(0, 3).map((req) => (
+                <View
+                  key={(req.request_id || req.id) ?? Math.random()}
+                  className="flex-row items-center justify-between mb-3 border-b pb-2"
+                  style={{ borderColor: "#eee" }}
+                >
+                  <View>
+                    <Text className="font-medium" style={{ color: colors.textDark }}>
+                      {typeof req.child === "string"
+                        ? req.child
+                        : req.child?.name || req.child_name || "Unknown"}
+                    </Text>
+                    <Text className="text-sm" style={{ color: colors.textLight }}>
+                      {t("dashboard.extra_hours_duration")}: {req.duration ?? 0} min
+                    </Text>
+                  </View>
+                </View>
+              ))}
+              {extraHours.length > 3 && (
+                <View style={{ marginTop: 8 }}>
+                  <Text
+                    style={{
+                      color: colors.accent,
+                      fontWeight: "600",
+                      fontSize: 13,
+                      textAlign: "center",
+                    }}
+                  >
+                    +{extraHours.length - 3} more
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
 
       {/* Language Selection Modal */}
       <Modal visible={showLanguageModal} animationType="fade" transparent>
