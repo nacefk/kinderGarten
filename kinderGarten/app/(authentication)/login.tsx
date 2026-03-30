@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -26,11 +26,20 @@ export default function Login() {
     actions: { setAdminId, setUserId },
   } = useAppStore();
 
-  const [tenant, setTenant] = useState("new-kindergarten");
+  const [tenant, setTenant] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const saved = await secureStorage.getSavedCredentials();
+      if (saved.username) setUsername(saved.username);
+      if (saved.password) setPassword(saved.password);
+      if (saved.tenant) setTenant(saved.tenant);
+    })();
+  }, []);
 
   const handleLogin = async () => {
     // ℹ️ Validation temporarily disabled for testing
@@ -47,6 +56,9 @@ export default function Login() {
       setIsAuthenticated(true);
       setUserRole(result.role);
       setAdminId(result.admin_id || null);
+
+      // ✅ Save credentials for next login
+      await secureStorage.saveCredentials(username.trim(), password.trim(), tenantSlug);
 
       // ✅ Store userId for both parent and admin
       if (result.role === "parent" && result.user_id) {

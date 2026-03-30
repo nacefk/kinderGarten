@@ -242,10 +242,8 @@ export default function DashboardScreen() {
           className="rounded-2xl p-5 mb-6 mx-5 mt-5"
           style={{
             backgroundColor: colors.cardBackground,
-            shadowColor: "#000",
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
+            borderWidth: 1,
+            borderColor: colors.border,
           }}
         >
           <View className="flex-row justify-between items-center mb-2">
@@ -315,10 +313,8 @@ export default function DashboardScreen() {
           className="rounded-2xl p-5 mb-6 mx-5"
           style={{
             backgroundColor: colors.cardBackground,
-            shadowColor: "#000",
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
+            borderWidth: 1,
+            borderColor: colors.border,
           }}
         >
           <View className="flex-row items-center justify-between mb-2">
@@ -357,10 +353,8 @@ export default function DashboardScreen() {
                       paddingVertical: 12,
                       paddingHorizontal: 14,
                       marginBottom: 10,
-                      shadowColor: colors.accent,
-                      shadowOpacity: 0.08,
-                      shadowRadius: 2,
-                      elevation: 1,
+                      borderWidth: 1,
+                      borderColor: colors.border,
                     }}
                   >
                     {/* Avatar/Initials */}
@@ -468,10 +462,8 @@ export default function DashboardScreen() {
           className="rounded-2xl p-5 mb-6 mx-5"
           style={{
             backgroundColor: colors.cardBackground,
-            shadowColor: "#000",
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
+            borderWidth: 1,
+            borderColor: colors.border,
           }}
         >
           <View className="flex-row items-center justify-between mb-2">
@@ -536,10 +528,8 @@ export default function DashboardScreen() {
           className="rounded-2xl p-5 mb-10 mx-5"
           style={{
             backgroundColor: colors.cardBackground,
-            shadowColor: "#000",
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
+            borderWidth: 1,
+            borderColor: colors.border,
           }}
         >
           <View className="flex-row items-center justify-between mb-2">

@@ -445,27 +445,30 @@ export default function Home() {
         <View className="flex-row items-center">
           <Image source={{ uri: profile?.avatar }} className="w-16 h-16 rounded-full mr-5" />
           <View>
-            <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
+            <Text className="text-2xl font-bold" style={{ color: "#fff" }}>
               {profile?.name}
             </Text>
             <Text
-              className="font-semibold text-base"
-              style={{ color: profile?.present ? colors.success : colors.error }}
+              className="font-semibold text-base px-3 py-1 rounded-full overflow-hidden"
+              style={{
+                color: profile?.present ? colors.success : colors.error,
+                backgroundColor: "#fff",
+              }}
             >
-              ● {profile?.present ? t("dashboard.present") : t("dashboard.absent")}
+              ● {profile?.present ? t("dashboard.present_singular") : t("dashboard.absent_singular")}
             </Text>
           </View>
         </View>
 
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => setShowLanguageModal(true)} className="p-1 mr-3">
-            <Ionicons name="globe-outline" size={28} color={colors.textDark} />
+            <Ionicons name="globe-outline" size={28} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity className="mr-4">
-            <Bell color={colors.textDark} size={28} />
+            <Bell color="#fff" size={28} />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout} className="p-1">
-            <LogOut color={colors.textDark} size={28} />
+            <LogOut color="#fff" size={28} />
           </TouchableOpacity>
         </View>
       </View>
@@ -745,10 +748,8 @@ export default function Home() {
               paddingVertical: 14,
               paddingHorizontal: 18,
               marginBottom: 8,
-              shadowColor: colors.accent,
-              shadowOpacity: 0.08,
-              shadowRadius: 4,
-              elevation: 2,
+              borderWidth: 1,
+              borderColor: colors.border,
             }}
           >
             <Ionicons name="calendar-outline" size={22} color="#fff" style={{ marginRight: 10 }} />
@@ -795,11 +796,8 @@ export default function Home() {
               paddingBottom: 28,
               width: "92%",
               maxWidth: 440,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.12,
-              shadowRadius: 8,
-              elevation: 8,
+              borderWidth: 1,
+              borderColor: colors.border,
               maxHeight: "90%",
             }}
           >

@@ -18,6 +18,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { getColors } from "@/config/colors";
 import Card from "../../components/Card";
+import HeaderBar from "@/components/Header";
 import Row from "../../components/Row";
 import * as ImagePicker from "expo-image-picker";
 import { getMyChild, updateChild, uploadAvatar } from "@/api/children";
@@ -286,38 +287,30 @@ export default function Profile() {
       <StatusBar barStyle={"dark-content"} />
 
       {/* En-tête */}
-      <View
-        className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.secondary }}
-      >
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/home"))}
-            className="mr-3"
-          >
-            <ChevronLeft color={colors.textDark} size={28} />
-          </TouchableOpacity>
-        </View>
+      <HeaderBar
+        title="Profil"
+        showBack={true}
+        rightElement={
+          <View className="flex-row items-center gap-4">
+            <TouchableOpacity
+              onPress={() => {
+                if (isEditing) saveProfile();
+                else setIsEditing(true);
+              }}
+            >
+              {isEditing ? (
+                <Check color="#fff" size={26} />
+              ) : (
+                <Pencil color="#fff" size={24} />
+              )}
+            </TouchableOpacity>
 
-        <View className="flex-row items-center gap-4">
-          <TouchableOpacity
-            onPress={() => {
-              if (isEditing) saveProfile();
-              else setIsEditing(true);
-            }}
-          >
-            {isEditing ? (
-              <Check color={colors.textDark} size={26} />
-            ) : (
-              <Pencil color={colors.textDark} size={24} />
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleLogout}>
-            <LogOut color={colors.textDark} size={24} />
-          </TouchableOpacity>
-        </View>
-      </View>
+            <TouchableOpacity onPress={handleLogout}>
+              <LogOut color="#fff" size={24} />
+            </TouchableOpacity>
+          </View>
+        }
+      />
 
       {/* 🧱 Scroll content */}
       <KeyboardAvoidingView

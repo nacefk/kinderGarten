@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { getColors } from "@/config/colors";
 import Card from "../../components/Card";
+import HeaderBar from "@/components/Header";
 import TimelineItem from "../../components/TimelineItem";
 import { getMyChild } from "@/api/children";
 import { getPlans, getEvents } from "@/api/planning";
@@ -235,23 +236,7 @@ export default function Activity() {
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
-      {/* Header */}
-      <View
-        className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.secondary }}
-      >
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/home"))}
-            className="mr-3"
-          >
-            <ChevronLeft color={colors.textDark} size={28} />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity>
-          <Bell color={colors.textDark} size={28} />
-        </TouchableOpacity>
-      </View>
+      <HeaderBar title="Activité" showBack={true} />
 
       {/* Tabs */}
       <View

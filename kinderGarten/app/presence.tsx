@@ -138,10 +138,8 @@ export default function PresenceScreen() {
         className="flex-row items-center mb-3 p-3 rounded-2xl"
         style={{
           backgroundColor: colors.cardBackground,
-          shadowColor: colors.shadow,
-          shadowOpacity: 0.05,
-          shadowRadius: 3,
-          elevation: 2,
+          borderWidth: 1,
+          borderColor: colors.border,
         }}
       >
         <Image source={{ uri: item.avatar }} className="w-12 h-12 rounded-full mr-3" />

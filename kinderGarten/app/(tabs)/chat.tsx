@@ -14,6 +14,7 @@ import { Send, ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
 import { getColors } from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
+import HeaderBar from "@/components/Header";
 import { getOrCreateConversation, getMessages, sendMessage } from "@/api/chat";
 import { useLocalSearchParams } from "expo-router";
 
@@ -159,18 +160,7 @@ export default function Chat() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
-      {/* Header */}
-      <View
-        className="flex-row items-center justify-between px-5 pt-16 pb-6"
-        style={{ backgroundColor: colors.secondary }}
-      >
-        <TouchableOpacity
-          onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/home"))}
-        >
-          <ChevronLeft color={colors.textDark} size={28} />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold text-gray-800">Discussion avec l’Admin</Text>
-      </View>
+      <HeaderBar title="Discussion" showBack={true} />
 
       {/* Messages */}
       <KeyboardAvoidingView

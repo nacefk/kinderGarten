@@ -6,6 +6,9 @@ const STORAGE_KEYS = {
   TENANT_SLUG: "kindergarten_tenant",
   USER_ROLE: "kindergarten_user_role",
   ADMIN_ID: "kindergarten_admin_id",
+  SAVED_USERNAME: "kindergarten_saved_username",
+  SAVED_PASSWORD: "kindergarten_saved_password",
+  SAVED_TENANT: "kindergarten_saved_tenant",
 };
 
 /**
@@ -152,5 +155,31 @@ export const secureStorage = {
   async isAuthenticated(): Promise<boolean> {
     const token = await this.getAccessToken();
     return !!token;
+  },
+
+  async saveCredentials(username: string, password: string, tenant: string) {
+    try {
+      await Promise.all([
+        SecureStore.setItemAsync(STORAGE_KEYS.SAVED_USERNAME, username),
+        SecureStore.setItemAsync(STORAGE_KEYS.SAVED_PASSWORD, password),
+        SecureStore.setItemAsync(STORAGE_KEYS.SAVED_TENANT, tenant),
+      ]);
+    } catch (error) {
+      console.error("❌ Failed to save credentials:", error);
+    }
+  },
+
+  async getSavedCredentials(): Promise<{ username: string | null; password: string | null; tenant: string | null }> {
+    try {
+      const [username, password, tenant] = await Promise.all([
+        SecureStore.getItemAsync(STORAGE_KEYS.SAVED_USERNAME),
+        SecureStore.getItemAsync(STORAGE_KEYS.SAVED_PASSWORD),
+        SecureStore.getItemAsync(STORAGE_KEYS.SAVED_TENANT),
+      ]);
+      return { username, password, tenant };
+    } catch (error) {
+      console.error("❌ Failed to get saved credentials:", error);
+      return { username: null, password: null, tenant: null };
+    }
   },
 };
