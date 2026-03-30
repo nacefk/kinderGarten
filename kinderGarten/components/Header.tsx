@@ -41,7 +41,7 @@ export default function HeaderBar({
   const handleBack = () => {
     if (onBackPress) {
       onBackPress();
-    } else if (navigation.canGoBack?.()) {
+    } else if (router.canGoBack()) {
       router.back();
     } else {
       // Navigate to appropriate home based on user role

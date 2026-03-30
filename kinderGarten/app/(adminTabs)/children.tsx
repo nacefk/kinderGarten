@@ -465,14 +465,16 @@ export default function ChildrenScreen() {
 
       {/* Search & Filters */}
       <View className="px-5 mt-3">
-        {/* Search Bar */}
+        {/* Search Bar + Add Child */}
+        <View className="flex-row items-center mb-4">
         <View
-          className="flex-row items-center rounded-2xl px-3 mb-4"
+          className="flex-row items-center rounded-2xl px-3"
           style={{
             backgroundColor: colors.cardBackground,
             minHeight: 44,
             borderWidth: 1,
             borderColor: colors.accent,
+            flex: 1,
           }}
         >
           <Ionicons name="search-outline" size={20} color={colors.textLight} />
@@ -485,59 +487,141 @@ export default function ChildrenScreen() {
             style={{ color: colors.textDark }}
           />
         </View>
+        <TouchableOpacity
+          onPress={() => {
+            setShowAddChild(true);
+            resetChildForm();
+          }}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            backgroundColor: colors.accent,
+            alignItems: "center",
+            justifyContent: "center",
+            marginLeft: 10,
+          }}
+        >
+          <Ionicons name="person-add-outline" size={22} color="#fff" />
+        </TouchableOpacity>
+        </View>
 
         {/* 🔍 Filter Controls */}
         <View className=" mb-3">
           {/* 🔘 Filter Type Toggle */}
-          <View className="flex-row justify-center mb-4">
-            {[
-              { key: "none", label: t("children.filter_all"), icon: "people-outline" },
-              { key: "class", label: t("children.filter_class"), icon: "school-outline" },
-              { key: "club", label: t("children.filter_club"), icon: "musical-notes-outline" },
-            ].map((btn) => (
+          <View className="flex-row justify-between mb-4">
+            {/* All */}
+            <TouchableOpacity
+              onPress={() => {
+                setFilterType("none");
+                setSelectedClass(null);
+                setSelectedClub(null);
+              }}
+              activeOpacity={0.8}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: filterType === "none" ? colors.accent : colors.cardBackground,
+                borderRadius: 10,
+                paddingVertical: 7,
+                paddingHorizontal: 14,
+                borderWidth: 1,
+                borderColor: colors.accent,
+              }}
+            >
+              <Text style={{ color: filterType === "none" ? "#fff" : colors.textDark, fontWeight: "500", fontSize: 13 }}>
+                {t("children.filter_all")}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Class + Add */}
+            <View className="flex-row" style={{ gap: 3 }}>
               <TouchableOpacity
-                key={btn.key}
                 onPress={() => {
-                  setFilterType(btn.key as any);
+                  setFilterType("class");
                   setSelectedClass(null);
                   setSelectedClub(null);
                 }}
                 activeOpacity={0.8}
                 style={{
-                  flexDirection: "row",
                   alignItems: "center",
-                  backgroundColor: filterType === btn.key ? colors.accent : colors.cardBackground,
-                  borderRadius: 12,
+                  justifyContent: "center",
+                  backgroundColor: filterType === "class" ? colors.accent : colors.cardBackground,
+                  borderRadius: 10,
+                  paddingVertical: 7,
                   paddingHorizontal: 14,
-                  paddingVertical: 8,
-                  marginHorizontal: 4,
                   borderWidth: 1,
                   borderColor: colors.accent,
                 }}
               >
-                <Ionicons
-                  name={btn.icon as any}
-                  size={18}
-                  color={filterType === btn.key ? "#fff" : colors.textDark}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  style={{
-                    color: filterType === btn.key ? "#fff" : colors.textDark,
-                    fontWeight: "500",
-                  }}
-                >
-                  {btn.label}
+                <Text style={{ color: filterType === "class" ? "#fff" : colors.textDark, fontWeight: "500", fontSize: 13 }}>
+                  {t("children.filter_class")}
                 </Text>
               </TouchableOpacity>
-            ))}
+              <TouchableOpacity
+                onPress={() => {
+                  setNewClassName("");
+                  setShowAddClass(true);
+                }}
+                style={{
+                  width: 32,
+                  borderRadius: 10,
+                  backgroundColor: colors.accent,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Club + Add */}
+            <View className="flex-row" style={{ gap: 3 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setFilterType("club");
+                  setSelectedClass(null);
+                  setSelectedClub(null);
+                }}
+                activeOpacity={0.8}
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: filterType === "club" ? colors.accent : colors.cardBackground,
+                  borderRadius: 10,
+                  paddingVertical: 7,
+                  paddingHorizontal: 14,
+                  borderWidth: 1,
+                  borderColor: colors.accent,
+                }}
+              >
+                <Text style={{ color: filterType === "club" ? "#fff" : colors.textDark, fontWeight: "500", fontSize: 13 }}>
+                  {t("children.filter_club")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setNewClubName("");
+                  setShowAddClub(true);
+                }}
+                style={{
+                  width: 32,
+                  borderRadius: 10,
+                  backgroundColor: colors.accent,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* 🏫 Class Chips */}
           {filterType === "class" && (
             <>
               {Array.isArray(classes) && classes.length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
                   {classes.map((cls: any) => (
                     <TouchableOpacity
                       key={cls.id}
@@ -588,7 +672,7 @@ export default function ChildrenScreen() {
                 </ScrollView>
               ) : (
                 <View
-                  style={{ paddingVertical: 40, alignItems: "center", justifyContent: "center" }}
+                  style={{ flex: 1, paddingVertical: 40, alignItems: "center", justifyContent: "center" }}
                 >
                   <Ionicons name="school-outline" size={48} color={colors.textLight} />
                   <Text
@@ -609,7 +693,7 @@ export default function ChildrenScreen() {
           {filterType === "club" && (
             <>
               {Array.isArray(clubs) && clubs.length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
                   {clubs.map((club: any) => (
                     <TouchableOpacity
                       key={club.id}
@@ -642,7 +726,7 @@ export default function ChildrenScreen() {
                 </ScrollView>
               ) : (
                 <View
-                  style={{ paddingVertical: 40, alignItems: "center", justifyContent: "center" }}
+                  style={{ flex: 1, paddingVertical: 40, alignItems: "center", justifyContent: "center" }}
                 >
                   <Ionicons name="musical-notes-outline" size={48} color={colors.textLight} />
                   <Text
@@ -668,90 +752,13 @@ export default function ChildrenScreen() {
           renderItem={renderChild}
           keyExtractor={(item) => item.id.toString()}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={
             <Text className="text-center mt-10 text-base" style={{ color: colors.textLight }}>
               {t("children.no_child_found")}
             </Text>
           }
         />
-      </View>
-
-      {/* Floating Buttons - Rectangle with Circular Sides */}
-      <View className="absolute bottom-8 right-8 gap-2">
-        {/* Add Club Button */}
-        <TouchableOpacity
-          onPress={() => {
-            setNewClubName("");
-            setShowAddClub(true);
-          }}
-          style={{
-            backgroundColor: colors.accent,
-            borderRadius: 50,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            shadowColor: "#000",
-            shadowOpacity: 0.2,
-            elevation: 5,
-          }}
-        >
-          <Ionicons name="add-circle-outline" size={20} color={colors.cardBackground} />
-          <Text style={{ color: colors.cardBackground, fontWeight: "600", fontSize: 14 }}>
-            {t("common.club")}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Add Class Button */}
-        <TouchableOpacity
-          onPress={() => {
-            setNewClassName("");
-            setShowAddClass(true);
-          }}
-          style={{
-            backgroundColor: colors.accent,
-            borderRadius: 50,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            shadowColor: "#000",
-            shadowOpacity: 0.2,
-            elevation: 5,
-          }}
-        >
-          <Ionicons name="add-circle-outline" size={20} color={colors.cardBackground} />
-          <Text style={{ color: colors.cardBackground, fontWeight: "600", fontSize: 14 }}>
-            {t("common.class")}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Add Child Button */}
-        <TouchableOpacity
-          onPress={() => {
-            setShowAddChild(true);
-            resetChildForm();
-          }}
-          style={{
-            backgroundColor: colors.accent,
-            borderRadius: 50,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            shadowColor: "#000",
-            shadowOpacity: 0.2,
-            elevation: 5,
-          }}
-        >
-          <Ionicons name="add-circle-outline" size={20} color={colors.cardBackground} />
-          <Text style={{ color: colors.cardBackground, fontWeight: "600", fontSize: 14 }}>
-            {t("common.child")}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* ✅ Add Class Modal */}

@@ -146,7 +146,7 @@ export default function Profile() {
         responsible_phone: profile.classInfo?.responsiblePhone,
         teacher_name: profile.classInfo?.teacherName,
         clubs: profile.clubs || [],
-        has_mobile_app: profile.hasMobileApp === true,
+        has_mobile_app: !!profile.hasMobileApp,
       };
       // // console.log("payload:", payload);
       await updateChild(childId, payload);
@@ -158,7 +158,7 @@ export default function Profile() {
 
       setProfile({
         ...restRefreshed,
-        hasMobileApp: has_mobile_app === true,
+        hasMobileApp: !!has_mobile_app,
         className: refreshed.classroom_name || "",
         club_details: refreshed.club_details || [],
         clubs: refreshed.clubs || [],
@@ -236,7 +236,7 @@ export default function Profile() {
           id: data?.id || "",
           name: data?.name || "",
           avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
-          hasMobileApp: data?.has_mobile_app === true,
+          hasMobileApp: !!data?.has_mobile_app,
           username: data?.username || "",
           password: data?.password || "",
           birthdate: data?.birthdate || "",
@@ -293,7 +293,7 @@ export default function Profile() {
         id: data?.id || "",
         name: data?.name || "",
         avatar: data?.avatar || "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
-        hasMobileApp: data?.has_mobile_app === true,
+        hasMobileApp: !!data?.has_mobile_app,
         username: data?.username || "",
         password: data?.password || "",
         birthdate: data?.birthdate || "",
@@ -400,6 +400,7 @@ export default function Profile() {
       <HeaderBar
         title={t("profile.child_profile")}
         showBack
+        onBackPress={() => router.push("/(adminTabs)/children")}
         rightElement={
           <TouchableOpacity onPress={() => (isEditing ? saveProfile() : setIsEditing(true))}>
             {isEditing ? <Check color="#fff" size={24} /> : <Pencil color="#fff" size={22} />}
@@ -419,7 +420,7 @@ export default function Profile() {
           keyboardShouldPersistTaps="handled"
         >
           {/* 👶 Child info */}
-          <Card title="Informations de l’enfant">
+          <Card>
             <View className="items-center">
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -453,16 +454,92 @@ export default function Profile() {
               </TouchableOpacity>
 
               {isEditing ? (
-                <TextInput
-                  value={profile.name}
-                  onChangeText={(t) => updateField("name", t)}
-                  className="text-center text-xl font-semibold border-b border-gray-300 w-48 mb-1"
-                  style={{ color: colors.textDark }}
-                />
+                <>
+                  <TextInput
+                    value={profile.name}
+                    onChangeText={(t) => updateField("name", t)}
+                    className="text-center text-xl font-semibold border-b border-gray-300 w-48 mb-1"
+                    style={{ color: colors.textDark }}
+                  />
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      const newValue = !profile.hasMobileApp;
+                      const action = newValue ? "activer" : "désactiver";
+                      Alert.alert(
+                        `${newValue ? "Activer" : "Désactiver"} l'accès mobile`,
+                        `Êtes-vous sûr de vouloir ${action} l'accès à l'application mobile?`,
+                        [
+                          { text: "Annuler", style: "cancel" },
+                          {
+                            text: "Confirmer",
+                            onPress: async () => {
+                              try {
+                                if (newValue) {
+                                  const result = await enableMobileApp(childId);
+                                  console.log("📱 enableMobileApp result:", result);
+                                } else {
+                                  await disableMobileApp(childId);
+                                }
+                                // Refresh full profile to get credentials
+                                await refreshProfile();
+                                Alert.alert("✅ Succès", `Accès mobile ${newValue ? "activé" : "désactivé"}.`);
+                              } catch (error: any) {
+                                console.error("❌ Error toggling mobile app:", error);
+                                Alert.alert("❌ Erreur", `Impossible de ${action} l'accès.`);
+                              }
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 10,
+                      gap: 8,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 44,
+                        height: 24,
+                        borderRadius: 12,
+                        backgroundColor: profile.hasMobileApp ? colors.accent : colors.disabled,
+                        justifyContent: "center",
+                        paddingHorizontal: 2,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: 10,
+                          backgroundColor: "#fff",
+                          transform: [{ translateX: profile.hasMobileApp ? 20 : 0 }],
+                        }}
+                      />
+                    </View>
+                    <Text style={{ color: profile.hasMobileApp ? colors.accent : colors.textLight, fontSize: 13 }}>
+                      {profile.hasMobileApp ? "Accès mobile activé" : "Accès mobile désactivé"}
+                    </Text>
+                  </TouchableOpacity>
+                </>
               ) : (
                 <>
                   <Text className="text-xl font-semibold" style={{ color: colors.textDark }}>
                     {profile.name}
+                  </Text>
+                  <Text
+                    style={{
+                      color: profile.hasMobileApp ? colors.accent : colors.textLight,
+                      fontSize: 13,
+                      marginTop: 4,
+                    }}
+                  >
+                    {profile.hasMobileApp
+                      ? "📱 Application mobile activée"
+                      : "📱 Pas d'accès mobile"}
                   </Text>
                 </>
               )}
@@ -520,101 +597,7 @@ export default function Profile() {
               )}
             </View>
 
-            {/* 📱 Mobile App Access */}
-            <View
-              className="flex-row justify-between items-center mb-5 px-4 py-2.5 rounded-xl"
-              style={{
-                backgroundColor: colors.cardBackground,
-                borderWidth: 1,
-                borderColor: colors.border,
-              }}
-            >
-              <Text style={{ color: colors.textDark, fontWeight: "500", fontSize: 14.5 }}>
-                Accès à l'application mobile
-              </Text>
-
-              {isEditing ? (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    const newValue = !profile.hasMobileApp;
-                    const action = newValue ? "activer" : "désactiver";
-
-                    Alert.alert(
-                      `Confirmer: ${newValue ? "Activer" : "Désactiver"}`,
-                      `Êtes-vous sûr de vouloir ${action} l'accès à l'application mobile?`,
-                      [
-                        { text: "Annuler", style: "cancel" },
-                        {
-                          text: "Confirmer",
-                          onPress: async () => {
-                            try {
-                              setLoading(true);
-                              // Call API endpoint
-                              if (newValue) {
-                                await enableMobileApp(childId);
-                              } else {
-                                await disableMobileApp(childId);
-                              }
-
-                              // Update local state
-                              updateField("hasMobileApp", newValue);
-
-                              // Show success
-                              Alert.alert(
-                                "✅ Succès",
-                                `L'accès à l'application mobile a été ${newValue ? "activé" : "désactivé"}.`
-                              );
-                            } catch (error: any) {
-                              console.error("❌ Error toggling mobile app:", error);
-                              Alert.alert(
-                                "❌ Erreur",
-                                `Impossible de ${action} l'accès: ${error.response?.data?.message || error.message}`
-                              );
-                            } finally {
-                              setLoading(false);
-                            }
-                          },
-                        },
-                      ]
-                    );
-                  }}
-                  style={{
-                    width: 46,
-                    height: 26,
-                    borderRadius: 13,
-                    backgroundColor: profile.hasMobileApp ? colors.accent : colors.disabled,
-                    justifyContent: "center",
-                    paddingHorizontal: 3,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 10,
-                      backgroundColor: colors.cardBackground,
-                      transform: [{ translateX: profile.hasMobileApp ? 20 : 0 }],
-                      shadowColor: colors.shadow,
-                      shadowOpacity: 0.15,
-                      shadowRadius: 2,
-                      elevation: 3,
-                    }}
-                  />
-                </TouchableOpacity>
-              ) : (
-                <Text
-                  style={{
-                    color: profile.hasMobileApp ? colors.accent : colors.textLight,
-                    fontWeight: "500",
-                  }}
-                >
-                  {profile.hasMobileApp ? "Oui" : "Non"}
-                </Text>
-              )}
-            </View>
-
-            {/* 🔐 Mobile App Credentials */}
+            {/*  Mobile App Credentials */}
             {profile.hasMobileApp && (profile.username || profile.password) && (
               <View
                 className="p-4 rounded-xl mb-5"
