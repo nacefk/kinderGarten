@@ -487,7 +487,11 @@ export default function Home() {
         {tenant?.logo && (
           <View
             className="mt-6 mb-3 p-2 items-center rounded-2xl"
-            style={{ backgroundColor: colors.cardBackground, borderWidth: 1, borderColor: colors.border }}
+            style={{
+              backgroundColor: colors.cardBackground,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
           >
             <Image
               source={{ uri: tenant.logo }}
