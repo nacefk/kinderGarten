@@ -796,7 +796,8 @@ export default function CalendarScreen() {
               }
 
               // Delete existing activities for the selected day first
-              const existingActivities = weeklyPlans[selectedClass.name]?.[selectedDayForLoad] || [];
+              const existingActivities =
+                weeklyPlans[selectedClass.name]?.[selectedDayForLoad] || [];
               for (const activity of existingActivities) {
                 if (activity.id) {
                   try {
@@ -1372,7 +1373,11 @@ export default function CalendarScreen() {
                         style={{
                           color: occupied
                             ? colors.textLight
-                            : isStart || isEnd ? "#fff" : inRange ? colors.accent : colors.textDark,
+                            : isStart || isEnd
+                              ? "#fff"
+                              : inRange
+                                ? colors.accent
+                                : colors.textDark,
                           fontWeight: isStart || isEnd ? "600" : "400",
                           textDecorationLine: occupied ? "line-through" : "none",
                           flex: 1,

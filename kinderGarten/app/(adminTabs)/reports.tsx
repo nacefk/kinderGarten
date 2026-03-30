@@ -763,7 +763,11 @@ export default function ReportsScreen() {
 
       {/* Modal */}
       <Modal visible={showModal} animationType="slide" onRequestClose={() => setShowModal(false)}>
-        <ScrollView className="flex-1 px-5 pt-12" style={{ backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 60 }}>
+        <ScrollView
+          className="flex-1 px-5 pt-12"
+          style={{ backgroundColor: colors.background }}
+          contentContainerStyle={{ paddingBottom: 60 }}
+        >
           <View className="flex-row items-center justify-between mb-6">
             <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
               {selectedChildren.length > 1
