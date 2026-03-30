@@ -467,43 +467,43 @@ export default function ChildrenScreen() {
       <View className="px-5 mt-3">
         {/* Search Bar + Add Child */}
         <View className="flex-row items-center mb-4">
-        <View
-          className="flex-row items-center rounded-2xl px-3"
-          style={{
-            backgroundColor: colors.cardBackground,
-            minHeight: 44,
-            borderWidth: 1,
-            borderColor: colors.accent,
-            flex: 1,
-          }}
-        >
-          <Ionicons name="search-outline" size={20} color={colors.textLight} />
-          <TextInput
-            className="flex-1 ml-2 text-base p-0"
-            placeholder={t("children.search_placeholder")}
-            placeholderTextColor={colors.textLight}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={{ color: colors.textDark }}
-          />
-        </View>
-        <TouchableOpacity
-          onPress={() => {
-            setShowAddChild(true);
-            resetChildForm();
-          }}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            backgroundColor: colors.accent,
-            alignItems: "center",
-            justifyContent: "center",
-            marginLeft: 10,
-          }}
-        >
-          <Ionicons name="person-add-outline" size={22} color="#fff" />
-        </TouchableOpacity>
+          <View
+            className="flex-row items-center rounded-2xl px-3"
+            style={{
+              backgroundColor: colors.cardBackground,
+              minHeight: 44,
+              borderWidth: 1,
+              borderColor: colors.accent,
+              flex: 1,
+            }}
+          >
+            <Ionicons name="search-outline" size={20} color={colors.textLight} />
+            <TextInput
+              className="flex-1 ml-2 text-base p-0"
+              placeholder={t("children.search_placeholder")}
+              placeholderTextColor={colors.textLight}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={{ color: colors.textDark }}
+            />
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              setShowAddChild(true);
+              resetChildForm();
+            }}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              backgroundColor: colors.accent,
+              alignItems: "center",
+              justifyContent: "center",
+              marginLeft: 10,
+            }}
+          >
+            <Ionicons name="person-add-outline" size={22} color="#fff" />
+          </TouchableOpacity>
         </View>
 
         {/* 🔍 Filter Controls */}
@@ -529,7 +529,13 @@ export default function ChildrenScreen() {
                 borderColor: colors.accent,
               }}
             >
-              <Text style={{ color: filterType === "none" ? "#fff" : colors.textDark, fontWeight: "500", fontSize: 13 }}>
+              <Text
+                style={{
+                  color: filterType === "none" ? "#fff" : colors.textDark,
+                  fontWeight: "500",
+                  fontSize: 13,
+                }}
+              >
                 {t("children.filter_all")}
               </Text>
             </TouchableOpacity>
@@ -554,7 +560,13 @@ export default function ChildrenScreen() {
                   borderColor: colors.accent,
                 }}
               >
-                <Text style={{ color: filterType === "class" ? "#fff" : colors.textDark, fontWeight: "500", fontSize: 13 }}>
+                <Text
+                  style={{
+                    color: filterType === "class" ? "#fff" : colors.textDark,
+                    fontWeight: "500",
+                    fontSize: 13,
+                  }}
+                >
                   {t("children.filter_class")}
                 </Text>
               </TouchableOpacity>
@@ -595,7 +607,13 @@ export default function ChildrenScreen() {
                   borderColor: colors.accent,
                 }}
               >
-                <Text style={{ color: filterType === "club" ? "#fff" : colors.textDark, fontWeight: "500", fontSize: 13 }}>
+                <Text
+                  style={{
+                    color: filterType === "club" ? "#fff" : colors.textDark,
+                    fontWeight: "500",
+                    fontSize: 13,
+                  }}
+                >
                   {t("children.filter_club")}
                 </Text>
               </TouchableOpacity>
@@ -672,7 +690,12 @@ export default function ChildrenScreen() {
                 </ScrollView>
               ) : (
                 <View
-                  style={{ flex: 1, paddingVertical: 40, alignItems: "center", justifyContent: "center" }}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 40,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
                   <Ionicons name="school-outline" size={48} color={colors.textLight} />
                   <Text
@@ -726,7 +749,12 @@ export default function ChildrenScreen() {
                 </ScrollView>
               ) : (
                 <View
-                  style={{ flex: 1, paddingVertical: 40, alignItems: "center", justifyContent: "center" }}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 40,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
                   <Ionicons name="musical-notes-outline" size={48} color={colors.textLight} />
                   <Text

@@ -483,7 +483,10 @@ export default function Profile() {
                                 }
                                 // Refresh full profile to get credentials
                                 await refreshProfile();
-                                Alert.alert("✅ Succès", `Accès mobile ${newValue ? "activé" : "désactivé"}.`);
+                                Alert.alert(
+                                  "✅ Succès",
+                                  `Accès mobile ${newValue ? "activé" : "désactivé"}.`
+                                );
                               } catch (error: any) {
                                 console.error("❌ Error toggling mobile app:", error);
                                 Alert.alert("❌ Erreur", `Impossible de ${action} l'accès.`);
@@ -520,7 +523,12 @@ export default function Profile() {
                         }}
                       />
                     </View>
-                    <Text style={{ color: profile.hasMobileApp ? colors.accent : colors.textLight, fontSize: 13 }}>
+                    <Text
+                      style={{
+                        color: profile.hasMobileApp ? colors.accent : colors.textLight,
+                        fontSize: 13,
+                      }}
+                    >
                       {profile.hasMobileApp ? "Accès mobile activé" : "Accès mobile désactivé"}
                     </Text>
                   </TouchableOpacity>
