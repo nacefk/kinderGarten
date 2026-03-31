@@ -223,14 +223,8 @@ export default function Profile() {
       setLoading(true);
       try {
         const data = await getChildById(childId);
-        // // console.log("📋 Full API Response Data:", JSON.stringify(data, null, 2));
-        // // console.log("🔑 All Available Keys in API Response:", Object.keys(data || {}));
-        // // console.log("🔐 parent_credentials from API:", data?.parent_credentials);
-        // // console.log("👤 parent_user from API:", data?.parent_user);
-        // // console.log(
-        //   "🔑 parent_user keys:",
-        //   data?.parent_user ? Object.keys(data.parent_user) : "NO PARENT_USER"
-        // );
+        console.log("👤 [Admin Profile] gender value:", JSON.stringify(data?.gender));
+        console.log("👤 [Admin Profile] Full data:", JSON.stringify(data, null, 2));
 
         const filled = {
           id: data?.id || "",

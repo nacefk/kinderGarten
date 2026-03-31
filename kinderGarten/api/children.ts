@@ -51,6 +51,7 @@ export async function getChildById(id: number | string) {
 export async function createChild({
   name,
   birthdate,
+  gender,
   parent_name,
   classroom_id,
   avatar,
@@ -59,6 +60,7 @@ export async function createChild({
 }: {
   name: string;
   birthdate: string;
+  gender?: string;
   parent_name: string;
   classroom_id?: number;
   avatar?: string;
@@ -68,6 +70,7 @@ export async function createChild({
   const res = await api.post(API_ENDPOINTS.CHILDREN, {
     name,
     birthdate,
+    gender,
     parent_name,
     classroom_id,
     avatar,

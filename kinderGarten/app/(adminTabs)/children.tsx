@@ -247,7 +247,7 @@ export default function ChildrenScreen() {
         avatar: avatarUrl,
         hasMobileApp,
       };
-      // // console.log("📦 [ADD CHILD] Payload:", payload, "Class:", classObj);
+      console.log("📦 [ADD CHILD] Payload:", JSON.stringify(payload));
       const created = await createChild(payload);
 
       setChildren([...children, created]);

@@ -10,9 +10,9 @@ import {
   Platform,
   Image,
 } from "react-native";
-import { useLocalSearchParams, Stack, router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { ChevronLeft, Send } from "lucide-react-native";
+import { useLocalSearchParams, router } from "expo-router";
+import { Send } from "lucide-react-native";
+import HeaderBar from "@/components/Header";
 import { getColors } from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -182,46 +182,21 @@ export default function ConversationScreen() {
 
   return (
     <>
-      {/* ✅ Dynamic header */}
-      <Stack.Screen
-        options={{
-          title: name as string,
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/chat"))}
-              style={{ paddingRight: 10 }}
-            >
-              <Ionicons name="arrow-back" size={22} color={colors.accent} />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
+      <HeaderBar
+        title={(name as string) || ""}
+        showBack={true}
+        onBackPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/chat"))}
+        rightElement={
+          avatar ? (
             <Image
               source={{ uri: avatar as string }}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                marginRight: 10,
-              }}
+              style={{ width: 36, height: 36, borderRadius: 18 }}
             />
-          ),
-        }}
+          ) : undefined
+        }
       />
 
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
-        <View
-          className="flex-row items-center justify-between px-5 pt-16 pb-6"
-          style={{ backgroundColor: colors.accentLight }}
-        >
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              onPress={() => (router.canGoBack() ? router.back() : router.push("/(tabs)/chat"))}
-              className="mr-3"
-            >
-              <ChevronLeft color={colors.textDark} size={28} />
-            </TouchableOpacity>
-          </View>
-        </View>
         <KeyboardAvoidingView
           className="flex-1"
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -269,7 +244,7 @@ export default function ConversationScreen() {
           <View
             className="flex-row items-center bg-white px-4 py-4 border-t border-gray-200"
             style={{
-              paddingBottom: Platform.OS === "ios" ? 24 : 12, // extra space on iPhones
+              paddingBottom: Platform.OS === "ios" ? 34 : 16, // extra space on iPhones
             }}
           >
             <TextInput

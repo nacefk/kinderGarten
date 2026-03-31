@@ -336,83 +336,40 @@ export default function DashboardScreen() {
             <View style={{ marginTop: 8 }}>
               {absencesToday.map((abs, idx) => {
                 const name = abs.child_name || abs.child || "Unknown";
-                const initials = name
-                  .split(" ")
-                  .map((n: string) => n[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase();
                 return (
                   <View
                     key={abs.id || idx}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      backgroundColor: colors.lightTan,
-                      borderRadius: 16,
                       paddingVertical: 12,
                       paddingHorizontal: 14,
-                      marginBottom: 10,
+                      marginBottom: 8,
+                      borderRadius: 12,
+                      backgroundColor: colors.background,
                       borderWidth: 1,
                       borderColor: colors.border,
                     }}
                   >
-                    {/* Avatar/Initials */}
-                    <View
-                      style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 19,
-                        backgroundColor: colors.accentLight,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 12,
-                      }}
-                    >
-                      <Text style={{ color: colors.accent, fontWeight: "bold", fontSize: 16 }}>
-                        {initials}
-                      </Text>
-                    </View>
                     <View style={{ flex: 1 }}>
-                      {/* Name */}
                       <Text
                         numberOfLines={1}
-                        style={{ color: colors.textDark, fontWeight: "700", fontSize: 15 }}
+                        style={{ color: colors.textDark, fontWeight: "600", fontSize: 14 }}
                       >
                         {name}
                       </Text>
-                      {/* Reason Title */}
                       <Text
-                        style={{
-                          color: colors.text,
-                          fontWeight: "600",
-                          fontSize: 12,
-                          marginTop: 1,
-                        }}
+                        numberOfLines={1}
+                        style={{ color: colors.textLight, fontSize: 12, marginTop: 2 }}
                       >
-                        {t("dashboard.reason_title")}
+                        {t("dashboard.reason_title")}: {abs.reason || t("dashboard.no_reason")}
                       </Text>
-                      {/* Reason */}
-                      <Text
-                        numberOfLines={2}
-                        style={{ color: colors.textLight, fontSize: 12, marginTop: 1 }}
-                      >
-                        {abs.reason || t("dashboard.no_reason")}
-                      </Text>
-                      {/* Full Period */}
-                      {abs.start_date && abs.end_date && (
-                        <Text style={{ color: colors.warning, fontSize: 11, marginTop: 2 }}>
-                          {t("dashboard.absence_period")}: {abs.start_date} → {abs.end_date}
-                        </Text>
-                      )}
                     </View>
-                    {/* Status Icon */}
-                    <Ionicons
-                      name="remove-circle"
-                      size={18}
-                      color={colors.error}
-                      style={{ marginLeft: 10, alignSelf: "flex-start", marginTop: 2 }}
-                    />
+                    {abs.start_date && abs.end_date && (
+                      <Text style={{ color: colors.textLight, fontSize: 11, marginLeft: 8 }}>
+                        {abs.start_date} → {abs.end_date}
+                      </Text>
+                    )}
                   </View>
                 );
               })}

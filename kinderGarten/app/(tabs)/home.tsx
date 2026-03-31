@@ -140,9 +140,9 @@ export default function Home() {
       } else {
         // // console.log("📊 [Home] No reports available for this child");
       }
-      // Find the most recent request for this child (if any)
+      // Find the most recent request for this child (pending or approved/rejected today)
       const myChildRequest = Array.isArray(allExtraRequests)
-        ? allExtraRequests.find((req) => req.child === childId && req.status === "pending")
+        ? allExtraRequests.find((req) => req.child === childId && (req.status === "pending" || req.status === "approved" || req.status === "rejected"))
         : null;
       setExtraHours(myChildRequest || { status: "none" });
 
@@ -736,6 +736,21 @@ export default function Home() {
             >
               <Text style={{ color: colors.success, fontWeight: "600", fontSize: 15 }}>
                 {t("home.extra_hours_approved")}
+              </Text>
+            </View>
+          )}
+          {extraHours?.status === "rejected" && (
+            <View
+              style={{
+                backgroundColor: colors.errorLight || "#FEE2E2",
+                paddingVertical: 12,
+                paddingHorizontal: 12,
+                borderRadius: 12,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: colors.error, fontWeight: "600", fontSize: 15 }}>
+                {t("home.extra_hours_rejected") || "Votre demande a été refusée"}
               </Text>
             </View>
           )}

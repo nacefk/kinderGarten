@@ -96,6 +96,9 @@ export default function Profile() {
         //   data?.parent_credentials ? Object.keys(data.parent_credentials) : "NO CREDENTIALS"
         // );
 
+        console.log("👤 [Profile] API gender value:", JSON.stringify(data?.gender));
+        console.log("👤 [Profile] All keys:", Object.keys(data || {}));
+        console.log("👤 [Profile] Full data:", JSON.stringify(data, null, 2));
         const fullProfile = {
           id: data?.id,
           name: data?.name,
@@ -222,9 +225,12 @@ export default function Profile() {
     value: string,
     editable: boolean,
     onChange: (v: string) => void,
-    onPressPhone?: (v: string) => void
+    onPressPhone?: (v: string) => void,
+    options?: { numeric?: boolean; suffix?: string }
   ) => {
     const isPhoneField = label.toLowerCase().includes("téléphone");
+    const isNumeric = options?.numeric || false;
+    const suffix = options?.suffix || "";
     return (
       <View className="flex-row justify-between items-start mb-3" style={{ flexWrap: "wrap" }}>
         <View style={{ flexShrink: 1, flexBasis: "40%" }}>
@@ -235,13 +241,16 @@ export default function Profile() {
 
         <View style={{ flexShrink: 1, flexBasis: "58%", alignItems: "flex-end" }}>
           {editable ? (
-            <TextInput
-              value={value}
-              onChangeText={onChange}
-              keyboardType={isPhoneField ? "phone-pad" : "default"}
-              className="border-b border-gray-300 text-right"
-              style={{ color: colors.textDark, minWidth: 100 }}
-            />
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TextInput
+                value={value}
+                onChangeText={onChange}
+                keyboardType={isPhoneField ? "phone-pad" : isNumeric ? "numeric" : "default"}
+                className="border-b border-gray-300 text-right"
+                style={{ color: colors.textDark, minWidth: 100 }}
+              />
+              {suffix ? <Text style={{ color: colors.textLight, marginLeft: 4 }}>{suffix}</Text> : null}
+            </View>
           ) : isPhoneField && value ? (
             <TouchableOpacity onPress={() => onPressPhone && onPressPhone(value)}>
               <Text
@@ -262,7 +271,7 @@ export default function Profile() {
                 flexWrap: "wrap",
               }}
             >
-              {value || "—"}
+              {value ? `${value}${suffix ? ` ${suffix}` : ""}` : "—"}
             </Text>
           )}
         </View>
@@ -291,20 +300,14 @@ export default function Profile() {
         title="Profil"
         showBack={true}
         rightElement={
-          <View className="flex-row items-center gap-4">
-            <TouchableOpacity
-              onPress={() => {
-                if (isEditing) saveProfile();
-                else setIsEditing(true);
-              }}
-            >
-              {isEditing ? <Check color="#fff" size={26} /> : <Pencil color="#fff" size={24} />}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleLogout}>
-              <LogOut color="#fff" size={24} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => {
+              if (isEditing) saveProfile();
+              else setIsEditing(true);
+            }}
+          >
+            {isEditing ? <Check color="#fff" size={26} /> : <Pencil color="#fff" size={24} />}
+          </TouchableOpacity>
         }
       />
 
@@ -399,10 +402,10 @@ export default function Profile() {
             </Row>
 
             {renderRow("⚖️ Poids", "weight", profile?.weight, isEditing, (v) =>
-              updateField("weight", v)
+              updateField("weight", v), undefined, { numeric: true, suffix: "kg" }
             )}
             {renderRow("📏 Taille", "height", profile?.height, isEditing, (v) =>
-              updateField("height", v)
+              updateField("height", v), undefined, { numeric: true, suffix: "cm" }
             )}
 
             <Row label="👧 Sexe" colors={colors}>
@@ -412,13 +415,13 @@ export default function Profile() {
                   className="flex-row justify-between items-center border-b border-gray-300 w-40"
                 >
                   <Text className="text-right font-medium py-1" style={{ color: colors.textDark }}>
-                    {profile?.gender || "Sélectionner le sexe"}
+                    {profile?.gender === "male" ? "Garçon" : profile?.gender === "female" ? "Fille" : profile?.gender || "Sélectionner le sexe"}
                   </Text>
                   <ChevronDown color={colors.textDark} size={18} />
                 </TouchableOpacity>
               ) : (
                 <Text className="font-medium text-right" style={{ color: colors.textDark }}>
-                  {profile?.gender}
+                  {profile?.gender === "male" ? "Garçon" : profile?.gender === "female" ? "Fille" : profile?.gender || "-"}
                 </Text>
               )}
             </Row>
@@ -428,23 +431,23 @@ export default function Profile() {
                 className="rounded-xl shadow-sm p-3 mt-1"
                 style={{ backgroundColor: colors.cardBackground }}
               >
-                {["Fille", "Garçon"].map((option) => (
+                {[{ label: "Fille", value: "female" }, { label: "Garçon", value: "male" }].map((option) => (
                   <TouchableOpacity
-                    key={option}
+                    key={option.value}
                     onPress={() => {
-                      updateField("gender", option);
+                      updateField("gender", option.value);
                       setShowGenderDropdown(false);
                     }}
-                    className={`py-2 rounded-xl ${profile?.gender === option ? "bg-gray-100" : ""}`}
+                    className={`py-2 rounded-xl ${profile?.gender === option.value ? "bg-gray-100" : ""}`}
                   >
                     <Text
                       className="text-right"
                       style={{
-                        color: profile?.gender === option ? colors.accent : colors.textDark,
-                        fontWeight: profile?.gender === option ? "600" : "400",
+                        color: profile?.gender === option.value ? colors.accent : colors.textDark,
+                        fontWeight: profile?.gender === option.value ? "600" : "400",
                       }}
                     >
-                      {option}
+                      {option.label}
                     </Text>
                   </TouchableOpacity>
                 ))}

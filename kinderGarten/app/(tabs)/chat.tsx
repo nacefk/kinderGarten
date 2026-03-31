@@ -166,7 +166,7 @@ export default function Chat() {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={90}
+        keyboardVerticalOffset={0}
       >
         {loading ? (
           <View className="flex-1 justify-center items-center">

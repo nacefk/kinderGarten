@@ -29,30 +29,28 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: t("tabs.home"),
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: t("tabs.chat"),
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: t("tabs.profile"),
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="activity"
         options={{
           title: t("tabs.activity"),
-          tabBarIcon: ({ color, size }) => <Ionicons name="pulse" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="pulse-outline" color={color} size={size} />,
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: t("tabs.profile"),
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: t("tabs.chat"),
+          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" color={color} size={size} />,
         }}
       />
     </Tabs>
