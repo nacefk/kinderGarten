@@ -37,6 +37,7 @@ type ExtraHour = {
   duration?: number;
   status?: "pending" | "approved" | "rejected";
 };
+import * as Sentry from "@sentry/react-native";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -308,6 +309,17 @@ export default function DashboardScreen() {
           )}
         </TouchableOpacity>
 
+        {/* TODO: Remove this Sentry test button after verifying */}
+        {__DEV__ && (
+          <TouchableOpacity
+            onPress={() => Sentry.captureException(new Error("First error"))}
+            style={{ backgroundColor: "#e74c3c", padding: 12, borderRadius: 8, marginTop: 12 }}
+          >
+            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+              Test Sentry Error
+            </Text>
+          </TouchableOpacity>
+        )}
         {/* --- Absences Today Bloc (Modernized) --- */}
         <View
           className="rounded-2xl p-5 mb-6 mx-5"
