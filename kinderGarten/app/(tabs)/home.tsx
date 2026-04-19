@@ -142,7 +142,11 @@ export default function Home() {
       }
       // Find the most recent request for this child (pending or approved/rejected today)
       const myChildRequest = Array.isArray(allExtraRequests)
-        ? allExtraRequests.find((req) => req.child === childId && (req.status === "pending" || req.status === "approved" || req.status === "rejected"))
+        ? allExtraRequests.find(
+            (req) =>
+              req.child === childId &&
+              (req.status === "pending" || req.status === "approved" || req.status === "rejected")
+          )
         : null;
       setExtraHours(myChildRequest || { status: "none" });
 

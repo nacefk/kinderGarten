@@ -249,7 +249,9 @@ export default function Profile() {
                 className="border-b border-gray-300 text-right"
                 style={{ color: colors.textDark, minWidth: 100 }}
               />
-              {suffix ? <Text style={{ color: colors.textLight, marginLeft: 4 }}>{suffix}</Text> : null}
+              {suffix ? (
+                <Text style={{ color: colors.textLight, marginLeft: 4 }}>{suffix}</Text>
+              ) : null}
             </View>
           ) : isPhoneField && value ? (
             <TouchableOpacity onPress={() => onPressPhone && onPressPhone(value)}>
@@ -401,11 +403,23 @@ export default function Profile() {
               )}
             </Row>
 
-            {renderRow("⚖️ Poids", "weight", profile?.weight, isEditing, (v) =>
-              updateField("weight", v), undefined, { numeric: true, suffix: "kg" }
+            {renderRow(
+              "⚖️ Poids",
+              "weight",
+              profile?.weight,
+              isEditing,
+              (v) => updateField("weight", v),
+              undefined,
+              { numeric: true, suffix: "kg" }
             )}
-            {renderRow("📏 Taille", "height", profile?.height, isEditing, (v) =>
-              updateField("height", v), undefined, { numeric: true, suffix: "cm" }
+            {renderRow(
+              "📏 Taille",
+              "height",
+              profile?.height,
+              isEditing,
+              (v) => updateField("height", v),
+              undefined,
+              { numeric: true, suffix: "cm" }
             )}
 
             <Row label="👧 Sexe" colors={colors}>
@@ -415,13 +429,21 @@ export default function Profile() {
                   className="flex-row justify-between items-center border-b border-gray-300 w-40"
                 >
                   <Text className="text-right font-medium py-1" style={{ color: colors.textDark }}>
-                    {profile?.gender === "male" ? "Garçon" : profile?.gender === "female" ? "Fille" : profile?.gender || "Sélectionner le sexe"}
+                    {profile?.gender === "male"
+                      ? "Garçon"
+                      : profile?.gender === "female"
+                        ? "Fille"
+                        : profile?.gender || "Sélectionner le sexe"}
                   </Text>
                   <ChevronDown color={colors.textDark} size={18} />
                 </TouchableOpacity>
               ) : (
                 <Text className="font-medium text-right" style={{ color: colors.textDark }}>
-                  {profile?.gender === "male" ? "Garçon" : profile?.gender === "female" ? "Fille" : profile?.gender || "-"}
+                  {profile?.gender === "male"
+                    ? "Garçon"
+                    : profile?.gender === "female"
+                      ? "Fille"
+                      : profile?.gender || "-"}
                 </Text>
               )}
             </Row>
@@ -431,7 +453,10 @@ export default function Profile() {
                 className="rounded-xl shadow-sm p-3 mt-1"
                 style={{ backgroundColor: colors.cardBackground }}
               >
-                {[{ label: "Fille", value: "female" }, { label: "Garçon", value: "male" }].map((option) => (
+                {[
+                  { label: "Fille", value: "female" },
+                  { label: "Garçon", value: "male" },
+                ].map((option) => (
                   <TouchableOpacity
                     key={option.value}
                     onPress={() => {
