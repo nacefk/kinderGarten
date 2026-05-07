@@ -17,7 +17,6 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useAppStore } from "@/store/useAppStore";
 import { secureStorage } from "@/utils/secureStorage";
 import { validation, getValidationMessage, convertToSlug } from "@/utils/validation";
-import { initializeNotifications } from "@/utils/notifications";
 
 export default function Login() {
   const router = useRouter();
@@ -96,9 +95,7 @@ export default function Login() {
         await secureStorage.setAdminId(result.admin_id);
       }
 
-      // 🔔 Initialize notifications with authenticated user
-      // // console.log("🔔 Initializing notifications after login...");
-      await initializeNotifications();
+      // 🔔 Notifications are initialized in _layout.tsx when isAuthenticated changes
 
       // Verify it was stored
       // // console.log("✅ [Login] After setAdminId:");

@@ -391,7 +391,7 @@ export default function Home() {
   // ✅ Logout handler
   const handleLogout = useCallback(async () => {
     await logout();
-    router.replace("/(authentication)/login");
+    router.replace("/");
   }, [logout]);
 
   // Planned Absence Submit Handler

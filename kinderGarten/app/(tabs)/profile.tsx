@@ -52,7 +52,7 @@ export default function Profile() {
         onPress: async () => {
           try {
             await logout();
-            router.replace("/(authentication)/login");
+            router.replace("/");
           } catch (err: any) {
             Alert.alert("Erreur", "Impossible de se déconnecter.");
             console.error("Logout error:", err);

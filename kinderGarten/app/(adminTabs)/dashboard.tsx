@@ -18,6 +18,7 @@ import { getColors } from "@/config/colors";
 import { useRouter } from "expo-router";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { useAppStore } from "@/store/useAppStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { getTranslation, Language } from "@/config/translations";
 import {
   getAttendanceSummary,
@@ -42,6 +43,7 @@ import * as Sentry from "@sentry/react-native";
 export default function DashboardScreen() {
   const router = useRouter();
   const { language, setLanguage } = useLanguageStore();
+  const { logout } = useAuthStore();
   const tenant = useAppStore((state) => state.tenant);
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
 
@@ -230,7 +232,13 @@ export default function DashboardScreen() {
         <TouchableOpacity onPress={() => setShowLanguageModal(true)} className="p-1 mr-3">
           <Ionicons name="globe-outline" size={28} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.replace("/login")} className="p-1">
+        <TouchableOpacity
+          onPress={async () => {
+            await logout();
+            router.replace("/");
+          }}
+          className="p-1"
+        >
           <LogOut color="#fff" size={28} />
         </TouchableOpacity>
       </View>

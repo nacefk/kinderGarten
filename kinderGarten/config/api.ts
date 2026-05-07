@@ -5,11 +5,11 @@ const ENV = __DEV__ ? "development" : "production";
 
 const API_CONFIGS = {
   development: {
-    baseURL: "http://192.168.1.230:8000/api/",
+    baseURL: "https://api.sghirilab.tn/api/",
     timeout: 10000,
   },
   production: {
-    baseURL: Constants.expoConfig?.extra?.apiUrl || "https://api.yourdomain.com/api/",
+    baseURL: Constants.expoConfig?.extra?.apiUrl || "https://api.sghirilab.tn/api/",
     timeout: 15000,
   },
 };

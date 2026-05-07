@@ -1,9 +1,9 @@
-// Firebase Configuration
-// Credentials loaded from environment variables (.env.local)
+// Firebase Configuration for React Native (Expo)
+// Push notifications are handled by expo-notifications with native FCM/APNs tokens.
+// This file initializes Firebase for analytics only (optional).
+// google-services.json (Android) and GoogleService-Info.plist (iOS) handle FCM natively.
 
-import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import { getAnalytics } from "firebase/analytics";
+import { initializeApp, getApps } from "firebase/app";
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -15,29 +15,7 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-let app: any;
-let messaging: any;
+// Initialize Firebase (only once)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-try {
-  app = initializeApp(firebaseConfig);
-  console.log("✅ Firebase initialized");
-
-  // Initialize Cloud Messaging
-  messaging = getMessaging(app);
-  console.log("✅ Cloud Messaging initialized");
-
-  // Analytics (optional)
-  if (typeof window !== "undefined") {
-    try {
-      getAnalytics(app);
-      console.log("✅ Analytics initialized");
-    } catch (e) {
-      console.log("⚠️ Analytics not available");
-    }
-  }
-} catch (error) {
-  console.error("❌ Firebase initialization error:", error);
-}
-
-export { app, messaging, getToken, onMessage };
+export { app };

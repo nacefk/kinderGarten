@@ -5,6 +5,7 @@ import { setupAxiosInterceptors } from "@/api/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { useAppStore } from "@/store/useAppStore";
+import { initializeNotifications } from "@/utils/notifications";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import * as Sentry from "@sentry/react-native";
 
@@ -47,6 +48,7 @@ export default Sentry.wrap(function RootLayout() {
     // ✅ Fetch tenant data only when authenticated
     if (isAuthenticated) {
       actions.fetchTenant();
+      initializeNotifications();
     }
   }, [isAuthenticated]);
 
