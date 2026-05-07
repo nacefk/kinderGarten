@@ -37,7 +37,6 @@ yarn-error.*
 # Firebase service account keys (SECRETS - never commit)
 *-firebase-adminsdk-*.json
 serviceAccountKey.json
-google-services.json
 
 # typescript
 *.tsbuildinfo
