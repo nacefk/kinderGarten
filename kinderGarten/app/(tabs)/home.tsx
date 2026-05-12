@@ -88,7 +88,8 @@ export default function Home() {
       const child = await getMyChild();
       // // console.log("[Home] Child object:", child);
       const classroomId = child.classroom?.id || child.classroom;
-      const classroomName = child.classroom?.name || t("common.classroom").replace("{id}", classroomId);
+      const classroomName =
+        child.classroom?.name || t("common.classroom").replace("{id}", classroomId);
       const childId = child.id;
 
       // 1️⃣.b Fetch attendance status for this child

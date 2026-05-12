@@ -91,7 +91,8 @@ export default function CalendarScreen() {
           if (child && child.classroom) {
             const classroom: ClassItem = {
               id: child.classroom.id || child.classroom,
-              name: child.classroom.name || t("common.classroom").replace("{id}", child.classroom.id),
+              name:
+                child.classroom.name || t("common.classroom").replace("{id}", child.classroom.id),
             };
             setClasses([classroom]);
             setSelectedClass(classroom);
@@ -555,7 +556,10 @@ export default function CalendarScreen() {
     if (overlap) {
       Alert.alert(
         t("calendar.error_time_conflict"),
-        t("calendar.overlap_body").replace("{title}", overlap.title).replace("{start}", overlap.time).replace("{end}", overlap.endTime || overlap.time)
+        t("calendar.overlap_body")
+          .replace("{title}", overlap.title)
+          .replace("{start}", overlap.time)
+          .replace("{end}", overlap.endTime || overlap.time)
       );
       return;
     }
@@ -789,7 +793,9 @@ export default function CalendarScreen() {
 
     Alert.alert(
       t("calendar.load_template_title"),
-      t("calendar.load_template_confirm").replace("{name}", template.name).replace("{day}", selectedDayForLoad),
+      t("calendar.load_template_confirm")
+        .replace("{name}", template.name)
+        .replace("{day}", selectedDayForLoad),
       [
         { text: t("common.cancel"), style: "cancel" },
         {
@@ -1485,7 +1491,10 @@ export default function CalendarScreen() {
             </Text>
 
             <Text className="text-sm mb-3" style={{ color: colors.textLight }}>
-              {t("calendar.activities_count").replace("{count}", String(allWeekPlanActivities.length))}
+              {t("calendar.activities_count").replace(
+                "{count}",
+                String(allWeekPlanActivities.length)
+              )}
             </Text>
 
             <TextInput
@@ -1621,7 +1630,10 @@ export default function CalendarScreen() {
                         {template.name}
                       </Text>
                       <Text className="text-xs mt-1" style={{ color: colors.textLight }}>
-                        {t("calendar.template_activities").replace("{count}", String(template.activities.length))}
+                        {t("calendar.template_activities").replace(
+                          "{count}",
+                          String(template.activities.length)
+                        )}
                       </Text>
                     </View>
                     <TouchableOpacity

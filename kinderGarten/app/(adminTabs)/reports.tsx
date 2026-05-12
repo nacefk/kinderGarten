@@ -785,8 +785,14 @@ export default function ReportsScreen() {
           <View className="flex-row items-center justify-between mb-6">
             <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
               {selectedChildren.length > 1
-                ? t("reports.group_report_title").replace("{count}", String(selectedChildren.length))
-                : t("reports.single_report_title").replace("{name}", selectedChildren[0]?.name || "")}
+                ? t("reports.group_report_title").replace(
+                    "{count}",
+                    String(selectedChildren.length)
+                  )
+                : t("reports.single_report_title").replace(
+                    "{name}",
+                    selectedChildren[0]?.name || ""
+                  )}
             </Text>
             <TouchableOpacity onPress={() => setShowModal(false)}>
               <Ionicons name="close-circle" size={28} color={colors.accent} />

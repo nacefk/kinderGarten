@@ -78,7 +78,10 @@ export default function Profile() {
       months += 12;
     }
     if (years < 1) return t("profile.age_months").replace("{count}", String(months));
-    if (months > 0) return t("profile.age_years_months").replace("{years}", String(years)).replace("{months}", String(months));
+    if (months > 0)
+      return t("profile.age_years_months")
+        .replace("{years}", String(years))
+        .replace("{months}", String(months));
     return t("profile.age_years").replace("{years}", String(years));
   };
 
@@ -560,11 +563,19 @@ export default function Profile() {
 
           {/* 🚨 Contact d’urgence */}
           <Card title={t("profile.emergency_contact")}>
-            {renderRow(t("profile.name_label"), "", profile?.emergencyContact?.name, isEditing, (v) =>
-              updateField("emergencyContact", { ...profile?.emergencyContact, name: v })
+            {renderRow(
+              t("profile.name_label"),
+              "",
+              profile?.emergencyContact?.name,
+              isEditing,
+              (v) => updateField("emergencyContact", { ...profile?.emergencyContact, name: v })
             )}
-            {renderRow(t("profile.relation_label"), "", profile?.emergencyContact?.relation, isEditing, (v) =>
-              updateField("emergencyContact", { ...profile?.emergencyContact, relation: v })
+            {renderRow(
+              t("profile.relation_label"),
+              "",
+              profile?.emergencyContact?.relation,
+              isEditing,
+              (v) => updateField("emergencyContact", { ...profile?.emergencyContact, relation: v })
             )}
             {renderRow(
               t("profile.phone_label"),
