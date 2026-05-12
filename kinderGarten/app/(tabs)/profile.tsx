@@ -87,50 +87,50 @@ export default function Profile() {
       const data = await getMyChild();
       console.log("👤 [Profile] API gender value:", JSON.stringify(data?.gender));
       console.log("👤 [Profile] All keys:", Object.keys(data || {}));
-        console.log("👤 [Profile] Full data:", JSON.stringify(data, null, 2));
-        const fullProfile = {
-          id: data?.id,
-          name: data?.name,
-          avatar: data?.avatar,
-          group: data?.classroom_name,
-          birthdate: data?.birthdate,
-          age: getAge(data?.birthdate),
-          weight: data?.weight,
-          height: data?.height,
-          gender: data?.gender,
-          allergies: data?.allergies,
-          conditions: data?.conditions,
-          medication: data?.medication,
-          doctor: data?.doctor,
-          emergencyContact: {
-            name: data?.emergency_contact_name,
-            relation: data?.emergency_contact_relation,
-            phone: data?.emergency_contact_phone,
-          },
-          authorizedPickups: data?.authorized_pickups,
-          hasMobileApp: data?.has_mobile_app === true,
-          parent_username: data?.parent_user?.username,
-          parent_password: data?.parent_user?.password,
-          parent_name: data?.parent_user?.first_name || data?.parent_name,
-          parent_email: data?.parent_user?.email,
-          classInfo: {
-            teacherName: data?.teacher_name,
-            classroomName: data?.classroom_name,
-            responsibleName: data?.responsible_name,
-            responsiblePhone: data?.responsible_phone,
-          },
-          parent_credentials: data?.parent_credentials,
-        };
+      console.log("👤 [Profile] Full data:", JSON.stringify(data, null, 2));
+      const fullProfile = {
+        id: data?.id,
+        name: data?.name,
+        avatar: data?.avatar,
+        group: data?.classroom_name,
+        birthdate: data?.birthdate,
+        age: getAge(data?.birthdate),
+        weight: data?.weight,
+        height: data?.height,
+        gender: data?.gender,
+        allergies: data?.allergies,
+        conditions: data?.conditions,
+        medication: data?.medication,
+        doctor: data?.doctor,
+        emergencyContact: {
+          name: data?.emergency_contact_name,
+          relation: data?.emergency_contact_relation,
+          phone: data?.emergency_contact_phone,
+        },
+        authorizedPickups: data?.authorized_pickups,
+        hasMobileApp: data?.has_mobile_app === true,
+        parent_username: data?.parent_user?.username,
+        parent_password: data?.parent_user?.password,
+        parent_name: data?.parent_user?.first_name || data?.parent_name,
+        parent_email: data?.parent_user?.email,
+        classInfo: {
+          teacherName: data?.teacher_name,
+          classroomName: data?.classroom_name,
+          responsibleName: data?.responsible_name,
+          responsiblePhone: data?.responsible_phone,
+        },
+        parent_credentials: data?.parent_credentials,
+      };
 
-        // console.log("✅ Full Profile State:", JSON.stringify(fullProfile, null, 2));
-        // console.log("🔐 Parent Credentials in fullProfile:", fullProfile.parent_credentials);
-        setProfile(fullProfile);
-      } catch (error: any) {
-        console.error("❌ Erreur de chargement:", error.response?.data || error.message);
-        Alert.alert("Erreur", "Impossible de charger le profil de l’enfant.");
-      } finally {
-        setLoading(false);
-      }
+      // console.log("✅ Full Profile State:", JSON.stringify(fullProfile, null, 2));
+      // console.log("🔐 Parent Credentials in fullProfile:", fullProfile.parent_credentials);
+      setProfile(fullProfile);
+    } catch (error: any) {
+      console.error("❌ Erreur de chargement:", error.response?.data || error.message);
+      Alert.alert("Erreur", "Impossible de charger le profil de l’enfant.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -321,9 +321,7 @@ export default function Profile() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 120 }}
           keyboardShouldPersistTaps="handled"
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* 👶 Informations sur l’enfant */}
           <Card title="Informations de l’enfant">
@@ -587,7 +585,8 @@ export default function Profile() {
           {/* Replay Walkthrough */}
           <TouchableOpacity
             onPress={async () => {
-              const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+              const AsyncStorage = (await import("@react-native-async-storage/async-storage"))
+                .default;
               await AsyncStorage.removeItem("kindergarten_walkthrough_seen");
               router.push("/walkthrough");
             }}

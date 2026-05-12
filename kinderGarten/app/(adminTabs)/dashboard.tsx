@@ -211,8 +211,6 @@ export default function DashboardScreen() {
     }
   };
 
-
-
   // ✅ Optional: format hours nicely
   const formatTime = (time: string) => time.slice(0, 5); // "17:00"
 

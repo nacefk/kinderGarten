@@ -417,9 +417,7 @@ export default function ReportsScreen() {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={{ paddingBottom: 40 }}
       showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <HeaderBar title={t("reports.title")} showBack={true} />
 
