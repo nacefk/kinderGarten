@@ -9,6 +9,7 @@ import {
   Modal,
   ActivityIndicator,
   Image,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -58,6 +59,18 @@ export default function ReportsScreen() {
   const [showClubDropdown, setShowClubDropdown] = useState(false);
   const [childrenList, setChildrenList] = useState<any[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchClasses(), fetchClubs(), fetchChildren()]);
+    } catch (e: any) {
+      console.error("❌ Error refreshing data:", e.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleSelectClass = async (cls: any) => {
     setSelectedClass(cls);
@@ -404,6 +417,9 @@ export default function ReportsScreen() {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={{ paddingBottom: 40 }}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
     >
       <HeaderBar title={t("reports.title")} showBack={true} />
 

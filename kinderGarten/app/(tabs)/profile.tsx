@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { getColors } from "@/config/colors";
@@ -37,6 +38,7 @@ export default function Profile() {
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { logout } = useAuthStore();
 
   /** ✅ Logout handler */
@@ -80,24 +82,11 @@ export default function Profile() {
   };
 
   /** 📦 Charger le profil depuis l’API */
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const data = await getMyChild();
-        // console.log("🧒 Full Child Data from API:", JSON.stringify(data, null, 2));
-        // console.log("🔍 All Available Keys:", Object.keys(data || {}));
-        // console.log("📱 has_mobile_app:", data?.has_mobile_app);
-        // console.log("👤 parent_user:", data?.parent_user);
-        // console.log("👨‍👩‍👧 parent_name:", data?.parent_name);
-        // console.log("🔐 parent_credentials:", data?.parent_credentials);
-        // // console.log(
-        //   "🔑 parent_credentials keys:",
-        //   data?.parent_credentials ? Object.keys(data.parent_credentials) : "NO CREDENTIALS"
-        // );
-
-        console.log("👤 [Profile] API gender value:", JSON.stringify(data?.gender));
-        console.log("👤 [Profile] All keys:", Object.keys(data || {}));
+  const loadProfile = async () => {
+    try {
+      const data = await getMyChild();
+      console.log("👤 [Profile] API gender value:", JSON.stringify(data?.gender));
+      console.log("👤 [Profile] All keys:", Object.keys(data || {}));
         console.log("👤 [Profile] Full data:", JSON.stringify(data, null, 2));
         const fullProfile = {
           id: data?.id,
@@ -142,10 +131,18 @@ export default function Profile() {
       } finally {
         setLoading(false);
       }
-    })();
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    loadProfile();
   }, []);
 
-  /** 🔁 Mise à jour d’un champ */
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
+  };
   const updateField = (key: string, value: any) => {
     setProfile((prev: any) => ({ ...prev, [key]: value }));
   };
@@ -324,6 +321,9 @@ export default function Profile() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 120 }}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           {/* 👶 Informations sur l’enfant */}
           <Card title="Informations de l’enfant">

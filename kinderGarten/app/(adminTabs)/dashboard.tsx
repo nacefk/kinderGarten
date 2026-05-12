@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { getTodayAbsences } from "@/api/absence";
 import { getAllPayments } from "@/api/payment";
 // Absences Today State and Fetch
@@ -60,13 +61,13 @@ export default function DashboardScreen() {
   const [unpaidCount, setUnpaidCount] = useState(0);
   const [loadingPayments, setLoadingPayments] = useState(true);
 
-  // ✅ Fetch unpaid children count
-  useEffect(() => {
+  // ✅ Load all dashboard data
+  const loadDashboardData = useCallback(async () => {
+    // Fetch unpaid children count
     (async () => {
       try {
         setLoadingPayments(true);
         const payments = await getAllPayments("pending");
-        // Count unique children with pending payments
         const uniqueChildren = new Set(payments.map((p) => p.child));
         setUnpaidCount(uniqueChildren.size);
       } catch (err: any) {
@@ -76,9 +77,8 @@ export default function DashboardScreen() {
         setLoadingPayments(false);
       }
     })();
-  }, []);
 
-  useEffect(() => {
+    // Fetch absences
     (async () => {
       try {
         setLoadingAbsences(true);
@@ -97,7 +97,56 @@ export default function DashboardScreen() {
         setLoadingAbsences(false);
       }
     })();
+
+    // Fetch presence summary
+    (async () => {
+      try {
+        setLoadingPresence(true);
+        const data = await getAttendanceSummary();
+        if (data && typeof data === "object") {
+          setPresence({
+            present: data.present || 0,
+            absent: data.absent || 0,
+          });
+        } else {
+          setPresence({ present: 0, absent: 0 });
+        }
+      } catch (err: any) {
+        console.error("❌ Error loading attendance summary:", err.message);
+        setPresence({ present: 0, absent: 0 });
+      } finally {
+        setLoadingPresence(false);
+      }
+    })();
+
+    // Fetch extra hours
+    (async () => {
+      try {
+        setLoadingExtra(true);
+        const data = await getTodayExtraHours();
+        if (Array.isArray(data)) {
+          setExtraHours(data);
+        } else if (data && typeof data === "object") {
+          const results = (data as any).results || (data as any).data || [];
+          setExtraHours(Array.isArray(results) ? results : []);
+        } else {
+          setExtraHours([]);
+        }
+      } catch (err: any) {
+        console.error("❌ Error loading extra-hour requests:", err.message);
+        setExtraHours([]);
+      } finally {
+        setLoadingExtra(false);
+      }
+    })();
   }, []);
+
+  // ✅ Refresh dashboard data on every focus
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboardData();
+    }, [loadDashboardData])
+  );
   const handleApprove = async (id: number) => {
     try {
       await approveExtraHour(id);
@@ -162,58 +211,7 @@ export default function DashboardScreen() {
     }
   };
 
-  // ✅ Fetch today's presence summary
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoadingPresence(true);
-        const data = await getAttendanceSummary();
-        // Ensure data has required fields
-        if (data && typeof data === "object") {
-          setPresence({
-            present: data.present || 0,
-            absent: data.absent || 0,
-          });
-        } else {
-          setPresence({ present: 0, absent: 0 });
-        }
-      } catch (err: any) {
-        console.error("❌ Error loading attendance summary:", err.message);
-        setPresence({ present: 0, absent: 0 }); // Set defaults on error
-      } finally {
-        setLoadingPresence(false);
-      }
-    })();
-  }, []);
 
-  // ✅ Fetch pending extra-hour requests
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoadingExtra(true);
-        const data = await getTodayExtraHours();
-        // // console.log("[Dashboard] Received today extra hours data:", data);
-        // Data should be an array directly from the API
-        if (Array.isArray(data)) {
-          // console.log("[Dashboard] Data is array:", data);
-          setExtraHours(data);
-        } else if (data && typeof data === "object") {
-          // If API returns {results: [...]} (fallback)
-          const results = (data as any).results || (data as any).data || [];
-          // console.log("[Dashboard] Data is object, results:", results);
-          setExtraHours(Array.isArray(results) ? results : []);
-        } else {
-          // console.log("[Dashboard] Data is neither array nor object");
-          setExtraHours([]);
-        }
-      } catch (err: any) {
-        console.error("❌ Error loading extra-hour requests:", err.message);
-        setExtraHours([]); // Set to empty array on error
-      } finally {
-        setLoadingExtra(false);
-      }
-    })();
-  }, []);
 
   // ✅ Optional: format hours nicely
   const formatTime = (time: string) => time.slice(0, 5); // "17:00"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -31,11 +32,13 @@ export default function PresenceScreen() {
   const [presenceMap, setPresenceMap] = useState<Record<number, PresenceStatus>>({});
   const [loading, setLoading] = useState(false);
 
-  // Fetch children and classes on mount
-  useEffect(() => {
-    actions.fetchChildren();
-    actions.fetchClasses();
-  }, []);
+  // Refresh children and classes on every focus
+  useFocusEffect(
+    useCallback(() => {
+      actions.fetchChildren();
+      actions.fetchClasses();
+    }, [])
+  );
 
   // Load today's attendance from API
   const fetchAttendance = async () => {

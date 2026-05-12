@@ -72,6 +72,7 @@ export default function ChildrenScreen() {
   const [childImage, setChildImage] = useState<string | null>(null);
   const [hasMobileApp, setHasMobileApp] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [selectedClub, setSelectedClub] = useState<string | null>(null);
   const [children, setChildren] = useState<any[]>([]);
@@ -110,6 +111,18 @@ export default function ChildrenScreen() {
       }
     })();
   }, []);
+
+  // ------------------- PULL TO REFRESH -------------------
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchChildren(), fetchClasses(), fetchClubs()]);
+    } catch (e: any) {
+      console.error("❌ [COMPONENT] Error refreshing data:", e.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // ------------------- ADD CLASS -------------------
   const handleAddClass = async () => {
@@ -781,6 +794,8 @@ export default function ChildrenScreen() {
           keyExtractor={(item) => item.id.toString()}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20 }}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListEmptyComponent={
             <Text className="text-center mt-10 text-base" style={{ color: colors.textLight }}>
               {t("children.no_child_found")}

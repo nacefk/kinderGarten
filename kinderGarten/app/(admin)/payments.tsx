@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -82,9 +83,11 @@ export default function PaymentsScreen() {
     { key: "completed", label: t("payments.filter_completed") },
   ];
 
-  useEffect(() => {
-    loadPayments();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadPayments();
+    }, [])
+  );
 
   const loadPayments = async () => {
     try {

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -136,10 +137,12 @@ export default function ExtraHoursScreen() {
     }
   };
 
-  // Load on mount
-  useEffect(() => {
-    loadExtraHours();
-  }, []);
+  // Refresh on focus
+  useFocusEffect(
+    useCallback(() => {
+      loadExtraHours();
+    }, [])
+  );
 
   const handleApprove = async (id: number) => {
     try {
