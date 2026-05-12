@@ -127,7 +127,7 @@ export default function ChildrenScreen() {
   // ------------------- ADD CLASS -------------------
   const handleAddClass = async () => {
     if (!newClassName.trim())
-      return Alert.alert("Nom manquant", "Veuillez entrer un nom de classe.");
+      return Alert.alert(t("children.error_name_missing"), t("children.error_enter_class_name"));
     setLoading(true);
     try {
       await createClass(newClassName.trim());
@@ -135,90 +135,99 @@ export default function ChildrenScreen() {
       await fetchClasses();
       setNewClassName("");
       setShowAddClass(false);
-      Alert.alert("Succès", "Classe ajoutée !");
+      Alert.alert(t("common.success"), t("children.class_added"));
     } catch (e: any) {
       console.error("❌ Error creating class:", e.message);
-      Alert.alert("Erreur", "Impossible d'ajouter la classe.");
+      Alert.alert(t("common.error"), t("children.error_add_class"));
     } finally {
       setLoading(false);
     }
   };
   // 🧹 Delete class - NOT YET SUPPORTED (backend missing detail endpoint)
   const handleDeleteClass = (cls: any) => {
-    Alert.alert("Supprimer la classe", `Voulez-vous vraiment supprimer la classe "${cls.name}" ?`, [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // console.log("🧹 [COMPONENT] Starting delete for class:", cls);
-            setLoading(true);
-            await deleteClass(cls.id);
-            // // console.log("✅ [COMPONENT] Delete successful, removing from store...");
-            // ✅ Remove from store immediately
-            removeClassFromStore(cls.id);
-            // // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
-            // 🔄 Verify deletion by refetching
-            await fetchClasses();
-            // // console.log("✅ [COMPONENT] Backend verified, classes refreshed");
-            Alert.alert("Supprimée ✅", "La classe a été supprimée.");
-          } catch (e: any) {
-            console.error("❌ [COMPONENT] Error deleting class:", e.message);
-            console.error("❌ [COMPONENT] Full error:", e);
-            Alert.alert("Erreur", `Impossible de supprimer la classe: ${e.message}`);
-          } finally {
-            setLoading(false);
-          }
+    Alert.alert(
+      t("children.delete_class_title"),
+      t("children.delete_class_confirm").replace("{name}", cls.name),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // console.log("🧹 [COMPONENT] Starting delete for class:", cls);
+              setLoading(true);
+              await deleteClass(cls.id);
+              // // console.log("✅ [COMPONENT] Delete successful, removing from store...");
+              // ✅ Remove from store immediately
+              removeClassFromStore(cls.id);
+              // // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
+              // 🔄 Verify deletion by refetching
+              await fetchClasses();
+              // // console.log("✅ [COMPONENT] Backend verified, classes refreshed");
+              Alert.alert(t("children.class_deleted_title"), t("children.class_deleted_msg"));
+            } catch (e: any) {
+              console.error("❌ [COMPONENT] Error deleting class:", e.message);
+              console.error("❌ [COMPONENT] Full error:", e);
+              Alert.alert(t("common.error"), t("children.error_delete_class") + ": " + e.message);
+            } finally {
+              setLoading(false);
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   // 🧹 Delete club
   const handleDeleteClub = (club: any) => {
-    Alert.alert("Supprimer le club", `Voulez-vous vraiment supprimer "${club.name}" ?`, [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // console.log("🧹 [COMPONENT] Starting delete for club:", club);
-            setLoading(true);
-            await deleteClub(club.id);
-            // // console.log("✅ [COMPONENT] Delete successful, removing from store...");
-            // ✅ Remove from store immediately
-            removeClubFromStore(club.id);
-            // // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
-            // 🔄 Verify deletion by refetching
-            await fetchClubs();
-            //  // console.log("✅ [COMPONENT] Backend verified, clubs refreshed");
-            Alert.alert("Supprimé ✅", "Le club a été supprimé.");
-          } catch (e: any) {
-            console.error("❌ Error deleting club:", e.message);
-            Alert.alert("Erreur", "Impossible de supprimer le club.");
-          } finally {
-            setLoading(false);
-          }
+    Alert.alert(
+      t("children.delete_club_title"),
+      t("children.delete_club_confirm").replace("{name}", club.name),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // console.log("🧹 [COMPONENT] Starting delete for club:", club);
+              setLoading(true);
+              await deleteClub(club.id);
+              // // console.log("✅ [COMPONENT] Delete successful, removing from store...");
+              // ✅ Remove from store immediately
+              removeClubFromStore(club.id);
+              // // console.log("✅ [COMPONENT] Store updated, refetching from backend...");
+              // 🔄 Verify deletion by refetching
+              await fetchClubs();
+              //  // console.log("✅ [COMPONENT] Backend verified, clubs refreshed");
+              Alert.alert(t("children.club_deleted_title"), t("children.club_deleted_msg"));
+            } catch (e: any) {
+              console.error("❌ Error deleting club:", e.message);
+              Alert.alert(t("common.error"), t("children.error_delete_club"));
+            } finally {
+              setLoading(false);
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   // ------------------- ADD CLUB -------------------
   const handleAddClub = async () => {
-    if (!newClubName.trim()) return Alert.alert("Nom manquant", "Veuillez entrer un nom de club.");
+    if (!newClubName.trim())
+      return Alert.alert(t("children.error_name_missing"), t("children.error_enter_club_name"));
     setLoading(true);
     try {
       const created = await createClub(newClubName.trim());
       await fetchClubs();
       setNewClubName("");
       setShowAddClub(false);
-      Alert.alert("Succès 🎉", "Club ajouté !");
+      Alert.alert(t("common.success") + " 🎉", t("children.club_added"));
     } catch (e: any) {
       console.error("❌ Error creating club:", e.response?.data || e.message);
-      Alert.alert("Erreur", "Impossible d’ajouter le club.");
+      Alert.alert(t("common.error"), t("children.error_add_club"));
     } finally {
       setLoading(false);
     }
@@ -234,7 +243,10 @@ export default function ChildrenScreen() {
     //   childClass,
     // });
     if (!childName.trim() || !childBirthdate || !childParent.trim() || !childGender)
-      return Alert.alert("Champs manquants", "Veuillez remplir tous les champs obligatoires.");
+      return Alert.alert(
+        t("children.error_fill_fields_title"),
+        t("children.error_fill_fields_msg")
+      );
 
     const classObj = classes.find((c: any) => c.name === childClass);
     if (!classObj || !classObj.id) {
@@ -242,7 +254,7 @@ export default function ChildrenScreen() {
       //   childClass,
       //   availableClasses: classes,
       // });
-      Alert.alert("Classe invalide", "Veuillez sélectionner une classe valide pour l'enfant.");
+      Alert.alert(t("children.error_invalid_class_title"), t("children.error_invalid_class_msg"));
       return;
     }
 
@@ -266,13 +278,13 @@ export default function ChildrenScreen() {
       setChildren([...children, created]);
       setShowAddChild(false);
 
-      let message = "L’enfant a été ajouté avec succès !";
+      let message = t("children.child_added_msg");
       if (hasMobileApp)
-        message += `\n\nIdentifiants de connexion :\n👤 ${created.username}\n🔑 ${created.password}`;
-      Alert.alert("Succès 🎉", message);
+        message += `\n\n${t("children.credentials_label")}\n👤 ${created.username}\n🔑 ${created.password}`;
+      Alert.alert(t("common.success") + " 🎉", message);
     } catch (e: any) {
       console.error("❌ Error creating child:", e.response?.data || e.message);
-      Alert.alert("Erreur", "Impossible d’ajouter l’enfant.");
+      Alert.alert(t("common.error"), t("children.error_add_child"));
     } finally {
       setLoading(false);
     }
@@ -282,7 +294,10 @@ export default function ChildrenScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted")
-      return Alert.alert("Permission refusée", "Veuillez autoriser la caméra.");
+      return Alert.alert(
+        t("children.error_camera_permission_title"),
+        t("children.error_camera_permission_msg")
+      );
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: "images",
@@ -296,7 +311,10 @@ export default function ChildrenScreen() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted")
-      return Alert.alert("Permission refusée", "Veuillez autoriser l’accès à la galerie.");
+      return Alert.alert(
+        t("children.error_gallery_permission_title"),
+        t("children.error_gallery_permission_msg")
+      );
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
@@ -368,20 +386,20 @@ export default function ChildrenScreen() {
     if (event.type === "dismissed") setShowDatePicker(false);
   };
   const handleDeleteChild = (id: number) => {
-    Alert.alert("Supprimer l’enfant", "Voulez-vous vraiment supprimer cet enfant ?", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("children.delete_child_title"), t("children.delete_child_confirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Supprimer",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           setLoading(true);
           try {
             await deleteChild(id);
             setChildren((prev) => prev.filter((child) => child.id !== id));
-            Alert.alert("Succès", "L’enfant a été supprimé avec succès.");
+            Alert.alert(t("children.child_deleted_title"), t("children.child_deleted_msg"));
           } catch (e: any) {
             console.error("❌ Error deleting child:", e.response?.data || e.message);
-            Alert.alert("Erreur", "Impossible de supprimer l’enfant.");
+            Alert.alert(t("common.error"), t("children.error_delete_child"));
           } finally {
             setLoading(false);
           }
@@ -419,7 +437,7 @@ export default function ChildrenScreen() {
           {item.name}
         </Text>
         <Text className="text-xs font-medium" style={{ color: colors.textLight }}>
-          {item.classroom_name || "Aucune classe"}
+          {item.classroom_name || t("common.no_class")}
         </Text>
       </View>
       {/* Chat icon button */}
@@ -435,12 +453,12 @@ export default function ChildrenScreen() {
             // console.log("[CHILDREN] Opening chat with:", { parentId, adminId });
 
             if (!parentId) {
-              alert("Impossible de trouver l'identifiant du parent pour ce profil.");
+              alert(t("children.error_parent_not_found"));
               return;
             }
 
             if (!adminId) {
-              alert("Admin ID not found. Please log in again.");
+              alert(t("children.error_admin_not_found"));
               return;
             }
 
@@ -458,7 +476,7 @@ export default function ChildrenScreen() {
             });
           } catch (err: any) {
             console.error("❌ Error fetching child details for chat:", err?.message || err);
-            alert("Erreur lors de la récupération des informations du parent.");
+            alert(t("children.error_fetching_parent"));
           }
         }}
         style={{ marginRight: 24 }}
@@ -972,10 +990,10 @@ export default function ChildrenScreen() {
             <View className="items-center mb-6">
               <TouchableOpacity
                 onPress={() =>
-                  Alert.alert("Photo de l'enfant", "Choisissez une option :", [
-                    { text: "📷 Prendre une photo", onPress: takePhoto },
-                    { text: "🖼️ Galerie", onPress: pickImage },
-                    { text: "Annuler", style: "cancel" },
+                  Alert.alert(t("children.photo_title"), t("children.photo_choose"), [
+                    { text: t("children.take_photo"), onPress: takePhoto },
+                    { text: t("children.from_gallery"), onPress: pickImage },
+                    { text: t("common.cancel"), style: "cancel" },
                   ])
                 }
                 activeOpacity={0.9}

@@ -17,6 +17,8 @@ import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
 import { getOrCreateConversation, getMessages, sendMessage } from "@/api/chat";
 import { useLocalSearchParams } from "expo-router";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 type Message = {
   id: string;
@@ -32,6 +34,8 @@ export default function Chat() {
   const userId = useAppStore((state) => state.userId);
   const tenant = useAppStore((state) => state.tenant);
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
   // // console.log("[Chat] Parent screen loaded - adminId:", adminId, "parentId:", userId);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -43,7 +47,7 @@ export default function Chat() {
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
-      let poller: NodeJS.Timeout | null = null;
+      let poller: ReturnType<typeof setInterval> | null = null;
 
       const fetchMessages = async (cid: number) => {
         try {
@@ -160,7 +164,7 @@ export default function Chat() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
-      <HeaderBar title="Discussion" showBack={true} />
+      <HeaderBar title={t("chat.title")} showBack={true} />
 
       {/* Messages */}
       <KeyboardAvoidingView
@@ -171,7 +175,7 @@ export default function Chat() {
         {loading ? (
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color={colors.accent} />
-            <Text className="mt-3 text-gray-600">Chargement des messages...</Text>
+            <Text className="mt-3 text-gray-600">{t("chat.loading_messages")}</Text>
           </View>
         ) : (
           <>
@@ -216,7 +220,7 @@ export default function Chat() {
               <TextInput
                 value={input}
                 onChangeText={setInput}
-                placeholder="Écrire un message..."
+                placeholder={t("chat.send_message")}
                 className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-gray-800"
               />
               <TouchableOpacity

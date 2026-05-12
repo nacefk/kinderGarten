@@ -9,6 +9,8 @@ import { useAppStore } from "@/store/useAppStore";
 import HeaderBar from "@/components/Header";
 import { getConversations, deleteConversation } from "@/api/chat";
 import { getChildren } from "@/api/children";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 const READ_STORAGE_KEY = "chat_read_state";
 
@@ -30,6 +32,8 @@ export default function ChatListScreen() {
   const router = useRouter();
   const tenant = useAppStore((state) => state.tenant);
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
 
   const [conversations, setConversations] = useState<ParentPreview[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +76,7 @@ export default function ChatListScreen() {
 
       const mapped = (data.results || []).map((conv: any) => {
         const parentName =
-          conv.other_user_name || conv.name || conv.parent_name || "Parent inconnu";
+          conv.other_user_name || conv.name || conv.parent_name || t("chat.unknown_parent");
         const childMatch =
           parentChildMap.get(parentName.toLowerCase()) ||
           parentChildMap.get((conv.other_user_username || "").toLowerCase()) ||
@@ -127,12 +131,12 @@ export default function ChatListScreen() {
       }
       onLongPress={() => {
         Alert.alert(
-          "Supprimer la conversation",
-          `Voulez-vous supprimer la conversation avec ${item.name} ?`,
+          t("chat.delete_conversation_title"),
+          t("chat.delete_conversation_confirm").replace("{name}", item.name),
           [
-            { text: "Annuler", style: "cancel" },
+            { text: t("common.cancel"), style: "cancel" },
             {
-              text: "Supprimer",
+              text: t("common.delete"),
               style: "destructive",
               onPress: async () => {
                 await deleteConversation(item.id);
@@ -197,14 +201,14 @@ export default function ChatListScreen() {
   return (
     <View className="flex-1 " style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <HeaderBar title="Messagerie" showBack={true} />
+      <HeaderBar title={t("chat.messaging_title")} showBack={true} />
 
       <Text className="text-2xl font-bold mb-6 mx-5 mt-4" style={{ color: colors.textDark }}>
-        Messages
+        {t("chat.messages")}
       </Text>
 
       {loading ? (
-        <Text className="mx-5 mt-10 text-gray-500">Chargement des conversations...</Text>
+        <Text className="mx-5 mt-10 text-gray-500">{t("chat.loading_conversations")}</Text>
       ) : (
         <FlatList
           data={conversations}

@@ -130,7 +130,7 @@ export default function ExtraHoursScreen() {
       setGroupedData(sortedGrouped);
     } catch (err: any) {
       console.error("❌ Error loading extra hours:", err.message);
-      Alert.alert("Error", "Failed to load extra hours requests.");
+      Alert.alert(t("common.error"), t("dashboard.error_load_extra_hours"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -153,23 +153,23 @@ export default function ExtraHoursScreen() {
     } catch (e: any) {
       const apiMessage = e?.response?.data || e?.message || "";
       console.error("❌ Approve error:", apiMessage);
-      let msg = "Unable to approve request.";
+      let msg = t("dashboard.error_approve");
       if (typeof apiMessage === "string") {
         if (
           apiMessage.toLowerCase().includes("already approved") ||
           apiMessage.toLowerCase().includes("already rejected")
         ) {
-          msg = "This request has already been processed.";
+          msg = t("dashboard.error_already_processed");
         } else if (apiMessage.toLowerCase().includes("does not exist")) {
-          msg = "This request no longer exists.";
+          msg = t("dashboard.error_not_exists");
         } else if (
           apiMessage.toLowerCase().includes("not allowed") ||
           apiMessage.toLowerCase().includes("permission")
         ) {
-          msg = "You do not have permission to approve this request.";
+          msg = t("dashboard.error_no_permission_approve");
         }
       }
-      Alert.alert("Error", msg);
+      Alert.alert(t("common.error"), msg);
     }
   };
 
@@ -182,23 +182,23 @@ export default function ExtraHoursScreen() {
     } catch (e: any) {
       const apiMessage = e?.response?.data || e?.message || "";
       console.error("❌ Reject error:", apiMessage);
-      let msg = "Unable to reject request.";
+      let msg = t("dashboard.error_reject");
       if (typeof apiMessage === "string") {
         if (
           apiMessage.toLowerCase().includes("already approved") ||
           apiMessage.toLowerCase().includes("already rejected")
         ) {
-          msg = "This request has already been processed.";
+          msg = t("dashboard.error_already_processed");
         } else if (apiMessage.toLowerCase().includes("does not exist")) {
-          msg = "This request no longer exists.";
+          msg = t("dashboard.error_not_exists");
         } else if (
           apiMessage.toLowerCase().includes("not allowed") ||
           apiMessage.toLowerCase().includes("permission")
         ) {
-          msg = "You do not have permission to reject this request.";
+          msg = t("dashboard.error_no_permission_reject");
         }
       }
-      Alert.alert("Error", msg);
+      Alert.alert(t("common.error"), msg);
     }
   };
 
@@ -396,7 +396,7 @@ export default function ExtraHoursScreen() {
                 const childName =
                   typeof req.child === "string"
                     ? req.child
-                    : req.child?.name || req.child_name || "Unknown";
+                    : req.child?.name || req.child_name || t("common.unknown");
                 const duration = req.duration || 0;
 
                 return (

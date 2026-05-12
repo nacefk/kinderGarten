@@ -79,8 +79,8 @@ export function getColors(tenantPrimaryColor?: string | null, tenantSecondaryCol
     return /^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/.test(color);
   };
 
-  const validPrimary = isValidColor(tenantPrimaryColor) ? tenantPrimaryColor : PRIMARY;
-  const validSecondary = isValidColor(tenantSecondaryColor) ? tenantSecondaryColor : SECONDARY;
+  const validPrimary = isValidColor(tenantPrimaryColor) ? tenantPrimaryColor! : PRIMARY;
+  const validSecondary = isValidColor(tenantSecondaryColor) ? tenantSecondaryColor! : SECONDARY;
 
  // console.log("🎨 [Colors] Using - Primary:", validPrimary, "| Secondary:", validSecondary);
 

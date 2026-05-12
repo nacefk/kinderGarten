@@ -17,6 +17,8 @@ import { useRouter } from "expo-router";
 import HeaderBar from "@/components/Header";
 import { api } from "@/api/api";
 import { API_ENDPOINTS } from "@/config/api";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 type PresenceStatus = "present" | "absent";
 
@@ -25,6 +27,8 @@ export default function PresenceScreen() {
   const { data, actions } = useAppStore();
   const tenant = useAppStore((state) => state.tenant);
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
   const classes = data.classList || [];
   const children = data.childrenList || [];
 
@@ -100,13 +104,10 @@ export default function PresenceScreen() {
       };
 
       const res = await api.post(API_ENDPOINTS.ATTENDANCE_UPDATE, payload);
-      Alert.alert("Succès ✅", "Les présences ont été enregistrées avec succès.");
+      Alert.alert(t("presence.save_success_title"), t("presence.save_success_msg"));
     } catch (error: any) {
       console.error("❌ Error saving attendance:", error.response?.data || error.message);
-      Alert.alert(
-        "Erreur",
-        error.response?.data?.detail || "Impossible d'enregistrer les présences."
-      );
+      Alert.alert(t("common.error"), error.response?.data?.detail || t("presence.error_save"));
     } finally {
       setLoading(false);
     }
@@ -140,7 +141,7 @@ export default function PresenceScreen() {
             {item.name}
           </Text>
           <Text className="text-xs" style={{ color: colors.textLight }}>
-            {item.className} · {item.age} ans
+            {item.className} · {item.age} {t("presence.age_suffix")}
           </Text>
         </View>
 
@@ -156,7 +157,7 @@ export default function PresenceScreen() {
               color: isPresent ? colors.successDark : colors.errorDark,
             }}
           >
-            {isPresent ? "Présent" : "Absent"}
+            {isPresent ? t("dashboard.present_singular") : t("dashboard.absent_singular")}
           </Text>
         </View>
       </TouchableOpacity>
@@ -165,12 +166,12 @@ export default function PresenceScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
-      <HeaderBar title="Gestion de la Présence" showBack={true} />
+      <HeaderBar title={t("presence.title")} showBack={true} />
 
       {loading ? (
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={{ color: colors.textLight, marginTop: 10 }}>Chargement...</Text>
+          <Text style={{ color: colors.textLight, marginTop: 10 }}>{t("common.loading")}</Text>
         </View>
       ) : (
         <>
@@ -186,12 +187,12 @@ export default function PresenceScreen() {
             {/* Header Row */}
             <View className="mb-4 flex-row justify-between items-center">
               <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
-                Gestion de la Présence
+                {t("presence.title")}
               </Text>
               <TouchableOpacity onPress={markAllPresent} className="flex-row items-center">
                 <Ionicons name="refresh-outline" size={18} color={colors.accent} />
                 <Text className="ml-1 text-sm font-medium" style={{ color: colors.accent }}>
-                  Tout présent
+                  {t("presence.mark_all_present")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -217,7 +218,7 @@ export default function PresenceScreen() {
                     fontWeight: "500",
                   }}
                 >
-                  Tout
+                  {t("presence.filter_all")}
                 </Text>
               </TouchableOpacity>
 
@@ -259,7 +260,7 @@ export default function PresenceScreen() {
               />
             ) : (
               <Text className="text-center text-base mt-4" style={{ color: colors.textLight }}>
-                Aucun enfant trouvé.
+                {t("presence.no_children")}
               </Text>
             )}
           </ScrollView>
@@ -270,7 +271,7 @@ export default function PresenceScreen() {
             style={{
               backgroundColor: colors.background,
               borderTopWidth: 1,
-              borderColor: colors.lightBorder,
+              borderColor: colors.border,
             }}
           >
             <TouchableOpacity
@@ -282,7 +283,7 @@ export default function PresenceScreen() {
               }}
             >
               <Text className="text-center text-white text-lg font-semibold">
-                {loading ? "Enregistrement..." : "Sauvegarder les modifications"}
+                {loading ? t("presence.saving") : t("presence.save_button")}
               </Text>
             </TouchableOpacity>
           </View>

@@ -129,23 +129,22 @@ export default function Login() {
       });
 
       // ✅ Provide detailed error messages
-      let errorMessage = "Invalid credentials. Please try again.";
+      let errorMessage = t("login.error_invalid_credentials");
 
       if (error.response?.status === 401) {
-        errorMessage = "Invalid username or password. Please check your credentials.";
+        errorMessage = t("login.error_wrong_password");
       } else if (error.response?.status === 404) {
-        errorMessage = "Kindergarten not found. Check the tenant slug: " + tenantSlug;
+        errorMessage = t("login.error_tenant_not_found") + tenantSlug;
       } else if (error.response?.status === 400) {
         errorMessage =
           error.response?.data?.detail ||
           error.response?.data?.non_field_errors?.[0] ||
-          "Invalid request. Please check all fields.";
+          t("login.error_invalid_request");
       } else if (error.message?.includes("Network") || error.code === "ECONNREFUSED") {
-        errorMessage =
-          "Cannot connect to server. Check your internet connection and server address.";
+        errorMessage = t("login.error_network");
       }
 
-      Alert.alert("Login Failed", errorMessage);
+      Alert.alert(t("login.error_title"), errorMessage);
     } finally {
       setLoading(false);
     }

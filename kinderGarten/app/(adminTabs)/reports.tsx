@@ -105,17 +105,17 @@ export default function ReportsScreen() {
   };
 
   const behaviorOptions = [
-    "Calme",
-    "Actif(ve)",
-    "Fatigué(e)",
-    "Agité(e)",
-    "Malade",
-    "Heureux(se)",
-    "Triste",
-    "Concentré(e)",
-    "En colère",
-    "Timide",
-    "Sociable",
+    t("reports.behavior_calm"),
+    t("reports.behavior_active"),
+    t("reports.behavior_tired"),
+    t("reports.behavior_restless"),
+    t("reports.behavior_sick"),
+    t("reports.behavior_happy"),
+    t("reports.behavior_sad"),
+    t("reports.behavior_focused"),
+    t("reports.behavior_angry"),
+    t("reports.behavior_shy"),
+    t("reports.behavior_social"),
   ];
 
   // ------------------------------------------------------------------------
@@ -785,8 +785,8 @@ export default function ReportsScreen() {
           <View className="flex-row items-center justify-between mb-6">
             <Text className="text-2xl font-bold" style={{ color: colors.textDark }}>
               {selectedChildren.length > 1
-                ? `Rapport de groupe (${selectedChildren.length} enfants)`
-                : `Rapport de ${selectedChildren[0]?.name}`}
+                ? t("reports.group_report_title").replace("{count}", String(selectedChildren.length))
+                : t("reports.single_report_title").replace("{name}", selectedChildren[0]?.name || "")}
             </Text>
             <TouchableOpacity onPress={() => setShowModal(false)}>
               <Ionicons name="close-circle" size={28} color={colors.accent} />

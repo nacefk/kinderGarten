@@ -4,21 +4,21 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { useFocusEffect } from "expo-router";
 import { RotateCcw, Maximize2, Play } from "lucide-react-native";
 import colors from "@/config/colors";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 export default function LiveView() {
   const [isError, setIsError] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
 
   const videoUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"; // Replace later
 
   // 🎥 Initialize video player
-  const player = useVideoPlayer(videoUrl, (status) => {
-    setIsBuffering(status.isBuffering ?? false);
-    if (status.error) {
-      console.error("Video error:", status.error);
-      setIsError(true);
-    }
+  const player = useVideoPlayer(videoUrl, (p) => {
+    p.loop = false;
   });
 
   // ▶️ Play on tap
@@ -53,11 +53,11 @@ export default function LiveView() {
         <View className="flex-row items-center">
           <View className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: colors.error }} />
           <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-            Live View
+            {t("live.title")}
           </Text>
         </View>
         <Text className="text-sm" style={{ color: colors.textLight }}>
-          Watching: Emma Johnson 👶
+          {t("live.watching").replace("{name}", "Emma Johnson")}
         </Text>
       </View>
 
@@ -69,7 +69,7 @@ export default function LiveView() {
       >
         {isError ? (
           <Text className="text-sm text-center" style={{ color: colors.textLight }}>
-            ⚠️ Unable to load stream. Try again later.
+            {t("live.error_stream")}
           </Text>
         ) : isBuffering ? (
           <ActivityIndicator size="large" color={colors.accent} />

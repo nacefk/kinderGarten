@@ -159,20 +159,20 @@ export default function DashboardScreen() {
     } catch (e: any) {
       const apiMessage = e?.response?.data || e?.message || "";
       console.error("❌ Approve error:", apiMessage);
-      let msg = "Unable to approve request.";
+      let msg = t("dashboard.error_approve");
       if (typeof apiMessage === "string") {
         if (
           apiMessage.toLowerCase().includes("already approved") ||
           apiMessage.toLowerCase().includes("already rejected")
         ) {
-          msg = "This request has already been processed.";
+          msg = t("dashboard.error_already_processed");
         } else if (apiMessage.toLowerCase().includes("does not exist")) {
-          msg = "This request no longer exists.";
+          msg = t("dashboard.error_not_exists");
         } else if (
           apiMessage.toLowerCase().includes("not allowed") ||
           apiMessage.toLowerCase().includes("permission")
         ) {
-          msg = "You do not have permission to approve this request.";
+          msg = t("dashboard.error_no_permission_approve");
         }
       }
       alert(msg);
@@ -191,20 +191,20 @@ export default function DashboardScreen() {
     } catch (e: any) {
       const apiMessage = e?.response?.data || e?.message || "";
       console.error("❌ Reject error:", apiMessage);
-      let msg = "Unable to reject request.";
+      let msg = t("dashboard.error_reject");
       if (typeof apiMessage === "string") {
         if (
           apiMessage.toLowerCase().includes("already approved") ||
           apiMessage.toLowerCase().includes("already rejected")
         ) {
-          msg = "This request has already been processed.";
+          msg = t("dashboard.error_already_processed");
         } else if (apiMessage.toLowerCase().includes("does not exist")) {
-          msg = "This request no longer exists.";
+          msg = t("dashboard.error_not_exists");
         } else if (
           apiMessage.toLowerCase().includes("not allowed") ||
           apiMessage.toLowerCase().includes("permission")
         ) {
-          msg = "You do not have permission to reject this request.";
+          msg = t("dashboard.error_no_permission_reject");
         }
       }
       alert(msg);
@@ -351,7 +351,7 @@ export default function DashboardScreen() {
           ) : Array.isArray(absencesToday) && absencesToday?.length > 0 ? (
             <View style={{ marginTop: 8 }}>
               {absencesToday.map((abs, idx) => {
-                const name = abs.child_name || abs.child || "Unknown";
+                const name = abs.child_name || abs.child || t("common.unknown");
                 return (
                   <View
                     key={abs.id || idx}
@@ -567,7 +567,7 @@ export default function DashboardScreen() {
                     <Text className="font-medium" style={{ color: colors.textDark }}>
                       {typeof req.child === "string"
                         ? req.child
-                        : req.child?.name || req.child_name || "Unknown"}
+                        : req.child?.name || req.child_name || t("common.unknown")}
                     </Text>
                     <Text className="text-sm" style={{ color: colors.textLight }}>
                       {t("dashboard.extra_hours_duration")}: {req.duration ?? 0} min
@@ -585,7 +585,7 @@ export default function DashboardScreen() {
                       textAlign: "center",
                     }}
                   >
-                    +{extraHours.length - 3} more
+                    +{extraHours.length - 3} {t("dashboard.extra_hours_more")}
                   </Text>
                 </View>
               )}

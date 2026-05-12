@@ -6,6 +6,9 @@ import { ChevronLeft, ChevronRight, Download, X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Dimensions, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { useAppStore } from "@/store/useAppStore";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
+import { getColors } from "@/config/colors";
 
 const { width, height } = Dimensions.get("window");
 
@@ -17,6 +20,10 @@ export default function StoryViewer() {
 
   // Get gallery items from app store
   const galleryItems = useAppStore((state) => state.data.galleryItems);
+  const tenant = useAppStore((state) => state.tenant);
+  const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
   const stories = galleryItems.length > 0 ? galleryItems : [];
 
   const handleNext = () => {
@@ -46,10 +53,10 @@ export default function StoryViewer() {
 
       // Save to gallery
       await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert("✅ Saved", "File has been saved to your gallery.");
+      Alert.alert(t("story.saved_title"), t("story.saved_msg"));
     } catch (error) {
       console.error("Download failed:", error);
-      Alert.alert("Error", "Failed to download file.");
+      Alert.alert(t("common.error"), t("story.error_download"));
     }
   };
 

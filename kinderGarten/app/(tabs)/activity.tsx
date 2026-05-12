@@ -19,6 +19,8 @@ import { getMyChild } from "@/api/children";
 import { getPlans, getEvents } from "@/api/planning";
 import { getReports } from "@/api/report";
 import { useAppStore } from "@/store/useAppStore";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 // Day name mapping constant
 const DAY_MAP: Record<string, string> = {
@@ -34,6 +36,8 @@ const DAY_MAP: Record<string, string> = {
 export default function Activity() {
   const tenant = useAppStore((state) => state.tenant);
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<"today" | "week" | "upcoming">("today");
   const [selectedDay, setSelectedDay] = useState<string>("Lundi");
@@ -117,7 +121,7 @@ export default function Activity() {
             grouped[frenchDay].push({
               startTime,
               endTime,
-              title: item.title || "Untitled",
+              title: item.title || t("common.untitled"),
               detail: item.description || "",
               icon: "🧩",
             });
@@ -139,7 +143,7 @@ export default function Activity() {
               grouped[frenchDay].push({
                 startTime,
                 endTime,
-                title: activity.title || "Untitled",
+                title: activity.title || t("common.untitled"),
                 detail: activity.description || "",
                 icon: "🧩",
               });
@@ -151,7 +155,7 @@ export default function Activity() {
             if (!grouped[day]) grouped[day] = [];
             grouped[day].push({
               time: item.time || "N/A",
-              title: item.title || "Untitled",
+              title: item.title || t("common.untitled"),
               detail: item.description || "",
               icon: "🧩",
             });
@@ -191,7 +195,7 @@ export default function Activity() {
         .filter((e: any) => e && e.date && new Date(e.date) > new Date())
         .map((e: any) => ({
           icon: "🎉",
-          title: e.title || "Event",
+          title: e.title || t("common.event"),
           detail: e.description || "",
           date: e.date,
         }));
@@ -199,7 +203,7 @@ export default function Activity() {
       setEvents(formattedEvents);
     } catch (error: any) {
       console.error("Error loading activity data:", error.message);
-      Alert.alert("Erreur", "Impossible de charger les activités. Veuillez réessayer.");
+      Alert.alert(t("common.error"), t("activity.error_loading"));
     } finally {
       setLoading(false);
     }
@@ -224,7 +228,7 @@ export default function Activity() {
         style={{ backgroundColor: colors.background }}
       >
         <ActivityIndicator size="large" color={colors.accent} />
-        <Text style={{ color: colors.textLight, marginTop: 8 }}>Chargement des activités...</Text>
+        <Text style={{ color: colors.textLight, marginTop: 8 }}>{t("activity.loading")}</Text>
       </View>
     );
   }
@@ -236,7 +240,7 @@ export default function Activity() {
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar barStyle={"dark-content"} />
 
-      <HeaderBar title="Activité" showBack={true} />
+      <HeaderBar title={t("tabs.activity")} showBack={true} />
 
       {/* Tabs */}
       <View
@@ -244,9 +248,9 @@ export default function Activity() {
         style={{ backgroundColor: colors.cardBackground }}
       >
         {[
-          { key: "today", label: "Aujourd’hui" },
-          { key: "week", label: "Cette semaine" },
-          { key: "upcoming", label: "À venir" },
+          { key: "today", label: t("activity.today") },
+          { key: "week", label: t("activity.this_week") },
+          { key: "upcoming", label: t("activity.upcoming") },
         ].map((tab) => (
           <TouchableOpacity
             key={tab.key}
@@ -277,7 +281,7 @@ export default function Activity() {
         {/* TODAY - Programme du jour */}
         {selectedFilter === "today" && (
           <>
-            <Card title="Programme du jour">
+            <Card title={t("activity.program_today")}>
               {todayTimeline.length > 0 ? (
                 <View className="space-y-2">
                   {todayTimeline.map((item, index) => (
@@ -337,13 +341,13 @@ export default function Activity() {
                 <View className="items-center py-8">
                   <Text className="text-4xl mb-3">📅</Text>
                   <Text className="text-center" style={{ color: colors.textLight }}>
-                    Aucune activité prévu aujourd'hui
+                    {t("activity.no_activity")}
                   </Text>
                 </View>
               )}
             </Card>
 
-            <Card title="Photos & vidéos du jour">
+            <Card title={t("activity.photos_videos")}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {galleryItems?.length > 0 ? (
                   galleryItems.map((item, index) => (
@@ -357,7 +361,7 @@ export default function Activity() {
                             style={{ backgroundColor: colors.textDark }}
                           >
                             <Text className="text-xs" style={{ color: colors.cardBackground }}>
-                              🎬 Vidéo
+                              {t("activity.video_label")}
                             </Text>
                           </View>
                         )}
@@ -379,7 +383,7 @@ export default function Activity() {
                     </View>
                   ))
                 ) : (
-                  <Text style={{ color: colors.textLight }}>Aucun média disponible.</Text>
+                  <Text style={{ color: colors.textLight }}>{t("activity.no_media")}</Text>
                 )}
               </ScrollView>
             </Card>
@@ -431,7 +435,7 @@ export default function Activity() {
               </View>
             )}
 
-            <Card title={`Programme du ${selectedDay}`}>
+            <Card title={`${t("activity.program_today")} - ${selectedDay}`}>
               {timelineByDay?.[selectedDay]?.length > 0 ? (
                 <View className="space-y-2">
                   {timelineByDay[selectedDay].map((item, index) => (
@@ -491,7 +495,7 @@ export default function Activity() {
                 <View className="items-center py-8">
                   <Text className="text-4xl mb-3">📅</Text>
                   <Text className="text-center" style={{ color: colors.textLight }}>
-                    Aucune activité pour {selectedDay}
+                    {t("activity.no_activity")} - {selectedDay}
                   </Text>
                 </View>
               )}
@@ -501,7 +505,7 @@ export default function Activity() {
 
         {/* 🔮 À VENIR — ÉVÉNEMENTS UNIQUEMENT */}
         {selectedFilter === "upcoming" && (
-          <Card title="Événements à venir">
+          <Card title={t("activity.upcoming_events")}>
             {events.length > 0 ? (
               events.map((event, index) => {
                 const eventDate = new Date(event.date);
@@ -523,10 +527,10 @@ export default function Activity() {
                     </View>
                     <View className="flex-1">
                       <Text className="font-medium" style={{ color: colors.textDark }}>
-                        {event.title || "Événement"}
+                        {event.title || t("activity.event_fallback")}
                       </Text>
                       <Text style={{ color: colors.text }}>
-                        {event.detail || event.description || "Aucune description"}
+                        {event.detail || event.description || t("activity.no_description")}
                       </Text>
                       <Text className="text-sm mt-1" style={{ color: colors.textLight }}>
                         {formattedDate}
@@ -537,7 +541,7 @@ export default function Activity() {
               })
             ) : (
               <Text className="text-center py-4" style={{ color: colors.textLight }}>
-                Aucun événement à venir.
+                {t("activity.no_events")}
               </Text>
             )}
           </Card>

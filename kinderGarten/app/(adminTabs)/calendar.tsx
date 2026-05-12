@@ -91,7 +91,7 @@ export default function CalendarScreen() {
           if (child && child.classroom) {
             const classroom: ClassItem = {
               id: child.classroom.id || child.classroom,
-              name: child.classroom.name || `Class ${child.classroom.id}`,
+              name: child.classroom.name || t("common.classroom").replace("{id}", child.classroom.id),
             };
             setClasses([classroom]);
             setSelectedClass(classroom);
@@ -108,7 +108,7 @@ export default function CalendarScreen() {
         }
       } catch (e) {
         console.error("❌ Error loading calendar:", e);
-        Alert.alert("Erreur", "Impossible de charger les classes.");
+        Alert.alert(t("common.error"), t("calendar.error_load_classes"));
       }
     })();
   }, []);
@@ -162,7 +162,7 @@ export default function CalendarScreen() {
           plan.classroom_detail?.name ||
           plan.class_name_detail?.name ||
           plan.class_name?.name ||
-          "Inconnu";
+          t("calendar.unknown_class");
         // console.log("🔍 Processing plan ID:", plan.id, "| Class:", className, "| Has starts_at?", !!plan.starts_at, "| Starts_at:", plan.starts_at);
 
         // 🔥 First time we encounter a class → pre-fill all 7 days
@@ -278,7 +278,7 @@ export default function CalendarScreen() {
       setWeeklyPlans(groupedPlans);
     } catch (error) {
       console.error(error);
-      Alert.alert("Erreur", "Impossible de charger les données du planning.");
+      Alert.alert(t("common.error"), t("calendar.error_load_planning"));
     }
   };
 
@@ -340,16 +340,16 @@ export default function CalendarScreen() {
 
   const handleSaveEvent = async () => {
     if (!newTitle.trim()) {
-      Alert.alert("Titre manquant", "Veuillez saisir un titre pour l'événement.");
+      Alert.alert(t("calendar.error_event_title_missing"), t("calendar.error_event_title_msg"));
       return;
     }
     if (!selectedClass) {
-      Alert.alert("Classe manquante", "Veuillez sélectionner une classe.");
+      Alert.alert(t("calendar.error_class_missing"), t("calendar.error_class_missing_msg"));
       return;
     }
 
     if (!selectedEventClass) {
-      Alert.alert("Classe manquante", "Veuillez sélectionner une classe ou 'Tous'.");
+      Alert.alert(t("calendar.error_class_missing"), t("calendar.error_class_or_all"));
       return;
     }
 
@@ -368,7 +368,7 @@ export default function CalendarScreen() {
       if (editingEvent) await updateEvent(editingEvent.id, payload);
       else await createEvent(payload);
 
-      Alert.alert("Succès ✅", "L'événement a été enregistré.");
+      Alert.alert(t("calendar.event_saved_title"), t("calendar.event_saved_msg"));
       setShowEventModal(false);
       setEditingEvent(null);
       setNewTitle("");
@@ -379,16 +379,16 @@ export default function CalendarScreen() {
       await fetchData(selectedClass.id);
     } catch (e) {
       console.error(e);
-      Alert.alert("Erreur", "Impossible d'enregistrer l'événement.");
+      Alert.alert(t("common.error"), t("calendar.error_save_event"));
     }
   };
 
   const handleDeleteEvent = async () => {
     if (!editingEvent) return;
-    Alert.alert("Supprimer l'événement", "Voulez-vous vraiment supprimer cet événement ?", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("calendar.delete_event_title"), t("calendar.delete_event_confirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Supprimer",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           try {
@@ -396,9 +396,9 @@ export default function CalendarScreen() {
             setShowEventModal(false);
             setEditingEvent(null);
             await fetchData(selectedClass?.id);
-            Alert.alert("Supprimé ✅", "L'événement a été supprimé.");
+            Alert.alert(t("calendar.event_deleted_title"), t("calendar.event_deleted_msg"));
           } catch {
-            Alert.alert("Erreur", "Impossible de supprimer l'événement.");
+            Alert.alert(t("common.error"), t("calendar.error_delete_event"));
           }
         },
       },
@@ -446,7 +446,7 @@ export default function CalendarScreen() {
       setTemplates(loadedTemplates);
     } catch (error) {
       console.error("Error loading templates:", error);
-      Alert.alert("Erreur", "Impossible de charger les templates.");
+      Alert.alert(t("common.error"), t("calendar.error_load_template"));
     }
   };
 
@@ -521,11 +521,14 @@ export default function CalendarScreen() {
 
   const handleSavePlan = async () => {
     if (!newPlanTitle.trim()) {
-      Alert.alert("Titre manquant", "Veuillez saisir le titre de l'activité.");
+      Alert.alert(
+        t("calendar.error_activity_title_missing"),
+        t("calendar.error_activity_title_msg")
+      );
       return;
     }
     if (!selectedClass) {
-      Alert.alert("Classe manquante", "Veuillez sélectionner une classe.");
+      Alert.alert(t("calendar.error_class_missing"), t("calendar.error_class_missing_msg"));
       return;
     }
 
@@ -534,7 +537,7 @@ export default function CalendarScreen() {
     const endTime = selectedEndTime || newPlanEndTime;
 
     if (!startTime || !endTime) {
-      Alert.alert("Horaire manquant", "Veuillez sélectionner l'heure de début et de fin.");
+      Alert.alert(t("calendar.error_time_missing"), t("calendar.error_time_missing_msg"));
       return;
     }
 
@@ -551,8 +554,8 @@ export default function CalendarScreen() {
 
     if (overlap) {
       Alert.alert(
-        "Conflit d'horaire",
-        `L'activité "${overlap.title}" (${overlap.time} - ${overlap.endTime || overlap.time}) chevauche cet horaire.`
+        t("calendar.error_time_conflict"),
+        t("calendar.overlap_body").replace("{title}", overlap.title).replace("{start}", overlap.time).replace("{end}", overlap.endTime || overlap.time)
       );
       return;
     }
@@ -617,7 +620,7 @@ export default function CalendarScreen() {
       // Refresh data from backend
       await fetchData(selectedClass?.id);
 
-      Alert.alert("Succès ✅", "L'activité a été enregistrée.");
+      Alert.alert(t("calendar.activity_saved_title"), t("calendar.activity_saved_msg"));
       setShowPlanModal(false);
       setEditingPlan(null);
       setNewPlanTitle("");
@@ -631,7 +634,7 @@ export default function CalendarScreen() {
       console.error("📋 Error response data:", JSON.stringify(e.response?.data));
 
       // Show detailed error message
-      let errorMessage = "Impossible d'enregistrer l'activité.";
+      let errorMessage = t("calendar.error_save_activity");
 
       if (e.message) {
         errorMessage = e.message;
@@ -655,17 +658,17 @@ export default function CalendarScreen() {
         errorMessage = JSON.stringify(e.response.data);
       }
 
-      Alert.alert("Erreur", errorMessage);
+      Alert.alert(t("common.error"), errorMessage);
     }
   };
 
   const handleDeletePlan = async () => {
     if (!editingPlan?.id) return;
 
-    Alert.alert("Supprimer l'activité", "Voulez-vous vraiment supprimer cette activité ?", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("calendar.delete_activity_title"), t("calendar.delete_activity_confirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Supprimer",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           try {
@@ -673,9 +676,9 @@ export default function CalendarScreen() {
             setShowPlanModal(false);
             setEditingPlan(null);
             await fetchData();
-            Alert.alert("Supprimé ✅", "L'activité a été supprimée.");
+            Alert.alert(t("calendar.activity_deleted_title"), t("calendar.activity_deleted_msg"));
           } catch (e) {
-            Alert.alert("Erreur", "Impossible de supprimer l'activité.");
+            Alert.alert(t("common.error"), t("calendar.error_delete_activity"));
           }
         },
       },
@@ -743,10 +746,10 @@ export default function CalendarScreen() {
 
     if (activities.length === 0) {
       Alert.alert(
-        "Aucune activité",
+        t("calendar.no_activities_template"),
         day
-          ? `Aucune activité pour ${day}. Veuillez en ajouter avant de sauvegarder.`
-          : "Veuillez ajouter au moins une activité avant de sauvegarder."
+          ? t("calendar.no_activities_for_day").replace("{day}", day)
+          : t("calendar.add_activities_before_save")
       );
       return;
     }
@@ -758,40 +761,43 @@ export default function CalendarScreen() {
   // Confirm save template
   const handleConfirmSaveTemplate = async () => {
     if (!templateName.trim()) {
-      Alert.alert("Nom manquant", "Veuillez entrer un nom pour le template.");
+      Alert.alert(t("calendar.error_template_name"), t("calendar.error_template_name_msg"));
       return;
     }
 
     try {
       await savePlanTemplate(templateName, allWeekPlanActivities);
-      Alert.alert("Succès ✅", `Template "${templateName}" sauvegardé.`);
+      Alert.alert(
+        t("calendar.event_saved_title"),
+        t("calendar.template_saved").replace("{name}", templateName)
+      );
       setShowSaveTemplateModal(false);
       setTemplateName("");
       setAllWeekPlanActivities([]);
     } catch (error) {
       console.error("Error saving template:", error);
-      Alert.alert("Erreur", "Impossible de sauvegarder le template.");
+      Alert.alert(t("common.error"), t("calendar.error_save_template"));
     }
   };
 
   // Load a template into a specific day
   const handleLoadTemplate = async (template: PlanTemplate) => {
     if (!selectedDayForLoad) {
-      Alert.alert("Erreur", "Veuillez sélectionner un jour.");
+      Alert.alert(t("common.error"), t("calendar.error_select_day"));
       return;
     }
 
     Alert.alert(
-      "Charger le template",
-      `Êtes-vous sûr de vouloir charger le template "${template.name}" dans ${selectedDayForLoad} ?`,
+      t("calendar.load_template_title"),
+      t("calendar.load_template_confirm").replace("{name}", template.name).replace("{day}", selectedDayForLoad),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Charger",
+          text: t("calendar.load_button"),
           onPress: async () => {
             try {
               if (!selectedClass) {
-                Alert.alert("Erreur", "Veuillez sélectionner une classe.");
+                Alert.alert(t("common.error"), t("calendar.error_select_class"));
                 return;
               }
 
@@ -832,12 +838,12 @@ export default function CalendarScreen() {
               setShowSelectDayForLoad(false);
               setSelectedDayForLoad(null);
               Alert.alert(
-                "Succès ✅",
-                `Template "${template.name}" chargé dans ${selectedDayForLoad}.`
+                t("calendar.event_saved_title"),
+                t("calendar.template_loaded").replace("{name}", template.name)
               );
             } catch (error) {
               console.error("Error loading template:", error);
-              Alert.alert("Erreur", "Impossible de charger le template.");
+              Alert.alert(t("common.error"), t("calendar.error_load_template"));
             }
           },
         },
@@ -850,10 +856,10 @@ export default function CalendarScreen() {
     try {
       await deleteTemplate(templateId);
       setTemplates(templates.filter((t) => t.id !== templateId));
-      Alert.alert("Supprimé ✅", "Template supprimé.");
+      Alert.alert(t("calendar.template_deleted_title"), t("calendar.template_deleted_msg"));
     } catch (error) {
       console.error("Error deleting template:", error);
-      Alert.alert("Erreur", "Impossible de supprimer le template.");
+      Alert.alert(t("common.error"), t("calendar.error_delete_template"));
     }
   };
 
@@ -968,7 +974,7 @@ export default function CalendarScreen() {
   // ---------- UI ----------
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
-      <HeaderBar title="Calendrier" showBack={true} />
+      <HeaderBar title={t("tabs.calendar")} showBack={true} />
 
       {/* Tabs */}
       <View
@@ -1076,7 +1082,7 @@ export default function CalendarScreen() {
                 style={{ backgroundColor: colors.accentLight }}
               >
                 <Text className="text-center font-medium text-sm" style={{ color: colors.accent }}>
-                  📋 Charger
+                  {t("calendar.load_button")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1105,7 +1111,7 @@ export default function CalendarScreen() {
 
             {/* 🏷️ Title */}
             <TextInput
-              placeholder="Titre de l'événement"
+              placeholder={t("calendar.event_title_placeholder")}
               value={newTitle}
               onChangeText={setNewTitle}
               className="rounded-xl px-4 py-3 text-base mb-3"
@@ -1131,7 +1137,7 @@ export default function CalendarScreen() {
                   }}
                 >
                   <Text style={{ color: colors.text }}>
-                    {selectedEventClass?.name || "Sélectionner une classe"}
+                    {selectedEventClass?.name || t("calendar.select_class")}
                   </Text>
                   <Ionicons
                     name={showClassPicker ? "chevron-up" : "chevron-down"}
@@ -1163,12 +1169,12 @@ export default function CalendarScreen() {
                           fontWeight: !selectedEventClass ? "600" : "400",
                         }}
                       >
-                        Sélectionner une classe
+                        {t("calendar.select_class")}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => {
-                        setSelectedEventClass({ id: -1, name: "Tous" });
+                        setSelectedEventClass({ id: -1, name: t("calendar.all_classes") });
                         setShowClassPicker(false);
                       }}
                       className="px-4 py-3 border-b"
@@ -1180,7 +1186,7 @@ export default function CalendarScreen() {
                           fontWeight: selectedEventClass?.id === -1 ? "600" : "400",
                         }}
                       >
-                        Tous
+                        {t("calendar.all_classes")}
                       </Text>
                     </TouchableOpacity>
                     {classes.map((cls) => (
@@ -1266,7 +1272,7 @@ export default function CalendarScreen() {
 
             {/* 📝 Description */}
             <TextInput
-              placeholder="Description (facultative)"
+              placeholder={t("calendar.description_placeholder")}
               value={newDescription}
               onChangeText={setNewDescription}
               className="rounded-xl px-4 py-3 text-base mb-5"
@@ -1340,7 +1346,7 @@ export default function CalendarScreen() {
             {/* Visual Timetable */}
             <View className="mb-5">
               <Text className="text-xs font-semibold mb-2" style={{ color: colors.textLight }}>
-                Sélectionner les horaires
+                {t("calendar.select_times")}
               </Text>
               <ScrollView
                 className="rounded-xl p-3 max-h-48"
@@ -1406,7 +1412,7 @@ export default function CalendarScreen() {
             </View>
 
             <TextInput
-              placeholder="Titre de l'activité"
+              placeholder={t("calendar.activity_title_placeholder")}
               value={newPlanTitle}
               onChangeText={setNewPlanTitle}
               className="rounded-xl px-4 py-3 text-base mb-5"
@@ -1474,16 +1480,20 @@ export default function CalendarScreen() {
           >
             <Text className="text-lg font-semibold mb-4" style={{ color: colors.textDark }}>
               {selectedDayForTemplate
-                ? `Sauvegarder ${selectedDayForTemplate}`
-                : "Sauvegarder la semaine"}
+                ? t("calendar.save_template_day").replace("{day}", selectedDayForTemplate)
+                : t("calendar.save_template_week")}
             </Text>
 
             <Text className="text-sm mb-3" style={{ color: colors.textLight }}>
-              Nombre d'activités: {allWeekPlanActivities.length}
+              {t("calendar.activities_count").replace("{count}", String(allWeekPlanActivities.length))}
             </Text>
 
             <TextInput
-              placeholder={selectedDayForTemplate ? "Ex: Matinée type lundi" : "Ex: Semaine type"}
+              placeholder={
+                selectedDayForTemplate
+                  ? t("calendar.template_name_placeholder")
+                  : t("calendar.template_name_placeholder_week")
+              }
               value={templateName}
               onChangeText={setTemplateName}
               className="rounded-xl px-4 py-3 text-base mb-5"
@@ -1516,7 +1526,7 @@ export default function CalendarScreen() {
                 className="flex-1 rounded-xl py-3"
                 style={{ backgroundColor: colors.accent }}
               >
-                <Text className="text-white font-medium text-center">Sauvegarder</Text>
+                <Text className="text-white font-medium text-center">{t("calendar.save")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1535,7 +1545,7 @@ export default function CalendarScreen() {
           >
             <View className="p-6 border-b" style={{ borderBottomColor: colors.border }}>
               <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-                Sélectionner un jour
+                {t("calendar.select_day_title")}
               </Text>
             </View>
 
@@ -1590,7 +1600,7 @@ export default function CalendarScreen() {
           >
             <View className="p-6 border-b" style={{ borderBottomColor: colors.border }}>
               <Text className="text-lg font-semibold" style={{ color: colors.textDark }}>
-                Templates pour {selectedDayForLoad}
+                {t("calendar.templates_for_day").replace("{day}", selectedDayForLoad)}
               </Text>
               <Text className="text-sm" style={{ color: colors.textLight }}>
                 ({templates.length} templates)
@@ -1611,7 +1621,7 @@ export default function CalendarScreen() {
                         {template.name}
                       </Text>
                       <Text className="text-xs mt-1" style={{ color: colors.textLight }}>
-                        {template.activities.length} activités
+                        {t("calendar.template_activities").replace("{count}", String(template.activities.length))}
                       </Text>
                     </View>
                     <TouchableOpacity
@@ -1625,7 +1635,7 @@ export default function CalendarScreen() {
               </ScrollView>
             ) : (
               <View className="p-6 items-center">
-                <Text style={{ color: colors.textLight }}>Aucun template sauvegardé</Text>
+                <Text style={{ color: colors.textLight }}>{t("calendar.no_templates")}</Text>
               </View>
             )}
 

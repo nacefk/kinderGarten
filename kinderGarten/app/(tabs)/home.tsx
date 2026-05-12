@@ -88,7 +88,7 @@ export default function Home() {
       const child = await getMyChild();
       // // console.log("[Home] Child object:", child);
       const classroomId = child.classroom?.id || child.classroom;
-      const classroomName = child.classroom?.name || `Classroom ${classroomId}`;
+      const classroomName = child.classroom?.name || t("common.classroom").replace("{id}", classroomId);
       const childId = child.id;
 
       // 1️⃣.b Fetch attendance status for this child
@@ -153,7 +153,7 @@ export default function Home() {
       buildTimeline(plans, eventsRes.data?.results || eventsRes.data, classroomName);
     } catch (err: any) {
       console.error(`❌ Error fetching home data: ${err.response?.data || err.message}`);
-      Alert.alert("Error", "Unable to load data. Please try again.");
+      Alert.alert(t("common.error"), t("home.error_load_data"));
     }
   }, []);
 
@@ -204,7 +204,7 @@ export default function Home() {
               ) {
                 const time = `${String(actDate.getHours()).padStart(2, "0")}:${String(actDate.getMinutes()).padStart(2, "0")}`;
                 todayActivities.push({
-                  title: activity.title || "Activity",
+                  title: activity.title || t("common.activity"),
                   time,
                   starts_at: activity.starts_at,
                 });
@@ -245,7 +245,7 @@ export default function Home() {
           ? [
               {
                 title: lastActivity.title,
-                description: `Class : ${className} — current activity`,
+                description: `${t("home.current_activity_desc").replace("{class}", className)}`,
                 image: "https://i.pravatar.cc/100?img=5",
               },
             ]
@@ -360,7 +360,7 @@ export default function Home() {
         console.warn("⚠️ Error fetching extra hour requests after request:", fetchErr);
       }
 
-      Alert.alert("Request Sent", "Your request is pending approval.");
+      Alert.alert(t("home.extra_hours_request_sent_title"), t("home.extra_hours_request_sent_msg"));
     } catch (err: any) {
       const apiMessage = err?.response?.data || err?.message || "";
       console.error("❌ Error:", apiMessage);
@@ -368,12 +368,9 @@ export default function Home() {
         typeof apiMessage === "string" &&
         apiMessage.toLowerCase().includes("pending extra hour request")
       ) {
-        Alert.alert(
-          "Pending Request",
-          "You already have a pending request for this child. Please wait for approval or rejection before submitting another."
-        );
+        Alert.alert(t("home.extra_hours_pending_title"), t("home.extra_hours_pending_msg"));
       } else {
-        Alert.alert("Error", "Unable to send request.");
+        Alert.alert(t("common.error"), t("home.error_send_request"));
       }
     }
   }, [selectedOption, extraHours]);
@@ -397,11 +394,11 @@ export default function Home() {
   // Planned Absence Submit Handler
   const handleSubmitAbsence = useCallback(async () => {
     if (!profile?.id || !absenceStartDate || !absenceEndDate || !absenceReason.trim()) {
-      Alert.alert("Missing info", "Please select a start and end date and enter a reason.");
+      Alert.alert(t("home.absence_missing_info_title"), t("home.absence_missing_info_msg"));
       return;
     }
     if (absenceEndDate < absenceStartDate) {
-      Alert.alert("Invalid range", "End date cannot be before start date.");
+      Alert.alert(t("home.absence_invalid_range_title"), t("home.absence_invalid_range_msg"));
       return;
     }
     setAbsenceSubmitting(true);
@@ -416,11 +413,11 @@ export default function Home() {
       setAbsenceReason("");
       setAbsenceStartDate(new Date());
       setAbsenceEndDate(new Date());
-      Alert.alert("Success", "Absence reported for selected days.");
+      Alert.alert(t("home.absence_success_title"), t("home.absence_success_msg"));
     } catch (err: any) {
       console.error("❌ Absence request error:", err);
       const backendMsg = err.response?.data?.message || err.response?.data?.detail || err.message;
-      Alert.alert("Error", backendMsg || "Failed to report absence. Please try again.");
+      Alert.alert(t("common.error"), backendMsg || t("home.absence_error_msg"));
     } finally {
       setAbsenceSubmitting(false);
     }
@@ -754,14 +751,14 @@ export default function Home() {
               }}
             >
               <Text style={{ color: colors.error, fontWeight: "600", fontSize: 15 }}>
-                {t("home.extra_hours_rejected") || "Votre demande a été refusée"}
+                {t("home.extra_hours_rejected")}
               </Text>
             </View>
           )}
         </Card>
 
         {/* Planned Absence Card - styled to match other views */}
-        <Card title={t("home.report_planned_absence") || "Report Planned Absence"}>
+        <Card title={t("home.report_planned_absence")}>
           <Text
             style={{
               color: colors.text,
@@ -769,8 +766,7 @@ export default function Home() {
               marginBottom: 12,
             }}
           >
-            {t("home.absence_section_hint") ||
-              "Let us know if your child will be absent for one or more days."}
+            {t("home.absence_section_hint")}
           </Text>
           <TouchableOpacity
             onPress={() => setShowAbsenceModal(true)}
@@ -791,7 +787,7 @@ export default function Home() {
                 fontSize: 16,
               }}
             >
-              {t("home.absence_button_pick_absence_dates") || "Pick absence dates"}
+              {t("home.absence_button_pick_absence_dates")}
             </Text>
           </TouchableOpacity>
         </Card>
@@ -860,8 +856,8 @@ export default function Home() {
                 <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 16 }}>
                   <Ionicons name="calendar-outline" size={18} color={colors.textDark} />{" "}
                   {absenceStartDate
-                    ? `Start: ${absenceStartDate.toLocaleDateString()}`
-                    : "Select Start Date"}
+                    ? `${t("home.absence_start_label")}: ${absenceStartDate.toLocaleDateString()}`
+                    : t("home.absence_select_start")}
                 </Text>
               </TouchableOpacity>
               {showStartDatePicker && (
@@ -895,8 +891,8 @@ export default function Home() {
                 <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 16 }}>
                   <Ionicons name="calendar-outline" size={18} color={colors.textDark} />{" "}
                   {absenceEndDate
-                    ? `End: ${absenceEndDate.toLocaleDateString()}`
-                    : "Select End Date"}
+                    ? `${t("home.absence_end_label")}: ${absenceEndDate.toLocaleDateString()}`
+                    : t("home.absence_select_end")}
                 </Text>
               </TouchableOpacity>
               {showEndDatePicker && (
@@ -934,7 +930,7 @@ export default function Home() {
               {/* Absence Days Counter */}
               <View style={{ alignItems: "center", marginBottom: 10 }}>
                 <Text style={{ color: colors.textDark, fontWeight: "600", fontSize: 15 }}>
-                  {t("home.absence_days_count") || "Selected days:"}{" "}
+                  {t("home.absence_days_count")}{" "}
                   {Math.max(
                     1,
                     Math.round(

@@ -43,20 +43,20 @@ export default function Profile() {
 
   /** ✅ Logout handler */
   const handleLogout = useCallback(async () => {
-    Alert.alert("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?", [
+    Alert.alert(t("profile.logout"), t("profile.confirm_logout"), [
       {
-        text: "Annuler",
+        text: t("common.cancel"),
         onPress: () => {},
         style: "cancel",
       },
       {
-        text: "Déconnecter",
+        text: t("profile.logout_action"),
         onPress: async () => {
           try {
             await logout();
             router.replace("/");
           } catch (err: any) {
-            Alert.alert("Erreur", "Impossible de se déconnecter.");
+            Alert.alert(t("common.error"), t("profile.error_logout"));
             console.error("Logout error:", err);
           }
         },
@@ -77,8 +77,9 @@ export default function Profile() {
       years--;
       months += 12;
     }
-    if (years < 1) return `${months} mois`;
-    return `${years} an${years > 1 ? "s" : ""}${months > 0 ? ` ${months} mois` : ""}`;
+    if (years < 1) return t("profile.age_months").replace("{count}", String(months));
+    if (months > 0) return t("profile.age_years_months").replace("{years}", String(years)).replace("{months}", String(months));
+    return t("profile.age_years").replace("{years}", String(years));
   };
 
   /** 📦 Charger le profil depuis l’API */
@@ -127,7 +128,7 @@ export default function Profile() {
       setProfile(fullProfile);
     } catch (error: any) {
       console.error("❌ Erreur de chargement:", error.response?.data || error.message);
-      Alert.alert("Erreur", "Impossible de charger le profil de l’enfant.");
+      Alert.alert(t("common.error"), t("profile.error_load"));
     } finally {
       setLoading(false);
     }
@@ -162,11 +163,11 @@ export default function Profile() {
         const uploadedUrl = await uploadAvatar(uri);
         await updateChild(profile.id, { avatar: uploadedUrl });
         updateField("avatar", uploadedUrl);
-        Alert.alert("✅ Succès", "Photo de profil mise à jour !");
+        Alert.alert(t("profile.avatar_success_title"), t("profile.avatar_success_msg"));
       }
     } catch (error) {
       console.error("❌ Erreur de téléchargement:", error);
-      Alert.alert("Erreur", "Impossible de mettre à jour la photo.");
+      Alert.alert(t("common.error"), t("profile.error_avatar"));
     } finally {
       setLoading(false);
     }
@@ -192,11 +193,11 @@ export default function Profile() {
         authorized_pickups: profile.authorizedPickups || [],
       };
       await updateChild(profile.id, payload);
-      Alert.alert("✅ Succès", "Profil mis à jour sur le serveur.");
+      Alert.alert(t("profile.save_success_title"), t("profile.save_success_msg"));
       setIsEditing(false);
     } catch (error: any) {
       console.error("❌ Erreur de sauvegarde:", error.response?.data || error.message);
-      Alert.alert("Erreur", "Impossible d’enregistrer les modifications.");
+      Alert.alert(t("common.error"), t("profile.error_save"));
     } finally {
       setLoading(false);
     }
@@ -210,9 +211,9 @@ export default function Profile() {
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) Linking.openURL(url);
-        else Alert.alert("Erreur", "Impossible d'ouvrir le composeur téléphonique.");
+        else Alert.alert(t("common.error"), t("profile.error_phone"));
       })
-      .catch(() => Alert.alert("Erreur", "Une erreur est survenue lors de l'appel."));
+      .catch(() => Alert.alert(t("common.error"), t("profile.error_phone_call")));
   }, []);
 
   /** 🧱 Ligne réutilisable */
@@ -285,7 +286,7 @@ export default function Profile() {
         style={{ backgroundColor: colors.background }}
       >
         <ActivityIndicator size="large" color={colors.accent} />
-        <Text style={{ color: colors.textLight, marginTop: 8 }}>Chargement du profil...</Text>
+        <Text style={{ color: colors.textLight, marginTop: 8 }}>{t("profile.loading")}</Text>
       </View>
     );
   }
@@ -296,7 +297,7 @@ export default function Profile() {
 
       {/* En-tête */}
       <HeaderBar
-        title="Profil"
+        title={t("profile.my_profile")}
         showBack={true}
         rightElement={
           <TouchableOpacity
@@ -324,7 +325,7 @@ export default function Profile() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* 👶 Informations sur l’enfant */}
-          <Card title="Informations de l’enfant">
+          <Card title={t("profile.child_info")}>
             <View className="items-center">
               <TouchableOpacity
                 disabled={!isEditing}
@@ -361,8 +362,8 @@ export default function Profile() {
           </Card>
 
           {/* 📏 Informations physiques */}
-          <Card title="Informations physiques">
-            <Row label="🎂 Date de naissance" colors={colors}>
+          <Card title={t("profile.physical_info")}>
+            <Row label={t("profile.birthdate")} colors={colors}>
               {isEditing ? (
                 <>
                   <TouchableOpacity
@@ -373,7 +374,7 @@ export default function Profile() {
                       className="text-right font-medium py-1"
                       style={{ color: colors.textDark }}
                     >
-                      {profile?.birthdate || "Sélectionner une date"}
+                      {profile?.birthdate || t("profile.select_date")}
                     </Text>
                   </TouchableOpacity>
 
@@ -402,7 +403,7 @@ export default function Profile() {
             </Row>
 
             {renderRow(
-              "⚖️ Poids",
+              t("profile.weight"),
               "weight",
               profile?.weight,
               isEditing,
@@ -411,7 +412,7 @@ export default function Profile() {
               { numeric: true, suffix: "kg" }
             )}
             {renderRow(
-              "📏 Taille",
+              t("profile.height"),
               "height",
               profile?.height,
               isEditing,
@@ -420,7 +421,7 @@ export default function Profile() {
               { numeric: true, suffix: "cm" }
             )}
 
-            <Row label="👧 Sexe" colors={colors}>
+            <Row label={t("profile.gender")} colors={colors}>
               {isEditing ? (
                 <TouchableOpacity
                   onPress={() => setShowGenderDropdown(!showGenderDropdown)}
@@ -428,19 +429,19 @@ export default function Profile() {
                 >
                   <Text className="text-right font-medium py-1" style={{ color: colors.textDark }}>
                     {profile?.gender === "male"
-                      ? "Garçon"
+                      ? t("profile.male")
                       : profile?.gender === "female"
-                        ? "Fille"
-                        : profile?.gender || "Sélectionner le sexe"}
+                        ? t("profile.female")
+                        : profile?.gender || t("profile.select_gender")}
                   </Text>
                   <ChevronDown color={colors.textDark} size={18} />
                 </TouchableOpacity>
               ) : (
                 <Text className="font-medium text-right" style={{ color: colors.textDark }}>
                   {profile?.gender === "male"
-                    ? "Garçon"
+                    ? t("profile.male")
                     : profile?.gender === "female"
-                      ? "Fille"
+                      ? t("profile.female")
                       : profile?.gender || "-"}
                 </Text>
               )}
@@ -451,61 +452,67 @@ export default function Profile() {
                 className="rounded-xl shadow-sm p-3 mt-1"
                 style={{ backgroundColor: colors.cardBackground }}
               >
-                {[
-                  { label: "Fille", value: "female" },
-                  { label: "Garçon", value: "male" },
-                ].map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    onPress={() => {
-                      updateField("gender", option.value);
-                      setShowGenderDropdown(false);
-                    }}
-                    className={`py-2 rounded-xl ${profile?.gender === option.value ? "bg-gray-100" : ""}`}
-                  >
-                    <Text
-                      className="text-right"
-                      style={{
-                        color: profile?.gender === option.value ? colors.accent : colors.textDark,
-                        fontWeight: profile?.gender === option.value ? "600" : "400",
+                {["female", "male"].map((value) => {
+                  const label = value === "female" ? t("profile.female") : t("profile.male");
+                  return (
+                    <TouchableOpacity
+                      key={value}
+                      onPress={() => {
+                        updateField("gender", value);
+                        setShowGenderDropdown(false);
                       }}
+                      className={`py-2 rounded-xl ${profile?.gender === value ? "bg-gray-100" : ""}`}
                     >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        className="text-right"
+                        style={{
+                          color: profile?.gender === value ? colors.accent : colors.textDark,
+                          fontWeight: profile?.gender === value ? "600" : "400",
+                        }}
+                      >
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )}
           </Card>
 
           {/* 🚑 Santé & Allergies */}
-          <Card title="Santé & allergies">
-            {renderRow("🤧 Allergies", "allergies", profile?.allergies, isEditing, (v) =>
+          <Card title={t("profile.health_allergies")}>
+            {renderRow(t("profile.allergies"), "allergies", profile?.allergies, isEditing, (v) =>
               updateField("allergies", v)
             )}
-            {renderRow("❤️ Conditions", "conditions", profile?.conditions, isEditing, (v) =>
+            {renderRow(t("profile.conditions"), "conditions", profile?.conditions, isEditing, (v) =>
               updateField("conditions", v)
             )}
-            {renderRow("💊 Médication", "medication", profile?.medication, isEditing, (v) =>
+            {renderRow(t("profile.medication"), "medication", profile?.medication, isEditing, (v) =>
               updateField("medication", v)
             )}
-            {renderRow("👨‍⚕️ Médecin", "doctor", profile?.doctor, isEditing, (v) =>
+            {renderRow(t("profile.doctor"), "doctor", profile?.doctor, isEditing, (v) =>
               updateField("doctor", v)
             )}
           </Card>
 
           {/* 🚗 Personnes autorisées */}
-          <Card title="Personnes autorisées à récupérer l’enfant">
+          <Card title={t("profile.authorized_pickups")}>
             {profile?.authorizedPickups?.length > 0 ? (
               profile.authorizedPickups.map((person: any, index: number) => (
                 <View key={index} className="mb-3">
-                  {renderRow(`👤 Nom ${index + 1}`, "", person.name, isEditing, (v) => {
-                    const updated = [...profile.authorizedPickups];
-                    updated[index] = { ...updated[index], name: v };
-                    updateField("authorizedPickups", updated);
-                  })}
                   {renderRow(
-                    `📞 Téléphone ${index + 1}`,
+                    `👤 ${t("profile.username")} ${index + 1}`,
+                    "",
+                    person.name,
+                    isEditing,
+                    (v) => {
+                      const updated = [...profile.authorizedPickups];
+                      updated[index] = { ...updated[index], name: v };
+                      updateField("authorizedPickups", updated);
+                    }
+                  )}
+                  {renderRow(
+                    `📞 ${t("profile.password")} ${index + 1}`,
                     "",
                     person.phone,
                     isEditing,
@@ -516,15 +523,21 @@ export default function Profile() {
                     },
                     handlePhoneCall
                   )}
-                  {renderRow(`👥 Relation ${index + 1}`, "", person.relation, isEditing, (v) => {
-                    const updated = [...profile.authorizedPickups];
-                    updated[index] = { ...updated[index], relation: v };
-                    updateField("authorizedPickups", updated);
-                  })}
+                  {renderRow(
+                    `👥 ${t("profile.tenant")} ${index + 1}`,
+                    "",
+                    person.relation,
+                    isEditing,
+                    (v) => {
+                      const updated = [...profile.authorizedPickups];
+                      updated[index] = { ...updated[index], relation: v };
+                      updateField("authorizedPickups", updated);
+                    }
+                  )}
                 </View>
               ))
             ) : (
-              <Text style={{ color: colors.text }}>Aucune personne autorisée</Text>
+              <Text style={{ color: colors.text }}>{t("profile.no_authorized_pickups")}</Text>
             )}
 
             {isEditing && (
@@ -538,21 +551,23 @@ export default function Profile() {
                 }}
                 className="mt-3 self-end"
               >
-                <Text style={{ color: colors.accent, fontWeight: "600" }}>+ Ajouter</Text>
+                <Text style={{ color: colors.accent, fontWeight: "600" }}>
+                  {t("profile.add_new")}
+                </Text>
               </TouchableOpacity>
             )}
           </Card>
 
           {/* 🚨 Contact d’urgence */}
-          <Card title="Contact d’urgence">
-            {renderRow("👤 Nom", "", profile?.emergencyContact?.name, isEditing, (v) =>
+          <Card title={t("profile.emergency_contact")}>
+            {renderRow(t("profile.name_label"), "", profile?.emergencyContact?.name, isEditing, (v) =>
               updateField("emergencyContact", { ...profile?.emergencyContact, name: v })
             )}
-            {renderRow("👥 Relation", "", profile?.emergencyContact?.relation, isEditing, (v) =>
+            {renderRow(t("profile.relation_label"), "", profile?.emergencyContact?.relation, isEditing, (v) =>
               updateField("emergencyContact", { ...profile?.emergencyContact, relation: v })
             )}
             {renderRow(
-              "📞 Téléphone",
+              t("profile.phone_label"),
               "",
               profile?.emergencyContact?.phone,
               isEditing,
@@ -562,18 +577,26 @@ export default function Profile() {
           </Card>
 
           {/* 🎓 Informations sur la classe */}
-          <Card title="Informations sur la classe">
-            {renderRow("👩‍🏫 Enseignant(e)", "", profile?.classInfo?.teacherName, isEditing, (v) =>
+          <Card title={t("profile.class_info")}>
+            {renderRow(t("profile.teacher"), "", profile?.classInfo?.teacherName, isEditing, (v) =>
               updateField("classInfo", { ...profile?.classInfo, teacherName: v })
             )}
-            {renderRow("🚪 Salle", "", profile?.classInfo?.classroomName, isEditing, (v) =>
-              updateField("classInfo", { ...profile?.classInfo, classroomName: v })
-            )}
-            {renderRow("🧑 Responsable", "", profile?.classInfo?.responsibleName, isEditing, (v) =>
-              updateField("classInfo", { ...profile?.classInfo, responsibleName: v })
+            {renderRow(
+              t("profile.classroom_room"),
+              "",
+              profile?.classInfo?.classroomName,
+              isEditing,
+              (v) => updateField("classInfo", { ...profile?.classInfo, classroomName: v })
             )}
             {renderRow(
-              "📞 Téléphone",
+              t("profile.responsible"),
+              "",
+              profile?.classInfo?.responsibleName,
+              isEditing,
+              (v) => updateField("classInfo", { ...profile?.classInfo, responsibleName: v })
+            )}
+            {renderRow(
+              t("profile.phone_label"),
               "",
               profile?.classInfo?.responsiblePhone,
               isEditing,
