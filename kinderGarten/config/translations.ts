@@ -231,6 +231,15 @@ export const translations: Record<Language, Record<string, string>> = {
     "walkthrough.extra_desc": "Request extra supervision time or report a planned absence — all from the app, quick and easy.",
     "walkthrough.profile_title": "Your Child's Profile",
     "walkthrough.profile_desc": "View and update your child's info, health details, emergency contacts, and authorized pickups.",
+
+    // Login
+    "login.welcome": "Welcome 👋",
+    "login.subtitle": "Please sign in with your administrator or parent credentials.",
+    "login.tenant_placeholder": "Kindergarten identifier (e.g. my-kindergarten)",
+    "login.username_placeholder": "Username",
+    "login.password_placeholder": "Password",
+    "login.sign_in": "Sign In",
+    "login.credentials_hint": "You can get your credentials from your kindergarten administration.",
   },
   fr: {
                         "dashboard.absences_unauthorized": "Vous n'êtes pas autorisé à voir les absences. Veuillez vous connecter en tant qu'administrateur.",
@@ -462,6 +471,15 @@ export const translations: Record<Language, Record<string, string>> = {
     "walkthrough.extra_desc": "Demandez du temps de garde supplémentaire ou signalez une absence prévue — rapidement et facilement depuis l'app.",
     "walkthrough.profile_title": "Profil de votre Enfant",
     "walkthrough.profile_desc": "Consultez et modifiez les informations de votre enfant, ses détails de santé, contacts d'urgence et personnes autorisées.",
+
+    // Login
+    "login.welcome": "Bienvenue 👋",
+    "login.subtitle": "Veuillez vous connecter avec vos identifiants administrateur ou parent.",
+    "login.tenant_placeholder": "Identifiant crèche (ex: ma-creche)",
+    "login.username_placeholder": "Nom d'utilisateur",
+    "login.password_placeholder": "Mot de passe",
+    "login.sign_in": "Se connecter",
+    "login.credentials_hint": "Vous pouvez obtenir vos identifiants auprès de l'administration de votre crèche.",
   },
   ar: {
                         "dashboard.absences_unauthorized": "ليست لديك صلاحية عرض الغيابات. يرجى تسجيل الدخول كمسؤول.",
@@ -693,6 +711,15 @@ export const translations: Record<Language, Record<string, string>> = {
     "walkthrough.extra_desc": "اطلب وقت رعاية إضافي أو أبلغ عن غياب مخطط — بسرعة وسهولة من التطبيق.",
     "walkthrough.profile_title": "ملف طفلك الشخصي",
     "walkthrough.profile_desc": "اعرض وعدّل معلومات طفلك، تفاصيله الصحية، جهات الاتصال الطارئة والأشخاص المصرح لهم.",
+
+    // Login
+    "login.welcome": "مرحباً 👋",
+    "login.subtitle": "يرجى تسجيل الدخول باستخدام بيانات المسؤول أو ولي الأمر.",
+    "login.tenant_placeholder": "معرّف الروضة (مثال: روضتي)",
+    "login.username_placeholder": "اسم المستخدم",
+    "login.password_placeholder": "كلمة المرور",
+    "login.sign_in": "تسجيل الدخول",
+    "login.credentials_hint": "يمكنك الحصول على بيانات الدخول من إدارة الروضة.",
   },
 };
 

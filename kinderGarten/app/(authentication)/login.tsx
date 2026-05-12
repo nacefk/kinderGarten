@@ -17,6 +17,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useAppStore } from "@/store/useAppStore";
 import { secureStorage } from "@/utils/secureStorage";
 import { validation, getValidationMessage, convertToSlug } from "@/utils/validation";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import { getTranslation } from "@/config/translations";
 
 export default function Login() {
   const router = useRouter();
@@ -30,6 +32,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { language } = useLanguageStore();
+  const t = (key: string) => getTranslation(language, key);
 
   useEffect(() => {
     (async () => {
@@ -162,16 +166,16 @@ export default function Login() {
         >
           {/* --- Title --- */}
           <Text className="text-2xl font-bold text-center mb-1" style={{ color: colors.textDark }}>
-            Welcome 👋
+            {t("login.welcome")}
           </Text>
           <Text className="text-base text-center mb-8" style={{ color: colors.text }}>
-            Please sign in with your administrator or parent credentials.
+            {t("login.subtitle")}
           </Text>
 
           {/* Tenant Input */}
           <TextInput
             className="w-full rounded-2xl px-5 py-4 text-base mb-4"
-            placeholder="Kindergarten slug (e.g. new-kindergarten)"
+            placeholder={t("login.tenant_placeholder")}
             placeholderTextColor={colors.textLight}
             style={{
               backgroundColor: colors.cardBackground,
@@ -188,7 +192,7 @@ export default function Login() {
           {/* Username Input */}
           <TextInput
             className="w-full rounded-2xl px-5 py-4 text-base mb-4"
-            placeholder="Username"
+            placeholder={t("login.username_placeholder")}
             placeholderTextColor={colors.textLight}
             style={{
               backgroundColor: colors.cardBackground,
@@ -213,7 +217,7 @@ export default function Login() {
           >
             <TextInput
               className="flex-1 text-base py-4"
-              placeholder="Password"
+              placeholder={t("login.password_placeholder")}
               placeholderTextColor={colors.textLight}
               secureTextEntry={!showPassword}
               value={password}
@@ -247,32 +251,14 @@ export default function Login() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-white text-lg font-semibold">Sign In</Text>
+              <Text className="text-white text-lg font-semibold">{t("login.sign_in")}</Text>
             )}
           </TouchableOpacity>
 
-          {/* Info Box */}
-          <View
-            className="mt-8 p-4 rounded-xl flex-row items-start"
-            style={{
-              backgroundColor: colors.accentLight,
-              borderLeftWidth: 4,
-              borderColor: colors.accent,
-            }}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={colors.accent}
-              className="mr-2"
-            />
-            <Text style={{ color: colors.text }}>
-              <Text className="font-semibold">Slug format:</Text> Use lowercase letters, numbers,
-              and hyphens (e.g., new-kindergarten).{"\n\n"}
-              <Text className="font-semibold">Example login:</Text> tenant-user / tenant123 /
-              new-kindergarten
-            </Text>
-          </View>
+          {/* Info Text */}
+          <Text className="mt-6 text-center text-sm" style={{ color: colors.textLight }}>
+            {t("login.credentials_hint")}
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </View>
