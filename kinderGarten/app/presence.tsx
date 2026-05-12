@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,39 +10,39 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
-import { secureStorage } from "@/utils/secureStorage";
 import { getColors } from "@/config/colors";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "expo-router";
 import HeaderBar from "@/components/Header";
+import { api } from "@/api/api";
+import { API_ENDPOINTS } from "@/config/api";
 
 type PresenceStatus = "present" | "absent";
 
-const API_BASE = "http://192.168.1.230:8000/api/attendance/"; // ✅ ensure trailing slash
-
 export default function PresenceScreen() {
   const router = useRouter();
-  const { data } = useAppStore();
+  const { data, actions } = useAppStore();
   const tenant = useAppStore((state) => state.tenant);
   const colors = getColors(tenant?.primary_color, tenant?.secondary_color);
-  const classes = data.classes || [];
+  const classes = data.classList || [];
   const children = data.childrenList || [];
 
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [presenceMap, setPresenceMap] = useState<Record<number, PresenceStatus>>({});
   const [loading, setLoading] = useState(false);
 
-  // ✅ Load today's attendance from API
+  // Fetch children and classes on mount
+  useEffect(() => {
+    actions.fetchChildren();
+    actions.fetchClasses();
+  }, []);
+
+  // Load today's attendance from API
   const fetchAttendance = async () => {
     try {
       setLoading(true);
-      const token = await secureStorage.getAccessToken();
-      if (!token) return;
 
-      const res = await axios.get(API_BASE, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(API_ENDPOINTS.ATTENDANCE);
       // Convert list into { childId: status }
       const map: Record<number, PresenceStatus> = {};
       const attendanceArray = Array.isArray(res.data)
@@ -89,12 +89,6 @@ export default function PresenceScreen() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      const token = await secureStorage.getAccessToken();
-      if (!token) {
-        Alert.alert("Erreur", "Aucun jeton d'authentification trouvé.");
-        return;
-      }
-
       const payload = {
         records: children.map((child: any) => ({
           child: child.id,
@@ -102,12 +96,7 @@ export default function PresenceScreen() {
         })),
       };
 
-      const res = await axios.post(`${API_BASE}update/`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await api.post(API_ENDPOINTS.ATTENDANCE_UPDATE, payload);
       Alert.alert("Succès ✅", "Les présences ont été enregistrées avec succès.");
     } catch (error: any) {
       console.error("❌ Error saving attendance:", error.response?.data || error.message);
@@ -123,7 +112,7 @@ export default function PresenceScreen() {
   // ✅ Filtered children
   const filteredChildren = useMemo(() => {
     if (selectedClass === "all") return children;
-    return children.filter((c: any) => c.className === selectedClass);
+    return children.filter((c: any) => c.classroom_name === selectedClass);
   }, [children, selectedClass]);
 
   // ✅ Render child card

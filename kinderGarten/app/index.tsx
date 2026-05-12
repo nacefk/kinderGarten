@@ -1,12 +1,16 @@
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "@/store/useAuthStore";
+
+const WALKTHROUGH_KEY = "kindergarten_walkthrough_seen";
 
 export default function Index() {
   const { isAuthenticated, isLoading, userRole } = useAuthStore();
   const [showSplash, setShowSplash] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [walkthroughSeen, setWalkthroughSeen] = useState<boolean | null>(null);
 
   // Show splash for 3.5 seconds with progress animation
   useEffect(() => {
@@ -27,8 +31,15 @@ export default function Index() {
     return () => clearInterval(progressInterval);
   }, []);
 
+  // Check if walkthrough has been seen
+  useEffect(() => {
+    AsyncStorage.getItem(WALKTHROUGH_KEY).then((value) => {
+      setWalkthroughSeen(value === "true");
+    });
+  }, []);
+
   // Still loading
-  if (isLoading || showSplash) {
+  if (isLoading || showSplash || walkthroughSeen === null) {
     return (
       <View className="flex-1 justify-center items-center bg-white px-6">
         {/* Image */}
@@ -56,10 +67,14 @@ export default function Index() {
     );
   }
 
-  // ✅ Navigate based on login state and role
+  // Navigate based on login state and role
   if (isAuthenticated) {
     if (userRole === "admin") {
       return <Redirect href="/(adminTabs)/dashboard" />;
+    }
+    // Show walkthrough for parents on first login
+    if (!walkthroughSeen) {
+      return <Redirect href="/walkthrough" />;
     }
     return <Redirect href="/(tabs)/home" />;
   }

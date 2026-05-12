@@ -1,5 +1,5 @@
 import "@/global.css";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Slot } from "expo-router";
 import { setupAxiosInterceptors } from "@/api/api";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -7,6 +7,8 @@ import { useLanguageStore } from "@/store/useLanguageStore";
 import { useAppStore } from "@/store/useAppStore";
 import { initializeNotifications } from "@/utils/notifications";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import NoInternet from "@/components/NoInternet";
+import NetInfo from "@react-native-community/netinfo";
 import * as Sentry from "@sentry/react-native";
 
 Sentry.init({
@@ -32,6 +34,7 @@ export default Sentry.wrap(function RootLayout() {
   const { checkAuth, isAuthenticated } = useAuthStore();
   const { initLanguage } = useLanguageStore();
   const { actions } = useAppStore();
+  const [isConnected, setIsConnected] = useState<boolean | null>(true);
 
   useEffect(() => {
     // ✅ Setup axios interceptors first (idempotent)
@@ -42,6 +45,13 @@ export default Sentry.wrap(function RootLayout() {
 
     // ✅ Initialize language preference from storage
     initLanguage();
+
+    // ✅ Listen for network changes
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsConnected(state.isConnected);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -51,6 +61,10 @@ export default Sentry.wrap(function RootLayout() {
       initializeNotifications();
     }
   }, [isAuthenticated]);
+
+  if (isConnected === false) {
+    return <NoInternet onRetry={() => NetInfo.fetch().then((state) => setIsConnected(state.isConnected))} />;
+  }
 
   return (
     <ErrorBoundary>

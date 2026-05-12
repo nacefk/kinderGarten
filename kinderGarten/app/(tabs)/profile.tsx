@@ -583,6 +583,33 @@ export default function Profile() {
               handlePhoneCall
             )}
           </Card>
+
+          {/* Replay Walkthrough */}
+          <TouchableOpacity
+            onPress={async () => {
+              const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+              await AsyncStorage.removeItem("kindergarten_walkthrough_seen");
+              router.push("/walkthrough");
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              paddingVertical: 14,
+              marginTop: 8,
+              marginBottom: 24,
+              backgroundColor: colors.cardBackground,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <Text style={{ fontSize: 18 }}>📖</Text>
+            <Text style={{ color: colors.primary, fontSize: 15, fontWeight: "600" }}>
+              {t("walkthrough.replay")}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
