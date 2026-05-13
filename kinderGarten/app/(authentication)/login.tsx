@@ -257,9 +257,7 @@ export default function Login() {
                 marginRight: 10,
               }}
             >
-              {acceptedPrivacy && (
-                <Ionicons name="checkmark" size={14} color="#fff" />
-              )}
+              {acceptedPrivacy && <Ionicons name="checkmark" size={14} color="#fff" />}
             </View>
             <Text style={{ color: colors.text, fontSize: 13, flex: 1 }}>
               {t("login.accept_privacy")}{" "}
@@ -279,7 +277,7 @@ export default function Login() {
             activeOpacity={0.9}
             className="rounded-2xl py-4 items-center"
             style={{
-              backgroundColor: (loading || !acceptedPrivacy) ? colors.disabled : colors.accent,
+              backgroundColor: loading || !acceptedPrivacy ? colors.disabled : colors.accent,
               shadowColor: colors.accent,
               shadowOpacity: 0.25,
               shadowRadius: 8,
