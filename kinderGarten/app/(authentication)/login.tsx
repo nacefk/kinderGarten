@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -32,6 +33,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const { language } = useLanguageStore();
   const t = (key: string) => getTranslation(language, key);
 
@@ -233,14 +235,51 @@ export default function Login() {
             </TouchableOpacity>
           </View>
 
+          {/* Privacy Policy Checkbox */}
+          <TouchableOpacity
+            onPress={() => setAcceptedPrivacy(!acceptedPrivacy)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <View
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 6,
+                borderWidth: 2,
+                borderColor: acceptedPrivacy ? colors.accent : colors.border,
+                backgroundColor: acceptedPrivacy ? colors.accent : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 10,
+              }}
+            >
+              {acceptedPrivacy && (
+                <Ionicons name="checkmark" size={14} color="#fff" />
+              )}
+            </View>
+            <Text style={{ color: colors.text, fontSize: 13, flex: 1 }}>
+              {t("login.accept_privacy")}{" "}
+              <Text
+                onPress={() => Linking.openURL("http://www.sghirilab.tn/privacy-policy.html")}
+                style={{ color: colors.accent, textDecorationLine: "underline" }}
+              >
+                {t("login.privacy_policy_link")}
+              </Text>
+            </Text>
+          </TouchableOpacity>
+
           {/* Login Button */}
           <TouchableOpacity
             onPress={handleLogin}
-            disabled={loading}
+            disabled={loading || !acceptedPrivacy}
             activeOpacity={0.9}
             className="rounded-2xl py-4 items-center"
             style={{
-              backgroundColor: loading ? colors.disabled : colors.accent,
+              backgroundColor: (loading || !acceptedPrivacy) ? colors.disabled : colors.accent,
               shadowColor: colors.accent,
               shadowOpacity: 0.25,
               shadowRadius: 8,

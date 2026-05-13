@@ -262,6 +262,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "profile.add_new": "+ Add",
     "profile.emergency_contact": "Emergency Contact",
     "profile.class_info": "Class Information",
+    "profile.privacy_policy": "Privacy Policy",
     "profile.teacher": "👩‍🏫 Teacher",
     "profile.classroom_room": "🚪 Room",
     "profile.responsible": "🧑 Responsible",
@@ -491,6 +492,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "login.password_placeholder": "Password",
     "login.sign_in": "Sign In",
     "login.credentials_hint": "You can get your credentials from your kindergarten administration.",
+    "login.accept_privacy": "I accept the",
+    "login.privacy_policy_link": "Privacy Policy",
   },
   fr: {
                         "dashboard.absences_unauthorized": "Vous n'êtes pas autorisé à voir les absences. Veuillez vous connecter en tant qu'administrateur.",
@@ -753,6 +756,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "profile.add_new": "+ Ajouter",
     "profile.emergency_contact": "Contact d'urgence",
     "profile.class_info": "Informations sur la classe",
+    "profile.privacy_policy": "Politique de confidentialité",
     "profile.teacher": "👩‍🏫 Enseignant(e)",
     "profile.classroom_room": "🚪 Salle",
     "profile.responsible": "🧑 Responsable",
@@ -982,6 +986,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "login.password_placeholder": "Mot de passe",
     "login.sign_in": "Se connecter",
     "login.credentials_hint": "Vous pouvez obtenir vos identifiants auprès de l'administration de votre crèche.",
+    "login.accept_privacy": "J'accepte la",
+    "login.privacy_policy_link": "Politique de confidentialité",
   },
   ar: {
                         "dashboard.absences_unauthorized": "ليست لديك صلاحية عرض الغيابات. يرجى تسجيل الدخول كمسؤول.",
@@ -1244,6 +1250,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "profile.add_new": "+ إضافة",
     "profile.emergency_contact": "جهة اتصال الطوارئ",
     "profile.class_info": "معلومات الفصل",
+    "profile.privacy_policy": "سياسة الخصوصية",
     "profile.teacher": "👩‍🏫 المعلم/ة",
     "profile.classroom_room": "🚪 القاعة",
     "profile.responsible": "🧑 المسؤول",
@@ -1473,6 +1480,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "login.password_placeholder": "كلمة المرور",
     "login.sign_in": "تسجيل الدخول",
     "login.credentials_hint": "يمكنك الحصول على بيانات الدخول من إدارة الروضة.",
+    "login.accept_privacy": "أوافق على",
+    "login.privacy_policy_link": "سياسة الخصوصية",
   },
 };
 
